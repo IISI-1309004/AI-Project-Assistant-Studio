@@ -10,6 +10,7 @@ repositories {
     mavenCentral()
 }
 
+
 intellij {
     version.set("2024.1")
     type.set("IC") // IntelliJ IDEA Community
