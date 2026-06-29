@@ -87,6 +87,21 @@ describe("Phase 5 CLI learning and memory e2e", () => {
       return;
     }
 
+    if (req.method === "GET" && url === "/api/v1/session/s-auto-test/memory-reinforcement") {
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({
+        sessionId: "s-auto-test",
+        status: "AVAILABLE",
+        memoryReinforcement: {
+          enabled: true,
+          attempted: 2,
+          reinforced: 2,
+          failed: 0,
+        },
+      }));
+      return;
+    }
+
     if (req.method === "GET" && url.startsWith("/api/v1/memory")) {
       res.setHeader("Content-Type", "application/json");
       if (url === "/api/v1/memory/m-1") {
@@ -160,6 +175,12 @@ describe("Phase 5 CLI learning and memory e2e", () => {
     const stdout = await runCli(["learn-progress", "learn-1"], serverPort);
     expect(stdout).toContain("Status:");
     expect(stdout).toContain("COMPLETED");
+  });
+
+  it("supports session-memory command", async () => {
+    const stdout = await runCli(["session-memory", "s-auto-test"], serverPort);
+    expect(stdout).toContain("\"status\": \"AVAILABLE\"");
+    expect(stdout).toContain("\"reinforced\": 2");
   });
 });
 
