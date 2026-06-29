@@ -490,6 +490,20 @@ program
     console.log(JSON.stringify(latest, null, 2));
   });
 
+program
+  .command("session-memory <sessionId>")
+  .description("查詢指定 Session 的 memory reinforcement 結果")
+  .action(async (sessionId: string) => {
+    try {
+      const { data } = await http.get(`/api/v1/session/${sessionId}/memory-reinforcement`);
+      console.log(JSON.stringify(data, null, 2));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to query memory reinforcement: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
 // ── server ──────────────────────────────────────────────────────
 const server = program.command("server").description("管理 Runtime Service");
 server.command("start").action(() => console.log(chalk.yellow("⚠️  Phase 1: use 'make docker-up' for now")));
