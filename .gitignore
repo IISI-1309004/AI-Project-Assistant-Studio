@@ -1,43 +1,22 @@
-# ----------------------------
-# Build outputs
-# ----------------------------
 .gradle/
 **/build/
 
-# Generated bundles
 cli/dist/
 web/dist/
 
-# ----------------------------
-# Node.js
-# ----------------------------
 node_modules/
 **/node_modules/
 
-# Keep lockfiles trackable
-!package-lock.json
-!cli/package-lock.json
-!web/package-lock.json
-
-# ----------------------------
-# Python
-# ----------------------------
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
 venv/
 
-# ----------------------------
-# IDE / local runtime caches
-# ----------------------------
 .idea/
 *.iml
 plugin/intellij/build/idea-sandbox/
 
-# ----------------------------
-# OS / temp
-# ----------------------------
 Thumbs.db
 .DS_Store
 *.log
