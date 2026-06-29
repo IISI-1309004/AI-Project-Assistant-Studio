@@ -3,6 +3,9 @@ import { Command } from "commander";
 import chalk from "chalk";
 import axios, { AxiosInstance } from "axios";
 import { basename, resolve } from "node:path";
+import { access } from "node:fs/promises";
+import { constants as fsConstants } from "node:fs";
+import { parseExcludePatterns, redactSensitiveText } from "./security";
 
 type InitStatus = {
   jobId: string;
@@ -45,6 +48,19 @@ const http: AxiosInstance = axios.create({
 });
 
 const sleep = (ms: number) => new Promise((resolveTimer) => setTimeout(resolveTimer, ms));
+
+type DoctorCheckResult = {
+  name: string;
+  status: "PASS" | "WARN" | "FAIL";
+  detail: string;
+  hint?: string;
+};
+
+
+function isNodeVersionSupported(versionText: string): boolean {
+  const major = Number(versionText.replace(/^v/, "").split(".")[0]);
+  return Number.isFinite(major) && major >= 20;
+}
 
 function normalizeProjectId(input: string): string {
   return input.toLowerCase().replace(/[^a-z0-9-_]+/g, "-").replace(/^-+|-+$/g, "") || "default";
@@ -131,8 +147,13 @@ program
   .option("--project-id <id>", "專案識別碼", "default")
   .option("--project-root <path>", "專案路徑", process.cwd())
   .action(async (requirement: string, opts: { projectId: string; projectRoot: string }) => {
+    const { sanitized, redactedCount } = redactSensitiveText(requirement);
+    if (redactedCount > 0) {
+      console.log(chalk.yellow(`⚠️  已遮罩 ${redactedCount} 個敏感片段（contextExcludePatterns 生效）`));
+    }
+
     const { data } = await http.post<SessionStatus>("/api/v1/session", {
-      requirement,
+      requirement: sanitized,
       projectId: opts.projectId,
       projectRoot: resolve(opts.projectRoot),
     });
@@ -616,8 +637,12 @@ wisdom
   .option("--type <specType>", "Spec 類型", "FEATURE")
   .action(async (opts) => {
     try {
+      const redacted = redactSensitiveText(opts.diff);
+      if (redacted.redactedCount > 0) {
+        console.log(chalk.yellow(`⚠️  已遮罩 ${redacted.redactedCount} 個敏感片段（contextExcludePatterns 生效）`));
+      }
       const context = {
-        code_diff: opts.diff,
+        code_diff: redacted.sanitized,
         file_names: opts.files ? opts.files.split(",").map((f: string) => f.trim()) : [],
         spec_type: opts.type,
       };
@@ -641,6 +666,99 @@ wisdom
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error(chalk.red(`Failed to check wisdom rules: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+// ── doctor (Phase 9) ─────────────────────────────────────────────
+program
+  .command("doctor")
+  .description("企業強化診斷（Phase 9）：檢查 Runtime、環境、敏感設定")
+  .option("--json", "以 JSON 輸出診斷結果")
+  .action(async (opts: { json?: boolean }) => {
+    const checks: DoctorCheckResult[] = [];
+
+    try {
+      const res = await http.get("/api/v1/health", { timeout: 3000 });
+      checks.push({
+        name: "runtime",
+        status: "PASS",
+        detail: `Runtime 可連線 (${res.status}) @ ${RUNTIME_URL}`,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      checks.push({
+        name: "runtime",
+        status: "FAIL",
+        detail: `Runtime 無回應 @ ${RUNTIME_URL}`,
+        hint: `請先啟動服務後重試（${message}）`,
+      });
+    }
+
+    checks.push({
+      name: "node",
+      status: isNodeVersionSupported(process.version) ? "PASS" : "WARN",
+      detail: `Node.js ${process.version}`,
+      hint: isNodeVersionSupported(process.version) ? undefined : "建議升級到 Node.js >= 20",
+    });
+
+    const configuredProviders = [
+      "CLAUDE_API_KEY",
+      "OPENAI_API_KEY",
+      "GEMINI_API_KEY",
+      "OLLAMA_BASE_URL",
+    ].filter((name) => Boolean(process.env[name]));
+    checks.push({
+      name: "ai-provider",
+      status: configuredProviders.length > 0 ? "PASS" : "WARN",
+      detail: configuredProviders.length > 0
+        ? `已設定 ${configuredProviders.length} 個 AI 供應商`
+        : "未偵測到 AI 供應商設定",
+      hint: configuredProviders.length > 0 ? undefined : "請設定 API Key 或 Ollama URL",
+    });
+
+    try {
+      await access(process.cwd(), fsConstants.W_OK);
+      checks.push({
+        name: "workspace-write",
+        status: "PASS",
+        detail: `工作目錄可寫入 (${process.cwd()})`,
+      });
+    } catch {
+      checks.push({
+        name: "workspace-write",
+        status: "FAIL",
+        detail: `工作目錄不可寫入 (${process.cwd()})`,
+        hint: "請檢查目錄權限",
+      });
+    }
+
+    const excludePatterns = parseExcludePatterns(process.env.AIPA_CONTEXT_EXCLUDE_PATTERNS);
+    checks.push({
+      name: "context-exclude",
+      status: excludePatterns.length > 0 ? "PASS" : "WARN",
+      detail: `自訂遮罩規則數量: ${excludePatterns.length}`,
+      hint: excludePatterns.length > 0 ? undefined : "建議設定 AIPA_CONTEXT_EXCLUDE_PATTERNS",
+    });
+
+    if (opts.json) {
+      console.log(JSON.stringify({
+        runtimeUrl: RUNTIME_URL,
+        timestamp: new Date().toISOString(),
+        checks,
+      }, null, 2));
+    } else {
+      console.log(chalk.cyan("AIPA Doctor Report"));
+      for (const check of checks) {
+        const icon = check.status === "PASS" ? chalk.green("✅") : check.status === "WARN" ? chalk.yellow("⚠️") : chalk.red("❌");
+        console.log(`${icon} ${check.name}: ${check.detail}`);
+        if (check.hint) {
+          console.log(chalk.gray(`   hint: ${check.hint}`));
+        }
+      }
+    }
+
+    if (checks.some((check) => check.status === "FAIL")) {
       process.exitCode = 1;
     }
   });
