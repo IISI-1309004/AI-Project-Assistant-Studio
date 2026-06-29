@@ -1,5 +1,10 @@
 version: "3.9"
 
+# AIPA Studio 容器編排配置
+# 啟動：docker compose up -d
+# 停止：docker compose down
+# 查看日誌：docker logs -f aipa-runtime
+
 services:
 
   aipa-runtime:
@@ -8,7 +13,7 @@ services:
       dockerfile: installer/docker/Dockerfile.runtime
     container_name: aipa-runtime
     ports:
-      - "18080:18080"
+      - "8080:18080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - AIPA_AI_ENGINE_URL=http://aipa-ai-engine:18082
@@ -16,8 +21,11 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-aipa}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-aipa}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-aipa_dev_password}
+      - AIPA_CONFIDENCE_THRESHOLD=${AIPA_CONFIDENCE_THRESHOLD:-70}
+      - AIPA_SESSION_TIMEOUT_SECONDS=${AIPA_SESSION_TIMEOUT_SECONDS:-3600}
     volumes:
       - ../../data/projects:/app/data/projects
+      - ../../data/logs/runtime:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,6 +40,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
 
   aipa-ai-engine:
     build:
@@ -43,9 +56,15 @@ services:
     environment:
       - AIPA_CHROMADB_URL=http://chromadb:18083
       - AIPA_DB_URL=postgresql://${POSTGRES_USER:-aipa}:${POSTGRES_PASSWORD:-aipa_dev_password}@postgres:5432/${POSTGRES_DB:-aipa}
+      - AIPA_PRIMARY_ADAPTER=${AIPA_PRIMARY_ADAPTER:-claude}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - AIPA_MEMORY_DECAY_FACTOR=${AIPA_MEMORY_DECAY_FACTOR:-0.95}
     volumes:
       - ../../data/projects:/app/data/projects
       - ../../data/chromadb:/app/data/chromadb
+      - ../../data/logs/ai-engine:/app/logs
     depends_on:
       chromadb:
         condition: service_healthy
@@ -60,9 +79,14 @@ services:
       timeout: 10s
       retries: 3
       start_period: 90s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
 
   chromadb:
-    image: chromadb/chroma:latest
+    image: chromadb/chroma:0.4.16-alpine
     container_name: aipa-chromadb
     expose:
       - "18083"
@@ -70,6 +94,7 @@ services:
       - ../../data/chromadb:/chroma/chroma
     environment:
       - CHROMA_SERVER_HTTP_PORT=18083
+      - IS_PERSISTENT=TRUE
     networks:
       - aipa-network
     restart: unless-stopped
@@ -78,6 +103,11 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
   aipa-web:
     build:
@@ -85,12 +115,17 @@ services:
       dockerfile: installer/docker/Dockerfile.web
     container_name: aipa-web
     ports:
-      - "18081:80"
+      - "80:80"
     depends_on:
       - aipa-runtime
     networks:
       - aipa-network
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
   postgres:
     image: postgres:15-alpine
@@ -101,6 +136,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-aipa}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-aipa_dev_password}
       - POSTGRES_DB=${POSTGRES_DB:-aipa}
+      - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - ../../data/postgres:/var/lib/postgresql/data
     networks:
@@ -111,8 +147,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
 
 networks:
   aipa-network:
     driver: bridge
     name: aipa-network
+
+volumes:
+  postgres_data:
+  chromadb_data:
+  projects_data:
+
+
