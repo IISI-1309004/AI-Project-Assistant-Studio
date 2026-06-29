@@ -114,6 +114,24 @@ describe("Phase 5 CLI learning and memory e2e", () => {
       return;
     }
 
+    if (req.method === "GET" && url === "/api/v1/session/s-auto-test/summary") {
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({
+        sessionId: "s-auto-test",
+        projectId: "demo",
+        status: "COMPLETED",
+        completionReport: { specTitle: "Auto-learning feature spec" },
+        autoLearning: { learning_id: "learn-1" },
+        memoryReinforcement: {
+          enabled: true,
+          attempted: 2,
+          reinforced: 2,
+          failed: 0,
+        },
+      }));
+      return;
+    }
+
     if (req.method === "GET" && url.startsWith("/api/v1/memory")) {
       res.setHeader("Content-Type", "application/json");
       if (url === "/api/v1/memory/m-1") {
@@ -198,6 +216,13 @@ describe("Phase 5 CLI learning and memory e2e", () => {
   it("supports status --memory", async () => {
     const stdout = await runCliWithRetry(["status", "--memory"], serverPort);
     expect(stdout).toContain("\"status\": \"AVAILABLE\"");
+    expect(stdout).toContain("\"memoryReinforcement\"");
+  });
+
+  it("supports session-summary command", async () => {
+    const stdout = await runCliWithRetry(["session-summary", "s-auto-test"], serverPort);
+    expect(stdout).toContain("\"status\": \"COMPLETED\"");
+    expect(stdout).toContain("\"autoLearning\"");
     expect(stdout).toContain("\"memoryReinforcement\"");
   });
 });

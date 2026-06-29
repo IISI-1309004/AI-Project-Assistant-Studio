@@ -47,6 +47,15 @@ public class SessionController {
         }
     }
 
+    @GetMapping("/{id}/summary")
+    public ResponseEntity<Map<String, Object>> getSessionSummary(@PathVariable String id) {
+        try {
+            return ResponseEntity.ok(sessionWorkflowService.getCompletionSummary(id));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> listSessions() {
         return ResponseEntity.ok(sessionWorkflowService.listSessions());

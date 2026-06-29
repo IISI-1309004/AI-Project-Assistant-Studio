@@ -344,6 +344,24 @@ public class SessionWorkflowService {
         );
     }
 
+    public Map<String, Object> getCompletionSummary(String sessionId) {
+        Map<String, Object> session = requireSession(sessionId);
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("sessionId", sessionId);
+        summary.put("projectId", session.getOrDefault("projectId", "unknown"));
+        summary.put("status", session.getOrDefault("status", "UNKNOWN"));
+        summary.put("requirement", session.getOrDefault("requirement", ""));
+        summary.put("message", session.getOrDefault("message", ""));
+        summary.put("completionReport", session.getOrDefault("completionReport", Map.of()));
+        summary.put("autoLearning", session.getOrDefault("autoLearning", Map.of()));
+        summary.put("learningId", session.getOrDefault("learningId", ""));
+        summary.put("learningResult", session.getOrDefault("learningResult", Map.of()));
+        summary.put("memoryReinforcement", session.getOrDefault("memoryReinforcement", Map.of()));
+        summary.put("updatedAt", session.getOrDefault("updatedAt", ""));
+        return summary;
+    }
+
     private Map<String, Object> advanceAfterSpecApproval(Map<String, Object> session, Map<String, Object> checkpoint) {
         String specId = String.valueOf(session.get("specId"));
         Specification spec = specEngine.approveSpec(specId, String.valueOf(checkpoint.get("resolvedBy")), String.valueOf(checkpoint.get("comments")));

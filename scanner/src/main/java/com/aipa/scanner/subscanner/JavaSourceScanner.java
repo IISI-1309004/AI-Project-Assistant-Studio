@@ -1,11 +1,15 @@
-package com.aipa.scanner;
+package com.aipa.scanner.subscanner;
 
+import com.aipa.scanner.PartialScanResult;
+import com.aipa.scanner.ScanConfig;
+import com.aipa.scanner.SubScanner;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -15,6 +19,7 @@ import java.util.stream.Stream;
 /**
  * JavaSourceScanner — 解析 .java 原始碼，建立類別清單與 Call Graph
  */
+@Component
 public class JavaSourceScanner implements SubScanner {
 
     @Override
@@ -28,7 +33,7 @@ public class JavaSourceScanner implements SubScanner {
     }
 
     @Override
-    public PartialScanResult scan(Path projectRoot) {
+    public PartialScanResult scan(Path projectRoot, ScanConfig config) {
         List<ClassInfo> classes = new ArrayList<>();
         Path javaRoot = projectRoot.resolve("src/main/java");
 
