@@ -473,8 +473,15 @@ program
 program
   .command("status")
   .description("顯示目前 Session 狀態")
+  .option("--memory", "只顯示 Session 的 memory reinforcement 狀態")
   .argument("[sessionId]", "Session ID")
-  .action(async (sessionId?: string) => {
+  .action(async (sessionId: string | undefined, opts: { memory?: boolean }) => {
+    if (sessionId && opts.memory) {
+      const { data } = await http.get(`/api/v1/session/${sessionId}/memory-reinforcement`);
+      console.log(JSON.stringify(data, null, 2));
+      return;
+    }
+
     if (sessionId) {
       const { data } = await http.get<SessionStatus>(`/api/v1/session/${sessionId}`);
       console.log(JSON.stringify(data, null, 2));
@@ -487,6 +494,13 @@ program
       return;
     }
     const latest = data[0];
+
+    if (opts.memory) {
+      const { data: reinforcement } = await http.get(`/api/v1/session/${latest.sessionId}/memory-reinforcement`);
+      console.log(JSON.stringify(reinforcement, null, 2));
+      return;
+    }
+
     console.log(JSON.stringify(latest, null, 2));
   });
 
