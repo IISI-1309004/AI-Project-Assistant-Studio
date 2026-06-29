@@ -25,6 +25,8 @@ aipa:
   learning:
     auto-trigger-on-completion: true
     generate-completion-report: true
+    auto-reinforce-memory: true
+    reinforce-max-items: 3
 
 management:
   endpoints:

@@ -58,6 +58,8 @@ class SessionWorkflowRetryTest {
                 new ObjectMapper(),
                 70,
                 3,
+                true,
+                3,
                 tempDir.resolve("runtime-state").toString()
         );
     }
