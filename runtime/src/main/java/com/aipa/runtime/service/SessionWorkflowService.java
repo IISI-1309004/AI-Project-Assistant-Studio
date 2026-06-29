@@ -39,6 +39,8 @@ public class SessionWorkflowService {
     private final ObjectMapper objectMapper;
     private final int confidenceThreshold;
     private final int executionMaxRetries;
+    private final boolean autoReinforceMemory;
+    private final int reinforceMaxItems;
     private final Path stateRoot;
     private final ConcurrentMap<String, Map<String, Object>> sessions = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Map<String, Object>> checkpoints = new ConcurrentHashMap<>();
@@ -54,6 +56,8 @@ public class SessionWorkflowService {
             ObjectMapper objectMapper,
             @Value("${aipa.confidence-threshold:70}") int confidenceThreshold,
             @Value("${aipa.execution-max-retries:3}") int executionMaxRetries,
+            @Value("${aipa.learning.auto-reinforce-memory:true}") boolean autoReinforceMemory,
+            @Value("${aipa.learning.reinforce-max-items:3}") int reinforceMaxItems,
             @Value("${aipa.runtime-state-dir:.ai-project/runtime-state}") String runtimeStateDir
     ) {
         this.knowledgeEngineClient = knowledgeEngineClient;
@@ -66,6 +70,8 @@ public class SessionWorkflowService {
         this.objectMapper = objectMapper.findAndRegisterModules();
         this.confidenceThreshold = confidenceThreshold;
         this.executionMaxRetries = Math.max(1, executionMaxRetries);
+        this.autoReinforceMemory = autoReinforceMemory;
+        this.reinforceMaxItems = Math.max(1, reinforceMaxItems);
         this.stateRoot = Path.of(runtimeStateDir);
         prepareStateDirectories();
     }
@@ -520,10 +526,22 @@ public class SessionWorkflowService {
                 session.put("autoLearning", learningResult);
             }
 
+            // Phase 5-3: 完成後自動強化關聯記憶（fail-soft）
+            session.put("memoryReinforcement", reinforceMemorySignals(session));
+
             // 記錄完成審計
             appendCompletionAudit(session, report);
         } catch (Exception ex) {
             // 學習流程失敗不應該影響會話完成
+            session.putIfAbsent("completionReport", Map.of(
+                    "sessionId", String.valueOf(session.getOrDefault("sessionId", "unknown")),
+                    "status", "ERROR"
+            ));
+            session.putIfAbsent("memoryReinforcement", Map.of(
+                    "enabled", autoReinforceMemory,
+                    "attempted", 0,
+                    "reinforced", 0
+            ));
             session.put("learningError", ex.getMessage());
         }
     }
@@ -539,12 +557,78 @@ public class SessionWorkflowService {
                     "specTitle", report.specTitle(),
                     "confidenceScore", report.confidenceScore(),
                     "executionStatus", report.executionStatus(),
-                    "keyLearnings", report.keyLearnings()
+                    "keyLearnings", report.keyLearnings(),
+                    "memoryReinforcement", session.getOrDefault("memoryReinforcement", Map.of())
             );
             Files.writeString(auditFile, objectMapper.writeValueAsString(auditEntry) + System.lineSeparator(),
                     Files.exists(auditFile) ? java.nio.file.StandardOpenOption.APPEND : java.nio.file.StandardOpenOption.CREATE);
         } catch (IOException ex) {
             // 審計失敗不應該影響會話完成
         }
+    }
+
+    private Map<String, Object> reinforceMemorySignals(Map<String, Object> session) {
+        if (!autoReinforceMemory) {
+            return Map.of("enabled", false, "attempted", 0, "reinforced", 0, "message", "memory auto reinforcement disabled");
+        }
+
+        List<String> memoryIds = extractMemoryIds(session);
+        if (memoryIds.isEmpty()) {
+            return Map.of("enabled", true, "attempted", 0, "reinforced", 0, "message", "no memory ids found in context");
+        }
+
+        List<String> reinforcedIds = new ArrayList<>();
+        List<String> failedIds = new ArrayList<>();
+        List<Map<String, Object>> details = new ArrayList<>();
+
+        for (String memoryId : memoryIds.stream().limit(reinforceMaxItems).toList()) {
+            try {
+                Map<String, Object> reinforced = memoryEngineClient.reinforce(memoryId);
+                reinforcedIds.add(memoryId);
+                details.add(Map.of(
+                        "memoryId", memoryId,
+                        "status", "REINFORCED",
+                        "result", reinforced == null ? Map.of() : reinforced
+                ));
+            } catch (Exception ex) {
+                failedIds.add(memoryId);
+                details.add(Map.of(
+                        "memoryId", memoryId,
+                        "status", "FAILED",
+                        "error", ex.getMessage() == null ? "unknown" : ex.getMessage()
+                ));
+            }
+        }
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("enabled", true);
+        summary.put("attempted", details.size());
+        summary.put("reinforced", reinforcedIds.size());
+        summary.put("failed", failedIds.size());
+        summary.put("reinforcedIds", reinforcedIds);
+        summary.put("failedIds", failedIds);
+        summary.put("details", details);
+        return summary;
+    }
+
+    private List<String> extractMemoryIds(Map<String, Object> session) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> memoryContext = (Map<String, Object>) session.getOrDefault("memoryContext", Map.of());
+        List<String> ids = new ArrayList<>();
+        for (Object value : memoryContext.values()) {
+            if (!(value instanceof List<?> list)) {
+                continue;
+            }
+            for (Object item : list) {
+                if (!(item instanceof Map<?, ?> rawMap)) {
+                    continue;
+                }
+                Object id = rawMap.get("id");
+                if (id != null && !String.valueOf(id).isBlank()) {
+                    ids.add(String.valueOf(id));
+                }
+            }
+        }
+        return ids.stream().distinct().toList();
     }
 }

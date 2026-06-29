@@ -1,6 +1,5 @@
 package com.aipa.runtime.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -45,8 +44,7 @@ public class SessionCompletionReportService {
 
         // 從 spec 提取信息
         String specTitle = "Unknown Spec";
-        @SuppressWarnings("unchecked")
-        Map<String, Object> spec = (Map<String, Object>) session.get("spec");
+        Map<String, Object> spec = objectMapper.convertValue(session.get("spec"), Map.class);
         if (spec != null) {
             specTitle = String.valueOf(spec.getOrDefault("title", "Unknown Spec"));
         }
@@ -58,13 +56,11 @@ public class SessionCompletionReportService {
         List<String> keyLearnings = extractKeyLearnings(session);
 
         // 獲取執行狀態
-        @SuppressWarnings("unchecked")
-        Map<String, Object> execution = (Map<String, Object>) session.getOrDefault("execution", Map.of());
+        Map<String, Object> execution = objectMapper.convertValue(session.getOrDefault("execution", Map.of()), Map.class);
         String executionStatus = String.valueOf(execution.getOrDefault("status", "UNKNOWN"));
 
         // 獲取 PR Preview
-        @SuppressWarnings("unchecked")
-        Map<String, Object> prPreview = (Map<String, Object>) execution.getOrDefault("prPreview", Map.of());
+        Map<String, Object> prPreview = objectMapper.convertValue(execution.getOrDefault("prPreview", Map.of()), Map.class);
         String prTitle = String.valueOf(prPreview.getOrDefault("title", ""));
 
         int attempts = Integer.parseInt(String.valueOf(session.getOrDefault("executionAttempts", 1)));
@@ -144,16 +140,14 @@ public class SessionCompletionReportService {
     private List<String> extractKeyLearnings(Map<String, Object> session) {
         List<String> learnings = new ArrayList<>();
         // 從 spec 和 execution 中提取關鍵信息
-        @SuppressWarnings("unchecked")
-        Map<String, Object> spec = (Map<String, Object>) session.get("spec");
+        Map<String, Object> spec = objectMapper.convertValue(session.get("spec"), Map.class);
         if (spec != null) {
             String title = String.valueOf(spec.getOrDefault("title", ""));
             if (!title.isEmpty()) {
                 learnings.add("Completed implementation of: " + title);
             }
         }
-        @SuppressWarnings("unchecked")
-        Map<String, Object> execution = (Map<String, Object>) session.getOrDefault("execution", Map.of());
+        Map<String, Object> execution = objectMapper.convertValue(session.getOrDefault("execution", Map.of()), Map.class);
         if (!execution.isEmpty()) {
             String status = String.valueOf(execution.getOrDefault("status", ""));
             if ("PR_READY".equals(status)) {

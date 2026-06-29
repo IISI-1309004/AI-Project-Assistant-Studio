@@ -60,6 +60,8 @@ class SessionWorkflowServiceTest {
                 new ObjectMapper(),
                 70,
                 3,
+                true,
+                3,
                 tempDir.resolve("runtime-state").toString()
         );
     }
@@ -126,6 +128,12 @@ class SessionWorkflowServiceTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> completedSession = (Map<String, Object>) prApproval.get("session");
         assertEquals("COMPLETED", completedSession.get("status"));
+        assertNotNull(completedSession.get("completionReport"));
+        assertNotNull(completedSession.get("memoryReinforcement"));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> reinforcement = (Map<String, Object>) completedSession.get("memoryReinforcement");
+        assertEquals(true, reinforcement.get("enabled"));
 
         Path auditFile = projectRoot.resolve(".ai-project/audit/checkpoint-audit.jsonl");
         assertTrue(Files.exists(auditFile));
