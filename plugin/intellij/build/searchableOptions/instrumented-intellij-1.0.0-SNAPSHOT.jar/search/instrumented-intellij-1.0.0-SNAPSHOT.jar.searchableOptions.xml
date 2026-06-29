@@ -1,9 +1,0 @@
-<options>
-  <configurable id="preferences.keymap" configurable_name="Keymap">
-    <option name="aipa" path="ActionManager" hit="Ask AIPA" />
-    <option name="ask" path="ActionManager" hit="Ask AIPA" />
-    <option name="aipa" path="ActionManager" hit="Ask AIPA Studio" />
-    <option name="ask" path="ActionManager" hit="Ask AIPA Studio" />
-    <option name="studio" path="ActionManager" hit="Ask AIPA Studio" />
-  </configurable>
-</options>

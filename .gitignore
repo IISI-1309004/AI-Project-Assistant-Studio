@@ -1,0 +1,16 @@
+# Gradle
+.gradle/
+**/build/
+
+# Node.js dependencies and build outputs
+node_modules/
+**/node_modules/
+**/dist/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE runtime/sandbox caches
+plugin/intellij/build/idea-sandbox/
+
