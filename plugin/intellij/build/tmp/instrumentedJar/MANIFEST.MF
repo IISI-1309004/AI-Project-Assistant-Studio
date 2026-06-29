@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Created-By: Gradle 8.8
+Build-JVM: 17.0.16 (OpenLogic 17.0.16+8-adhoc..jdk17u)
+Version: 1.0.0-SNAPSHOT
+Build-Plugin: Gradle IntelliJ Plugin
+Build-Plugin-Version: 1.17.4
+Build-OS: Windows 11 10.0 amd64
+Build-SDK: IC-2024.1
+

@@ -1,0 +1,13 @@
+<idea-plugin>
+  <idea-version since-build="241" until-build="243.*" />
+  <id>com.aipa.studio</id>
+  <name>AIPA Studio</name>
+  <version>1.0.0-SNAPSHOT</version>
+  <description>AI Project Assistant Studio — IntelliJ Plugin (Phase 1 Skeleton)</description>
+  <depends>com.intellij.modules.platform</depends>
+  <actions>
+    <action id="AipaAsk" class="com.aipa.intellij.actions.AskAipaAction" text="Ask AIPA" description="Ask AIPA Studio">
+      <add-to-group group-id="EditorPopupMenu" anchor="last" />
+    </action>
+  </actions>
+</idea-plugin>
