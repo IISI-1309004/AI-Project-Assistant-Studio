@@ -135,6 +135,10 @@ class SessionWorkflowServiceTest {
         Map<String, Object> reinforcement = (Map<String, Object>) completedSession.get("memoryReinforcement");
         assertEquals(true, reinforcement.get("enabled"));
 
+        Map<String, Object> reinforcementStatus = service.getMemoryReinforcementStatus(String.valueOf(completedSession.get("sessionId")));
+        assertEquals("AVAILABLE", reinforcementStatus.get("status"));
+        assertNotNull(reinforcementStatus.get("memoryReinforcement"));
+
         Path auditFile = projectRoot.resolve(".ai-project/audit/checkpoint-audit.jsonl");
         assertTrue(Files.exists(auditFile));
         String auditContent = Files.readString(auditFile);
