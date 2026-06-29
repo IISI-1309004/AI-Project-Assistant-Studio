@@ -1,0 +1,69 @@
+# AIPA Studio — 預設智慧規則（Java 企業開發）
+# Phase 6 載入至 Wisdom Engine
+
+rules:
+  - id: WIS-JAVA-001
+    title: 禁止在 Controller 層直接注入 Repository
+    description: Controller 層不得直接依賴 Repository，必須透過 Service 層存取資料
+    severity: BLOCK
+    scope:
+      global: false
+      modules: []
+      featureTypes: [FEATURE, REFACTOR]
+    triggerConditions:
+      - "Controller 類別中注入了 @Repository 或 extends JpaRepository"
+    examples:
+      bad: "@Autowired private UserRepository userRepository; // 在 Controller 中"
+      good: "@Autowired private UserService userService; // 透過 Service 層"
+
+  - id: WIS-JAVA-002
+    title: 不得在 for loop 內執行 DB 查詢（N+1 問題）
+    description: 禁止在迴圈內執行資料庫查詢，應使用批次查詢或 JOIN
+    severity: WARN
+    scope:
+      global: true
+    triggerConditions:
+      - "for 迴圈內有 repository.findById 或類似的 DB 呼叫"
+    examples:
+      bad: "for (Long id : ids) { repo.findById(id); }"
+      good: "repo.findAllById(ids);"
+
+  - id: WIS-JAVA-003
+    title: Service 方法必須標注 @Transactional
+    description: 有寫入操作的 Service 方法必須標注 @Transactional，查詢方法使用 readOnly=true
+    severity: WARN
+    scope:
+      global: true
+    triggerConditions:
+      - "Service 類別中有 save/update/delete 操作但無 @Transactional 標注"
+
+  - id: WIS-JAVA-004
+    title: 不得在月底批次作業期間修改 Batch Job
+    description: 每月最後 3 天禁止修改任何批次作業邏輯，避免影響月結
+    severity: BLOCK
+    scope:
+      global: false
+      modules: ["batch", "scheduler"]
+    triggerConditions:
+      - "修改了 @Scheduled 或 Job 相關類別"
+
+  - id: WIS-DB-001
+    title: UPDATE/DELETE 語句必須有 WHERE 條件
+    description: 禁止無 WHERE 條件的 UPDATE 或 DELETE，防止全表誤操作
+    severity: BLOCK
+    scope:
+      global: true
+    triggerConditions:
+      - "SQL 語句中有 UPDATE 或 DELETE 但缺少 WHERE"
+    examples:
+      bad: "UPDATE users SET status = 'INACTIVE'"
+      good: "UPDATE users SET status = 'INACTIVE' WHERE id = #{id}"
+
+  - id: WIS-SEC-001
+    title: 禁止在 Log 中輸出密碼或個人識別資料
+    description: 任何 Log 輸出不得包含 password、token、身分證號、信用卡號等敏感資料
+    severity: BLOCK
+    scope:
+      global: true
+    triggerConditions:
+      - "log 語句中包含 password、token、cardNumber 等欄位名稱"

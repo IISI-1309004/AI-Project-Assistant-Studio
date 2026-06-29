@@ -1,0 +1,35 @@
+# AIPA Studio 專案預設設定模板
+# 由 aipa init 複製至 .ai-project/config.yml
+
+# AI 供應商設定
+ai:
+  primary-adapter: claude          # copilot | claude | gemini | openai | ollama
+  fallback-adapters:
+    - openai
+    - ollama
+  confidence-threshold: 70         # 60–90
+
+# 儲存後端設定
+storage:
+  backend: sqlite                  # sqlite | postgresql | elasticsearch
+  sqlite:
+    path: .ai-project/knowledge/db/aipa.db
+
+# 掃描設定
+scan:
+  exclude:
+    - "**/*.key"
+    - "**/secret*"
+    - "**/credentials*"
+    - "**/.env"
+
+# AI 上下文排除（不傳送給 AI 供應商）
+context-exclude:
+  - "**/*password*"
+  - "**/*secret*"
+  - "**/*credential*"
+  - "**/*apikey*"
+
+# Runtime Service 連線
+runtime:
+  url: http://localhost:18080

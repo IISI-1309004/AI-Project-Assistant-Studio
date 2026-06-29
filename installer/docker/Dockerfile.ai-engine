@@ -1,0 +1,28 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 安裝 Poetry
+RUN pip install poetry==1.8.3
+
+# 複製依賴設定
+COPY pyproject.toml poetry.lock* ./
+
+# 安裝依賴（不含開發依賴）
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-interaction --no-ansi --only main
+
+# 複製所有 Python Engine 模組
+COPY knowledge/ ./knowledge/
+COPY memory/ ./memory/
+COPY learning/ ./learning/
+COPY experience/ ./experience/
+COPY wisdom/ ./wisdom/
+COPY aipa_ai_engine/ ./aipa_ai_engine/
+
+# 建立資料目錄
+RUN mkdir -p /app/data/projects /app/data/chromadb
+
+EXPOSE 18082
+
+CMD ["uvicorn", "aipa_ai_engine.main:app", "--host", "0.0.0.0", "--port", "18082"]

@@ -1,0 +1,13 @@
+FROM eclipse-temurin:17-jre-alpine
+
+WORKDIR /app
+
+# 複製 JAR
+COPY runtime/build/libs/aipa-runtime.jar app.jar
+
+# 建立資料目錄
+RUN mkdir -p /app/data/projects
+
+EXPOSE 18080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
