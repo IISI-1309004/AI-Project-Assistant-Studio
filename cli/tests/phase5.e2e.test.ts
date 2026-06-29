@@ -38,6 +38,18 @@ async function runCli(args: string[], port: number): Promise<string> {
   });
 }
 
+async function runCliWithRetry(args: string[], port: number): Promise<string> {
+  try {
+    return await runCli(args, port);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (!message.includes("ETIMEDOUT")) {
+      throw err;
+    }
+    return await runCli(args, port);
+  }
+}
+
 describe("Phase 5 CLI learning and memory e2e", () => {
   let serverPort = 0;
   const server = createServer((req: IncomingMessage, res: ServerResponse) => {
@@ -139,26 +151,26 @@ describe("Phase 5 CLI learning and memory e2e", () => {
   });
 
   it("supports learn command", async () => {
-    const stdout = await runCli(["learn", "--project-id", "demo", "--pr", "42", "--summary", "merge feature"], serverPort);
+    const stdout = await runCliWithRetry(["learn", "--project-id", "demo", "--pr", "42", "--summary", "merge feature"], serverPort);
     expect(stdout).toContain("Learning done: learn-1");
   });
 
   it("supports learn-result and rollback", async () => {
-    const result = await runCli(["learn-result", "learn-1"], serverPort);
+    const result = await runCliWithRetry(["learn-result", "learn-1"], serverPort);
     expect(result).toContain("\"status\": \"COMPLETED\"");
 
-    const rollback = await runCli(["learn-rollback", "learn-1"], serverPort);
+    const rollback = await runCliWithRetry(["learn-rollback", "learn-1"], serverPort);
     expect(rollback).toContain("Learning rollback completed");
   });
 
   it("supports memory list/show/reinforce", async () => {
-    const list = await runCli(["memory", "list", "--project-id", "demo"], serverPort);
+    const list = await runCliWithRetry(["memory", "list", "--project-id", "demo"], serverPort);
     expect(list).toContain("m-1");
 
-    const show = await runCli(["memory", "show", "m-1"], serverPort);
+    const show = await runCliWithRetry(["memory", "show", "m-1"], serverPort);
     expect(show).toContain("\"strength\": 7");
 
-    const reinforce = await runCli(["memory", "reinforce", "m-1"], serverPort);
+    const reinforce = await runCliWithRetry(["memory", "reinforce", "m-1"], serverPort);
     expect(reinforce).toContain("\"strength\": 7");
   });
 
@@ -166,21 +178,27 @@ describe("Phase 5 CLI learning and memory e2e", () => {
    * Phase 5-2: Auto-learning tests
    */
   it("supports learn --auto from completed session", async () => {
-    const stdout = await runCli(["learn", "--auto"], serverPort);
+    const stdout = await runCliWithRetry(["learn", "--auto"], serverPort);
     expect(stdout).toContain("Auto-learning from session");
     expect(stdout).toContain("Auto-Learning triggered");
   });
 
   it("supports learn-progress to check learning status", async () => {
-    const stdout = await runCli(["learn-progress", "learn-1"], serverPort);
+    const stdout = await runCliWithRetry(["learn-progress", "learn-1"], serverPort);
     expect(stdout).toContain("Status:");
     expect(stdout).toContain("COMPLETED");
   });
 
   it("supports session-memory command", async () => {
-    const stdout = await runCli(["session-memory", "s-auto-test"], serverPort);
+    const stdout = await runCliWithRetry(["session-memory", "s-auto-test"], serverPort);
     expect(stdout).toContain("\"status\": \"AVAILABLE\"");
     expect(stdout).toContain("\"reinforced\": 2");
+  });
+
+  it("supports status --memory", async () => {
+    const stdout = await runCliWithRetry(["status", "--memory"], serverPort);
+    expect(stdout).toContain("\"status\": \"AVAILABLE\"");
+    expect(stdout).toContain("\"memoryReinforcement\"");
   });
 });
 
