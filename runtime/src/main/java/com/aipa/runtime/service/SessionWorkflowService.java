@@ -326,6 +326,24 @@ public class SessionWorkflowService {
         return session;
     }
 
+    public Map<String, Object> getMemoryReinforcementStatus(String sessionId) {
+        Map<String, Object> session = requireSession(sessionId);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> reinforcement = (Map<String, Object>) session.get("memoryReinforcement");
+        if (reinforcement == null) {
+            return Map.of(
+                    "sessionId", sessionId,
+                    "status", "NOT_AVAILABLE",
+                    "message", "memory reinforcement data not found"
+            );
+        }
+        return Map.of(
+                "sessionId", sessionId,
+                "status", "AVAILABLE",
+                "memoryReinforcement", reinforcement
+        );
+    }
+
     private Map<String, Object> advanceAfterSpecApproval(Map<String, Object> session, Map<String, Object> checkpoint) {
         String specId = String.valueOf(session.get("specId"));
         Specification spec = specEngine.approveSpec(specId, String.valueOf(checkpoint.get("resolvedBy")), String.valueOf(checkpoint.get("comments")));
