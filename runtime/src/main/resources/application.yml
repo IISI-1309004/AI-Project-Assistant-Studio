@@ -19,7 +19,12 @@ spring:
 aipa:
   ai-engine-url: http://localhost:18082
   confidence-threshold: 70
+  execution-max-retries: 3
   version: 1.0.0-SNAPSHOT
+  # Phase 5-2: Learning + Memory Configuration
+  learning:
+    auto-trigger-on-completion: true
+    generate-completion-report: true
 
 management:
   endpoints:
