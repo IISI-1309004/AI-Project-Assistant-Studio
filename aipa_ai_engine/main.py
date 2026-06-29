@@ -32,17 +32,32 @@ app.include_router(experience_router, prefix="/engine/experience", tags=["experi
 app.include_router(wisdom_router, prefix="/engine/wisdom", tags=["wisdom"])
 
 
+@app.on_event("startup")
+async def on_startup():
+    """啟動時自動載入預設智慧規則（如果資料庫為空）"""
+    try:
+        from aipa_wisdom.engine import WisdomEngine
+        engine = WisdomEngine()
+        loaded = engine.load_default_rules()
+        if loaded > 0:
+            import logging
+            logging.getLogger(__name__).info(f"Loaded {loaded} default wisdom rules on startup")
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Could not load default wisdom rules: {e}")
+
+
 @app.get("/engine/health")
 async def health():
     return {
         "status": "UP",
         "version": "1.0.0-SNAPSHOT",
-        "phase": "Phase 1 — Skeleton",
+        "phase": "Phase 6 — Experience + Wisdom Engines",
         "engines": {
-            "knowledge": "skeleton",
-            "memory": "skeleton",
-            "learning": "skeleton",
-            "experience": "skeleton",
-            "wisdom": "skeleton",
+            "knowledge": "active",
+            "memory": "active",
+            "learning": "active",
+            "experience": "active",
+            "wisdom": "active",
         },
     }

@@ -545,6 +545,169 @@ server.command("status").action(async () => {
   }
 });
 
+// ── wisdom (Phase 6) ────────────────────────────────────────────
+const wisdom = program.command("wisdom").description("智慧規則管理（Phase 6）");
+
+wisdom
+  .command("list")
+  .description("列出所有智慧規則")
+  .option("--project <projectId>", "篩選特定專案的規則", "")
+  .action(async (opts) => {
+    try {
+      const url = opts.project
+        ? `/api/v1/wisdom/rules?projectId=${opts.project}`
+        : "/api/v1/wisdom/rules";
+      const { data } = await http.get<Array<Record<string, unknown>>>(url);
+      if (!data || data.length === 0) {
+        console.log(chalk.yellow("No wisdom rules found."));
+        return;
+      }
+      data.forEach((rule) => {
+        const severity = rule["severity"] as string;
+        const icon = severity === "BLOCK" ? chalk.red("🚫 BLOCK") : chalk.yellow("⚠️  WARN ");
+        console.log(`${icon}  [${rule["id"]}] ${rule["title"]}`);
+        if (rule["description"]) {
+          console.log(`        ${chalk.gray(String(rule["description"]).substring(0, 80))}`);
+        }
+      });
+      console.log(chalk.gray(`\nTotal: ${data.length} rules`));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to list wisdom rules: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+wisdom
+  .command("add")
+  .description("新增智慧規則")
+  .requiredOption("--title <title>", "規則標題")
+  .requiredOption("--desc <description>", "規則描述")
+  .option("--severity <severity>", "嚴重等級 WARN|BLOCK", "WARN")
+  .option("--id <id>", "規則 ID（選填）")
+  .option("--condition <condition>", "觸發條件")
+  .action(async (opts) => {
+    try {
+      const rule: Record<string, unknown> = {
+        title: opts.title,
+        description: opts.desc,
+        severity: opts.severity.toUpperCase(),
+        scope: { global: true },
+        trigger_conditions: opts.condition ? [opts.condition] : [],
+        enabled: true,
+      };
+      if (opts.id) rule["id"] = opts.id;
+      const { data } = await http.post("/api/v1/wisdom/rules", rule);
+      console.log(chalk.green(`✅ Wisdom rule created: ${data["id"]}`));
+      console.log(`   Title: ${data["title"]}`);
+      console.log(`   Severity: ${data["severity"]}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to add wisdom rule: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+wisdom
+  .command("check")
+  .description("對程式碼變更執行智慧規則檢查")
+  .option("--diff <codeDiff>", "程式碼 diff 內容", "")
+  .option("--files <files>", "異動檔案（逗號分隔）", "")
+  .option("--type <specType>", "Spec 類型", "FEATURE")
+  .action(async (opts) => {
+    try {
+      const context = {
+        code_diff: opts.diff,
+        file_names: opts.files ? opts.files.split(",").map((f: string) => f.trim()) : [],
+        spec_type: opts.type,
+      };
+      const { data } = await http.post<{
+        hasBlockViolation: boolean;
+        blockCount: number;
+        warnCount: number;
+        matchedRules: Array<Record<string, unknown>>;
+      }>("/api/v1/wisdom/check", context);
+      if (data.hasBlockViolation) {
+        console.log(chalk.red(`🚫 BLOCK violation! (${data.blockCount} BLOCK, ${data.warnCount} WARN)`));
+      } else if (data.warnCount > 0) {
+        console.log(chalk.yellow(`⚠️  ${data.warnCount} WARN rule(s) matched.`));
+      } else {
+        console.log(chalk.green("✅ No wisdom rule violations."));
+      }
+      (data.matchedRules ?? []).forEach((rule) => {
+        const icon = rule["severity"] === "BLOCK" ? chalk.red("🚫") : chalk.yellow("⚠️");
+        console.log(`  ${icon} [${rule["id"]}] ${rule["title"]}`);
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to check wisdom rules: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+// ── experience (Phase 6) ─────────────────────────────────────────
+const experience = program.command("experience").description("經驗案例管理（Phase 6）");
+
+experience
+  .command("search <query>")
+  .description("搜尋相似歷史案例（相似度 > 0.6）")
+  .option("--project <projectId>", "限定專案 ID", "")
+  .option("--top <n>", "回傳筆數", "5")
+  .action(async (query: string, opts) => {
+    try {
+      const { data } = await http.post<Array<Record<string, unknown>>>("/api/v1/experience/search", {
+        query,
+        project_id: opts.project,
+        top_k: parseInt(opts.top, 10),
+      });
+      if (!data || data.length === 0) {
+        console.log(chalk.yellow("No similar cases found (similarity threshold: 0.6)."));
+        return;
+      }
+      console.log(chalk.green(`Found ${data.length} similar case(s):\n`));
+      data.forEach((c, i) => {
+        const sim = typeof c["_similarity"] === "number"
+          ? ` (similarity: ${(c["_similarity"] as number).toFixed(2)})`
+          : "";
+        console.log(`${i + 1}. [${c["id"]}] ${c["title"]}${sim}`);
+        if (c["requirement"]) {
+          console.log(`   ${chalk.gray(String(c["requirement"]).substring(0, 100))}`);
+        }
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to search experience cases: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+experience
+  .command("list")
+  .description("列出所有歷史案例")
+  .requiredOption("--project <projectId>", "專案 ID")
+  .action(async (opts) => {
+    try {
+      const { data } = await http.get<Array<Record<string, unknown>>>(
+        `/api/v1/experience/cases?project_id=${opts.project}`
+      );
+      if (!data || data.length === 0) {
+        console.log(chalk.yellow("No experience cases found."));
+        return;
+      }
+      console.log(chalk.bold(`Experience Cases for '${opts.project}':\n`));
+      data.forEach((c, i) => {
+        const icon = c["outcome"] === "SUCCESS" ? chalk.green("✅") : chalk.yellow("⚠️");
+        console.log(`${i + 1}. ${icon} [${c["id"]}] ${c["title"]}`);
+        console.log(`   Created: ${c["created_at"]}  References: ${c["reference_count"] ?? 0}`);
+      });
+      console.log(chalk.gray(`\nTotal: ${data.length} cases`));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to list experience cases: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
 program.parseAsync().catch((err: unknown) => {
   const message = err instanceof Error ? err.message : String(err);
   console.error(chalk.red(`Command failed: ${message}`));
