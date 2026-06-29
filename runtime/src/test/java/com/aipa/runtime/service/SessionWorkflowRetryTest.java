@@ -55,6 +55,8 @@ class SessionWorkflowRetryTest {
                         true,
                         true
                 ),
+                new ExperienceEngineClient(normalizedBaseUrl),
+                new WisdomEngineClient(normalizedBaseUrl),
                 new ObjectMapper(),
                 70,
                 3,

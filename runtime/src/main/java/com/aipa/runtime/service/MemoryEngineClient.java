@@ -55,5 +55,16 @@ public class MemoryEngineClient {
                 .retrieve()
                 .body(Map.class);
     }
+
+    public Map<String, Object> getItem(String memoryId) {
+        try {
+            return restClient.get()
+                    .uri("/engine/memory/items/{memoryId}", memoryId)
+                    .retrieve()
+                    .body(Map.class);
+        } catch (Exception e) {
+            return Map.of("error", e.getMessage());
+        }
+    }
 }
 

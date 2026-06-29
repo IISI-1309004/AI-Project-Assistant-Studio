@@ -1,11 +1,14 @@
 package com.aipa.runtime.config;
 
+import com.aipa.runtime.service.ExperienceEngineClient;
+import com.aipa.runtime.service.WisdomEngineClient;
 import com.aipa.workflow.confidence.ConfidenceEngine;
 import com.aipa.workflow.confidence.ConfidenceEngineImpl;
 import com.aipa.workflow.planning.PlanningEngine;
 import com.aipa.workflow.planning.PlanningEngineImpl;
 import com.aipa.workflow.spec.SpecEngine;
 import com.aipa.workflow.spec.SpecEngineImpl;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +19,9 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class WorkflowEngineConfig {
+
+    @Value("${aipa.ai-engine-url:http://localhost:18082}")
+    private String aiEngineUrl;
 
     @Bean
     @ConditionalOnMissingBean(SpecEngine.class)
@@ -33,6 +39,18 @@ public class WorkflowEngineConfig {
     @ConditionalOnMissingBean(PlanningEngine.class)
     public PlanningEngine planningEngine() {
         return new PlanningEngineImpl();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ExperienceEngineClient.class)
+    public ExperienceEngineClient experienceEngineClient() {
+        return new ExperienceEngineClient(aiEngineUrl);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(WisdomEngineClient.class)
+    public WisdomEngineClient wisdomEngineClient() {
+        return new WisdomEngineClient(aiEngineUrl);
     }
 }
 
