@@ -30,6 +30,12 @@ type SessionStatus = {
     ai?: { provider?: string; model?: string };
     prPreview?: { title?: string; branch?: string };
   } | null;
+  memoryReinforcement?: {
+    enabled?: boolean;
+    attempted?: number;
+    reinforced?: number;
+    failed?: number;
+  } | null;
 };
 
 const RUNTIME_URL = process.env.AIPA_RUNTIME_URL ?? "http://localhost:18080";
@@ -335,6 +341,12 @@ checkpoint
       }
       if (session.execution.prPreview?.title) {
         console.log(chalk.gray(`PR Preview: ${session.execution.prPreview.title} @ ${session.execution.prPreview.branch ?? "n/a"}`));
+      }
+    }
+    if (session.memoryReinforcement?.enabled) {
+      console.log(chalk.green(`Memory Reinforcement: ${session.memoryReinforcement.reinforced ?? 0}/${session.memoryReinforcement.attempted ?? 0}`));
+      if ((session.memoryReinforcement.failed ?? 0) > 0) {
+        console.log(chalk.yellow(`Memory reinforce failed count: ${session.memoryReinforcement.failed}`));
       }
     }
   });
