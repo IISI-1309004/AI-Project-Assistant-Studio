@@ -6,6 +6,7 @@ import { basename, resolve } from "node:path";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { spawn } from "node:child_process";
+import { config as loadEnv } from "dotenv";
 import { parseExcludePatterns, redactSensitiveText } from "./security";
 
 type InitStatus = {
@@ -42,10 +43,15 @@ type SessionStatus = {
   } | null;
 };
 
+// Load local env files when running CLI directly from a workspace.
+loadEnv({ path: resolve(process.cwd(), ".env.local"), override: false });
+loadEnv({ path: resolve(process.cwd(), ".env"), override: false });
+
 const RUNTIME_URL = process.env.AIPA_RUNTIME_URL ?? "http://localhost:18080";
+const HTTP_TIMEOUT_MS = Number(process.env.AIPA_HTTP_TIMEOUT_MS ?? "60000");
 const http: AxiosInstance = axios.create({
   baseURL: RUNTIME_URL,
-  timeout: 10000,
+  timeout: Number.isFinite(HTTP_TIMEOUT_MS) && HTTP_TIMEOUT_MS > 0 ? HTTP_TIMEOUT_MS : 60000,
 });
 
 const sleep = (ms: number) => new Promise((resolveTimer) => setTimeout(resolveTimer, ms));
@@ -880,6 +886,7 @@ program
       "OPENAI_API_KEY",
       "GEMINI_API_KEY",
       "OLLAMA_BASE_URL",
+      "GITHUB_TOKEN",
     ].filter((name) => Boolean(process.env[name]));
     checks.push({
       name: "ai-provider",

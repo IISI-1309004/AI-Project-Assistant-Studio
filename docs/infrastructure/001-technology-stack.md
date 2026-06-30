@@ -1,287 +1,285 @@
-# AIPA Studio — 技術選型（Technology Selection）
+﻿# AIPA Studio ???銵??Technology Selection嚗?
 
-**版本**：1.0.0-draft
-**狀態**：審核中
-**負責人**：AIPA Studio 架構團隊
-**最後更新**：Phase 1 — 架構鎖定階段
-**依賴文件**：[系統架構文件](../design/003-system-architecture-design.md)、[模組設計](../design/005-module-design.md)
+**?**嚗?.0.0-draft
+**???*嚗祟?訾葉
+**鞎痊鈭?*嚗IPA Studio ?嗆???
+**?敺??*嚗hase 1 ???嗆????挾
+**靘陷?辣**嚗蝟餌絞?嗆??辣](../design/003-system-architecture-design.md)?璅∠?閮剛?](../design/005-module-design.md)
 
 ---
 
-## 1. 技術選型原則
+## 1. ?銵????
 
-所有技術選擇必須同時滿足以下四個標準：
+???銵?????遛頞喃誑銝???皞?
 
-| 標準 | 說明 |
+| 璅? | 隤芣? |
 |---|---|
-| **企業適用性** | 技術必須具備生產環境穩定性，有長期維護承諾 |
-| **授權相容性** | 所有相依必須為 Apache 2.0 或 MIT 授權，可商業使用 |
-| **本地部署支援** | 核心功能不依賴任何雲端服務，可完全離線運作 |
-| **跨平台** | 支援 Windows 10+、Ubuntu 22.04 LTS、RHEL 8+、macOS（開發環境） |
+| **隡平?拍??* | ?銵?????Ｙ憓帘摰改???雁霅瑟隢?|
+| **???詨捆??* | ??靘?? Apache 2.0 ??MIT ??嚗?平雿輻 |
+| **?砍?函蔡?舀** | ?詨??銝?鞈港遙雿蝡舀????臬??券蝺?雿?|
+| **頝典像??* | ?舀 Windows 10+?buntu 22.04 LTS?HEL 8+?acOS嚗??潛憓? |
 
 ---
 
-## 2. Runtime Core 技術棧（`runtime/`、`scanner/`、`agent/`、`workflow/`）
+## 2. Runtime Core ?銵ㄖ嚗runtime/`?scanner/`?agent/`?workflow/`嚗?
 
-### 2.1 Java 執行期
+### 2.1 後端 ?瑁???
 
-| 技術 | 版本 | 選用理由 | 授權 |
+| ?銵?| ? | ?貊? | ?? |
 |---|---|---|---|
-| **Java** | 17 LTS | 長期支援版本（2029 年 EOL）；目標使用者熟悉 Java；`record`、`sealed class` 等新語法提升可讀性 | GPL v2 with Classpath Exception |
-| **Spring Boot** | 3.3.x | 企業 Java 標準框架；原生支援 REST API、JPA、Security、Batch；活躍社群 | Apache 2.0 |
-| **Spring Data JPA** | （隨 Spring Boot 3.3） | 統一 Repository 抽象，支援 SQLite / PostgreSQL 切換 | Apache 2.0 |
-| **Spring Security** | （隨 Spring Boot 3.3） | Runtime API 存取控制（IP 白名單、基本認證） | Apache 2.0 |
-| **Flyway** | 10.x | 資料庫 Schema 版本化遷移；支援 SQLite 與 PostgreSQL | Apache 2.0 |
-| **HikariCP** | （隨 Spring Boot） | 高效能連線池；PostgreSQL 部署時使用 | Apache 2.0 |
+| **後端** | 17 LTS | ?瑟??舀?嚗?029 撟?EOL嚗??格?雿輻????Java嚗record`?sealed class` 蝑隤????航???| GPL v2 with Classpath Exception |
+| **後端框架** | 3.3.x | 隡平 後端 璅?獢嚗????REST API?PA?ecurity?atch嚗暑頨冗蝢?| Apache 2.0 |
+| **Spring Data JPA** | 嚗 後端框架 3.3嚗?| 蝯曹? Repository ?質情嚗??SQLite / PostgreSQL ?? | Apache 2.0 |
+| **Spring Security** | 嚗 後端框架 3.3嚗?| Runtime API 摮??批嚗P ?賢??柴?祈?霅? | Apache 2.0 |
+| **Flyway** | 10.x | 鞈?摨?Schema ??蝘鳴??舀 SQLite ??PostgreSQL | Apache 2.0 |
+| **HikariCP** | 嚗 Spring Boot嚗?| 擃??賡??瘙?PostgreSQL ?函蔡?蝙??| Apache 2.0 |
 
-### 2.2 建構工具
+### 2.2 撱箸?撌亙
 
-| 技術 | 版本 | 選用理由 | 授權 |
+| ?銵?| ? | ?貊? | ?? |
 |---|---|---|---|
-| **Gradle** | 8.x | Kotlin DSL 設定可讀性高；Multi-project 支援完善；比 Maven 建構速度快 | Apache 2.0 |
-| **Gradle Wrapper** | （隨 Gradle 8.x） | 確保所有開發人員使用相同 Gradle 版本 | Apache 2.0 |
+| **Gradle** | 8.x | Kotlin DSL 閮剖??航??折?嚗ulti-project ?舀摰?嚗? Maven 撱箸??漲敹?| Apache 2.0 |
+| **Gradle Wrapper** | 嚗 Gradle 8.x嚗?| 蝣箔?????潔犖?∩蝙?函??Gradle ? | Apache 2.0 |
 
-### 2.3 Java 靜態分析（Scanner Engine 使用）
+### 2.3 後端 ????嚗canner Engine 雿輻嚗?
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **JavaParser** | 3.25.x | Java 原始碼 AST 解析；分析類別結構、方法呼叫 | Apache 2.0 / LGPL v3 |
-| **ASM** | 9.x | Java 位元組碼分析（補充 AST 分析） | BSD 3-Clause |
-| **JAXB** | （JDK 內建） | XML 解析（MyBatis Mapper、Spring XML 設定） | CDDL / GPL v2 |
-| **SnakeYAML** | 2.x | YAML 解析（application.yml、docker-compose.yml） | Apache 2.0 |
-| **Swagger Parser** | 2.x | OpenAPI 3.0 / Swagger 2.0 規格解析 | Apache 2.0 |
+| **JavaParser** | 3.25.x | 後端 ??蝣?AST 閫??嚗????亦?瑽瘜??| Apache 2.0 / LGPL v3 |
+| **ASM** | 9.x | 後端 雿?蝯Ⅳ??嚗???AST ??嚗?| BSD 3-Clause |
+| **JAXB** | 嚗DK ?批遣嚗?| XML 閫??嚗yBatis Mapper?pring XML 閮剖?嚗?| CDDL / GPL v2 |
+| **SnakeYAML** | 2.x | YAML 閫??嚗pplication.yml?ocker-compose.yml嚗?| Apache 2.0 |
+| **Swagger Parser** | 2.x | OpenAPI 3.0 / Swagger 2.0 閬閫?? | Apache 2.0 |
 
-### 2.4 HTTP 客戶端（AI Adapter 使用）
+### 2.4 HTTP 摰Ｘ蝡荔?AI Adapter 雿輻嚗?
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **OkHttp** | 4.x | 呼叫 Claude / Gemini / OpenAI REST API；支援逾時與重試 | Apache 2.0 |
-| **Jackson** | 2.x（隨 Spring Boot） | JSON 序列化 / 反序列化 | Apache 2.0 |
+| **OkHttp** | 4.x | ?澆 Claude / Gemini / OpenAI REST API嚗?湧暹???閰?| Apache 2.0 |
+| **Jackson** | 2.x嚗 Spring Boot嚗?| JSON 摨???/ ???? | Apache 2.0 |
 
-### 2.5 測試框架（Java）
+### 2.5 皜祈岫獢嚗ava嚗?
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **JUnit 5** | 5.10.x | Java 單元測試標準框架 | EPL 2.0 |
-| **Mockito** | 5.x | Mock 物件框架 | MIT |
-| **Spring Boot Test** | （隨 Spring Boot） | Spring 整合測試 | Apache 2.0 |
-| **Testcontainers** | 1.19.x | 整合測試使用真實 PostgreSQL 容器 | MIT |
-| **RestAssured** | 5.x | API 測試框架 | Apache 2.0 |
+| **JUnit 5** | 5.10.x | 後端 ?桀?皜祈岫璅?獢 | EPL 2.0 |
+| **Mockito** | 5.x | Mock ?拐辣獢 | MIT |
+| **後端框架 Test** | 嚗 Spring Boot嚗?| Spring ?游?皜祈岫 | Apache 2.0 |
+| **Testcontainers** | 1.19.x | ?游?皜祈岫雿輻?祕 PostgreSQL 摰孵 | MIT |
+| **RestAssured** | 5.x | API 皜祈岫獢 | Apache 2.0 |
 
 ---
 
-## 3. AI Engine 技術棧（`knowledge/`、`memory/`、`learning/`、`experience/`、`wisdom/`）
+## 3. AI Engine ?銵ㄖ嚗knowledge/`?memory/`?learning/`?experience/`?wisdom/`嚗?
 
-### 3.1 Python 執行期
+### 3.1 Python ?瑁???
 
-| 技術 | 版本 | 選用理由 | 授權 |
+| ?銵?| ? | ?貊? | ?? |
 |---|---|---|---|
-| **Python** | 3.11 LTS | AI/ML 生態系第一語言；3.11 效能顯著優於 3.10；企業常用版本 | PSF License |
-| **FastAPI** | 0.111.x | 高效能非同步 REST API 框架；自動生成 OpenAPI 文件；Pydantic v2 整合 | MIT |
-| **Uvicorn** | 0.29.x | ASGI 伺服器，FastAPI 標準搭配；高效能非同步 I/O | BSD |
-| **Pydantic** | 2.x | 資料驗證與 Schema 定義；Python typing 完整支援 | MIT |
+| **Python** | 3.11 LTS | AI/ML ??蝟餌洵銝隤?嚗?.11 ?憿航??芣 3.10嚗?璆剖虜?函???| PSF License |
+| **FastAPI** | 0.111.x | 擃??賡??郊 REST API 獢嚗????OpenAPI ?辣嚗ydantic v2 ?游? | MIT |
+| **Uvicorn** | 0.29.x | ASGI 隡箸??剁?FastAPI 璅??剝?嚗????甇?I/O | BSD |
+| **Pydantic** | 2.x | 鞈?撽???Schema 摰儔嚗ython typing 摰?舀 | MIT |
 
-### 3.2 AI / 向量處理
+### 3.2 AI / ????
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **LangChain** | 0.2.x | LLM 工作流程框架；Prompt 管理；輸出解析 | MIT |
-| **LlamaIndex** | 0.10.x | 知識索引與檢索框架；支援多種資料來源 | MIT |
-| **sentence-transformers** | 3.x | 文字向量嵌入（Embedding）；支援本地模型 | Apache 2.0 |
-| **ChromaDB** | 0.5.x | 本地向量資料庫；零外部依賴；支援持久化 | Apache 2.0 |
-| **numpy** | 1.26.x | 向量運算基礎庫 | BSD |
+| **LangChain** | 0.2.x | LLM 撌乩?瘚?獢嚗rompt 蝞∠?嚗撓?箄圾??| MIT |
+| **LlamaIndex** | 0.10.x | ?亥?蝝Ｗ??炎蝝Ｘ??塚??舀憭車鞈?靘? | MIT |
+| **sentence-transformers** | 3.x | ????撋嚗mbedding嚗??舀?砍璅∪? | Apache 2.0 |
+| **ChromaDB** | 0.5.x | ?砍??鞈?摨恬??嗅??其?鞈湛??舀????| Apache 2.0 |
+| **numpy** | 1.26.x | ?????箇?摨?| BSD |
 
-### 3.3 預設 Embedding 模型
+### 3.3 ?身 Embedding 璅∪?
 
-| 模型 | 來源 | 用途 | 授權 |
+| 璅∪? | 靘? | ?券?| ?? |
 |---|---|---|---|
-| `all-MiniLM-L6-v2` | Sentence Transformers Hub | 知識項目向量化（輕量，適合本地） | Apache 2.0 |
-| `paraphrase-multilingual-MiniLM-L12-v2` | Sentence Transformers Hub | 多語言支援（中文 / 日文 / 英文） | Apache 2.0 |
+| `all-MiniLM-L6-v2` | Sentence Transformers Hub | ?亥??????頛?嚗??堆? | Apache 2.0 |
+| `paraphrase-multilingual-MiniLM-L12-v2` | Sentence Transformers Hub | 憭?閮?舀嚗葉??/ ?交? / ?望?嚗?| Apache 2.0 |
 
-> **說明**：預設使用本地 Embedding 模型（sentence-transformers），不需要任何外部 API。模型在首次安裝時自動下載並快取至本地。
+> **隤芣?**嚗?閮凋蝙?冽??Embedding 璅∪?嚗entence-transformers嚗?銝?閬遙雿???API?芋?擐活摰????頛蒂敹怠??單?啜?
 
-### 3.4 資料存取（Python）
+### 3.4 鞈?摮?嚗ython嚗?
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **SQLAlchemy** | 2.x | ORM 與 SQL 工具組；支援 SQLite / PostgreSQL | MIT |
-| **Alembic** | 1.13.x | Python 資料庫 Schema 遷移工具 | MIT |
-| **psycopg2-binary** | 2.9.x | PostgreSQL Python 驅動（二進位版本，免安裝 libpq） | LGPL |
+| **SQLAlchemy** | 2.x | ORM ??SQL 撌亙蝯??舀 SQLite / PostgreSQL | MIT |
+| **Alembic** | 1.13.x | Python 鞈?摨?Schema ?瑞宏撌亙 | MIT |
+| **psycopg2-binary** | 2.9.x | PostgreSQL Python 撽?嚗??脖??嚗?摰? libpq嚗?| LGPL |
 
-### 3.5 Git 分析（Learning Engine 使用）
+### 3.5 Git ??嚗earning Engine 雿輻嚗?
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **GitPython** | 3.1.x | Git Repository 操作；讀取 diff、commit、log | BSD |
-| **pygit2** | 1.14.x | 高效能 Git 操作（底層 libgit2） | GPL v2 with Linking Exception |
+| **GitPython** | 3.1.x | Git Repository ??嚗???diff?ommit?og | BSD |
+| **pygit2** | 1.14.x | 擃???Git ??嚗?撅?libgit2嚗?| GPL v2 with Linking Exception |
 
-### 3.6 建構工具（Python）
+### 3.6 撱箸?撌亙嚗ython嚗?
 
-| 技術 | 版本 | 選用理由 | 授權 |
+| ?銵?| ? | ?貊? | ?? |
 |---|---|---|---|
-| **Poetry** | 1.8.x | 相依管理與虛擬環境；lock 檔確保可重現建構；Monorepo 工作空間支援 | MIT |
+| **Poetry** | 1.8.x | ?訾?蝞∠????祉憓?lock 瑼Ⅱ靽?撱箸?嚗onorepo 撌乩?蝛粹??舀 | MIT |
 
-### 3.7 測試框架（Python）
+### 3.7 皜祈岫獢嚗ython嚗?
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **pytest** | 8.x | Python 標準測試框架 | MIT |
-| **pytest-asyncio** | 0.23.x | 非同步 FastAPI 端點測試 | Apache 2.0 |
-| **httpx** | 0.27.x | FastAPI 測試用 HTTP 客戶端 | BSD |
+| **pytest** | 8.x | Python 璅?皜祈岫獢 | MIT |
+| **pytest-asyncio** | 0.23.x | ??甇?FastAPI 蝡舫?皜祈岫 | Apache 2.0 |
+| **httpx** | 0.27.x | FastAPI 皜祈岫??HTTP 摰Ｘ蝡?| BSD |
 
 ---
 
-## 4. CLI 技術棧（`cli/`）
+## 4. CLI ?銵ㄖ嚗cli/`嚗?
 
-| 技術 | 版本 | 選用理由 | 授權 |
+| ?銵?| ? | ?貊? | ?? |
 |---|---|---|---|
-| **Node.js** | 20 LTS | 長期支援（2026 年 EOL）；跨平台 CLI 生態豐富；npm 套件庫完整 | MIT |
-| **TypeScript** | 5.x | 型別安全；重構友善；IDE 支援完整 | Apache 2.0 |
-| **Commander.js** | 12.x | CLI 命令解析框架；子命令樹結構；自動生成 `--help` | MIT |
-| **Inquirer.js** | 10.x | 互動式 Terminal 提示（Human Checkpoint 審核介面） | MIT |
-| **Chalk** | 5.x | Terminal 彩色輸出 | MIT |
-| **ora** | 8.x | Terminal Loading Spinner（Session 進度） | MIT |
-| **eventsource** | 2.x | SSE 客戶端（訂閱 Runtime Session 進度串流） | MIT |
-| **axios** | 1.x | HTTP 客戶端（呼叫 Runtime REST API） | MIT |
-| **js-yaml** | 4.x | 讀寫 `.ai-project/config.yml` | MIT |
-| **tsx** | 4.x | 直接執行 TypeScript（開發期） | MIT |
-| **pkg** | 5.x | 打包 Node.js 應用為獨立可執行檔 | MIT |
+| **Node.js** | 20 LTS | ?瑟??舀嚗?026 撟?EOL嚗?頝典像??CLI ??鞊?嚗pm 憟辣摨怠???| MIT |
+| **TypeScript** | 5.x | ?摰嚗?瑽???IDE ?舀摰 | Apache 2.0 |
+| **Commander.js** | 12.x | CLI ?賭誘閫??獢嚗??賭誘璅寧?瑽??芸??? `--help` | MIT |
+| **Inquirer.js** | 10.x | 鈭?撘?Terminal ?內嚗uman Checkpoint 撖拇隞嚗?| MIT |
+| **Chalk** | 5.x | Terminal 敶抵頛詨 | MIT |
+| **ora** | 8.x | Terminal Loading Spinner嚗ession ?脣漲嚗?| MIT |
+| **eventsource** | 2.x | SSE 摰Ｘ蝡荔?閮 Runtime Session ?脣漲銝脫?嚗?| MIT |
+| **axios** | 1.x | HTTP 摰Ｘ蝡荔??澆 Runtime REST API嚗?| MIT |
+| **js-yaml** | 4.x | 霈撖?`.ai-project/config.yml` | MIT |
+| **tsx** | 4.x | ?湔?瑁? TypeScript嚗??潭?嚗?| MIT |
+| **pkg** | 5.x | ?? Node.js ??箇蝡?瑁?瑼?| MIT |
 
-### 建構工具（CLI）
+### 撱箸?撌亙嚗LI嚗?
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **tsup** | 8.x | TypeScript 打包（基於 esbuild，極快） | MIT |
-| **vitest** | 1.x | 單元測試框架 | MIT |
+| **tsup** | 8.x | TypeScript ??嚗??esbuild嚗扔敹恬? | MIT |
+| **vitest** | 1.x | ?桀?皜祈岫獢 | MIT |
 
 ---
 
-## 5. Web UI 技術棧（`web/`）
+## 5. Web UI ?銵ㄖ嚗web/`嚗?
 
-| 技術 | 版本 | 選用理由 | 授權 |
+| ?銵?| ? | ?貊? | ?? |
 |---|---|---|---|
-| **React** | 18.x | 企業前端標準；生態完整；Hook 模型成熟 | MIT |
-| **TypeScript** | 5.x | 型別安全；與後端 API 契約可共享型別定義 | Apache 2.0 |
-| **Vite** | 5.x | 開發期極快 HMR；生產建構基於 Rollup | MIT |
-| **React Router** | 6.x | SPA 路由管理 | MIT |
-| **TailwindCSS** | 3.x | Utility-first CSS；無需設計系統即可快速開發 | MIT |
-| **React Query（TanStack Query）** | 5.x | 伺服器狀態管理；API 呼叫快取與同步 | MIT |
-| **Zustand** | 4.x | 輕量 Client 狀態管理（全域 UI 狀態） | MIT |
-| **Monaco Editor** | 0.47.x | VSCode 核心編輯器元件（用於 Spec 編輯與 Diff 檢視） | MIT |
-| **react-diff-view** | 3.x | PR Code Diff 顯示元件（類 GitHub 風格） | MIT |
-| **react-flow** | 11.x | 知識圖譜視覺化（節點 / 邊關係圖） | MIT |
+| **React** | 18.x | 隡平?垢璅?嚗????湛?Hook 璅∪??? | MIT |
+| **TypeScript** | 5.x | ?摰嚗?敺垢 API 憟??臬鈭怠??亙?蝢?| Apache 2.0 |
+| **Vite** | 5.x | ??扔敹?HMR嚗??Ｗ遣瑽??Rollup | MIT |
+| **React Router** | 6.x | SPA 頝舐蝞∠? | MIT |
+| **TailwindCSS** | 3.x | Utility-first CSS嚗?閮剛?蝟餌絞?喳敹恍???| MIT |
+| **React Query嚗anStack Query嚗?* | 5.x | 隡箸??函??恣??API ?澆敹怠???甇?| MIT |
+| **Zustand** | 4.x | 頛? Client ??恣???典? UI ??? | MIT |
+| **Monaco Editor** | 0.47.x | VSCode ?詨?蝺刻摩?典?隞塚??冽 Spec 蝺刻摩??Diff 瑼Ｚ?嚗?| MIT |
+| **react-diff-view** | 3.x | PR Code Diff 憿舐內?辣嚗? GitHub 憸冽嚗?| MIT |
+| **react-flow** | 11.x | ?亥???閬死??蝭暺?/ ??靽?嚗?| MIT |
 
-### 建構工具（Web）
+### 撱箸?撌亙嚗eb嚗?
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **vitest** | 1.x | 單元測試 | MIT |
-| **Playwright** | 1.x | E2E 測試 | Apache 2.0 |
+| **vitest** | 1.x | ?桀?皜祈岫 | MIT |
+| **Playwright** | 1.x | E2E 皜祈岫 | Apache 2.0 |
 
 ---
 
-## 6. IDE Plugin 技術棧
+## 6. IDE Plugin ?銵ㄖ
 
-### 6.1 VSCode Extension（`plugin/vscode/`）
+### 6.1 VSCode Extension嚗plugin/vscode/`嚗?
 
-| 技術 | 版本 | 選用理由 | 授權 |
+| ?銵?| ? | ?貊? | ?? |
 |---|---|---|---|
-| **TypeScript** | 5.x | VSCode Extension 官方語言 | Apache 2.0 |
-| **VSCode Extension API** | 1.89+ | 擴充功能入口；Webview、TreeView、StatusBar、Command | MIT |
-| **@vscode/vsce** | 2.x | 打包 `.vsix` 安裝包 | MIT |
+| **TypeScript** | 5.x | VSCode Extension 摰隤? | Apache 2.0 |
+| **VSCode Extension API** | 1.89+ | ?游???亙嚗ebview?reeView?tatusBar?ommand | MIT |
+| **@vscode/vsce** | 2.x | ?? `.vsix` 摰???| MIT |
 
-### 6.2 IntelliJ Plugin（`plugin/intellij/`）
+### 6.2 IntelliJ Plugin嚗plugin/intellij/`嚗?
 
-| 技術 | 版本 | 選用理由 | 授權 |
+| ?銵?| ? | ?貊? | ?? |
 |---|---|---|---|
-| **Kotlin** | 1.9.x | IntelliJ Platform 官方推薦語言；與 Java 完全互通 | Apache 2.0 |
-| **IntelliJ Platform SDK** | 2024.1+ | Plugin 開發框架；ToolWindow、Action、Notification | Apache 2.0 |
-| **JCEF（Java Chromium Embedded Framework）** | （隨 IntelliJ） | 在 ToolWindow 中嵌入 Web UI（載入 React SPA） | BSD |
-| **Gradle IntelliJ Plugin** | 1.17.x | IntelliJ Plugin 建構工具 | Apache 2.0 |
+| **Kotlin** | 1.9.x | IntelliJ Platform 摰?刻隤?嚗? 後端 摰鈭?| Apache 2.0 |
+| **IntelliJ Platform SDK** | 2024.1+ | Plugin ?獢嚗oolWindow?ction?otification | Apache 2.0 |
+| **JCEF嚗ava Chromium Embedded Framework嚗?* | 嚗 IntelliJ嚗?| ??ToolWindow 銝剖???Web UI嚗???React SPA嚗?| BSD |
+| **Gradle IntelliJ Plugin** | 1.17.x | IntelliJ Plugin 撱箸?撌亙 | Apache 2.0 |
 
 ---
 
-## 7. 儲存技術棧
+## 7. ?脣??銵ㄖ
 
-### 7.1 關聯式資料庫
+### 7.1 ?撘??澈
 
-| 技術 | 版本 | 使用場景 | 授權 |
+| ?銵?| ? | 雿輻?湔 | ?? |
 |---|---|---|---|
-| **SQLite** | 3.45.x | 預設儲存後端（單機開發人員）；零額外依賴；跨平台 | Public Domain |
-| **PostgreSQL** | 15.x | 企業團隊共享儲存後端；支援並發讀寫；完整 ACID | PostgreSQL License |
-| **H2** | 2.x | Java 單元測試 / 整合測試使用（記憶體模式） | EPL 1.0 / MPL 2.0 |
+| **SQLite** | 3.45.x | ?身?脣?敺垢嚗璈??潔犖?∴?嚗憿?靘陷嚗楊撟喳 | Public Domain |
+| **PostgreSQL** | 15.x | 隡平???曹澈?脣?敺垢嚗?港蒂?潸?撖恬?摰 ACID | PostgreSQL License |
+| **H2** | 2.x | 後端 ?桀?皜祈岫 / ?游?皜祈岫雿輻嚗??園?璅∪?嚗?| EPL 1.0 / MPL 2.0 |
 
-### 7.2 向量資料庫
+### 7.2 ??鞈?摨?
 
-| 技術 | 版本 | 使用場景 | 授權 |
+| ?銵?| ? | 雿輻?湔 | ?? |
 |---|---|---|---|
-| **ChromaDB** | 0.5.x | 本地向量儲存（預設）；零外部依賴；支援持久化 | Apache 2.0 |
-| **pgvector**（可選） | 0.7.x | PostgreSQL Extension，在同一個 DB 儲存向量（企業升級選項） | PostgreSQL License |
+| **ChromaDB** | 0.5.x | ?砍???脣?嚗?閮哨?嚗憭靘陷嚗?湔?銋? | Apache 2.0 |
+| **pgvector**嚗?賂? | 0.7.x | PostgreSQL Extension嚗????DB ?脣???嚗?璆剖?蝝?? | PostgreSQL License |
 
-### 7.3 全文搜尋（可選升級）
+### 7.3 ?冽???嚗?詨?蝝?
 
-| 技術 | 版本 | 使用場景 | 授權 |
+| ?銵?| ? | 雿輻?湔 | ?? |
 |---|---|---|---|
-| **Elasticsearch** | 8.x | 知識庫全文搜尋增強（大型企業選項） | SSPL / Elastic License 2.0 |
+| **Elasticsearch** | 8.x | ?亥?摨怠??撠?撘瘀?憭批?隡平?賊?嚗?| SSPL / Elastic License 2.0 |
 
-> **⚠️ 注意**：Elasticsearch 8.x 授權為 SSPL，用於內部工具使用時無需商業授權，但需確認企業法務審核。
+> **?? 瘜冽?**嚗lasticsearch 8.x ????SSPL嚗?澆?典極?瑚蝙?冽??⊿??平??嚗??蝣箄?隡平瘜?撖拇??
 
 ---
 
-## 8. AI 供應商 SDK
+## 8. AI 靘???SDK
 
-| 供應商 | SDK / 整合方式 | 版本 | 授權 |
+| 靘???| SDK / ?游??孵? | ? | ?? |
 |---|---|---|---|
 | **Anthropic Claude** | `anthropic` Python SDK | 0.28.x | MIT |
 | **Google Gemini** | `google-generativeai` Python SDK | 0.7.x | Apache 2.0 |
 | **OpenAI** | `openai` Python SDK | 1.30.x | MIT |
-| **Ollama** | 直接呼叫 Ollama REST API（`localhost:11434`） | N/A | MIT |
-| **GitHub Copilot** | `gh copilot` CLI 橋接（Java 子進程呼叫） | 最新版 | GitHub 服務條款 |
-| **MCP** | `mcp` Python SDK | 1.x | MIT |
+| **GitHub Copilot** | `gh copilot` CLI 璈嚗ava 摮脩??澆嚗?| ??啁? | GitHub ??璇狡 |
 
-> **設計說明**：所有 AI SDK 呼叫集中在 `aipa-agent`（Java）或 AI Engine（Python）內，業務邏輯不直接依賴任何 AI SDK。供應商切換只需更換 Adapter 實作。
+> **閮剛?隤芣?**嚗???AI SDK ?澆?葉??`aipa-agent`嚗ava嚗? AI Engine嚗ython嚗嚗平??頛臭??湔靘陷隞颱? AI SDK???????芷??湔? Adapter 撖虫???
 
 ---
 
-## 9. Installer 工具鏈
+## 9. Installer 撌亙??
 
 ### 9.1 Windows MSI
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **NSIS（Nullsoft Scriptable Install System）** | 3.10 | Windows 安裝精靈生成；支援靜默安裝；免費 | zlib/libpng License |
-| **WiX Toolset**（備選） | 4.x | MSI 格式安裝包；企業 GPO 部署相容 | MIT |
-| **Launch4j** | 3.50 | 將 JAR 包裝為 Windows `.exe` | BSD / MIT |
+| **NSIS嚗ullsoft Scriptable Install System嚗?* | 3.10 | Windows 摰?蝎暸???嚗?湧?暺?鋆??祥 | zlib/libpng License |
+| **WiX Toolset**嚗??賂? | 4.x | MSI ?澆?摰???隡平 GPO ?函蔡?詨捆 | MIT |
+| **Launch4j** | 3.50 | 撠?JAR ????Windows `.exe` | BSD / MIT |
 
 ### 9.2 Linux Shell
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **Bash** | 5.x | 安裝 / 更新 / 解除安裝腳本 | GPL v3 |
-| **systemd** | N/A | Linux 服務管理 | LGPL |
-| **Nginx** | 1.26.x | Web UI 靜態服務與 API 反向代理 | BSD |
+| **Bash** | 5.x | 摰? / ?湔 / 閫?摰??單 | GPL v3 |
+| **systemd** | N/A | Linux ??蝞∠? | LGPL |
+| **Nginx** | 1.26.x | Web UI ??????API ??隞?? | BSD |
 
 ### 9.3 Docker Compose
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **Docker Compose** | v2（Plugin 形式） | 容器編排；服務依賴管理 | Apache 2.0 |
-| **Docker** | 26.x | 容器執行期 | Apache 2.0 |
+| **Docker Compose** | v2嚗lugin 敶Ｗ?嚗?| 摰孵蝺冽?嚗???鞈渡恣??| Apache 2.0 |
+| **Docker** | 26.x | 摰孵?瑁???| Apache 2.0 |
 
 ---
 
-## 10. CI/CD 工具鏈
+## 10. CI/CD 撌亙??
 
-| 技術 | 版本 | 用途 | 授權 |
+| ?銵?| ? | ?券?| ?? |
 |---|---|---|---|
-| **GitHub Actions** | N/A | CI/CD 流水線；自動化建構 / 測試 / 發布 | GitHub 服務條款 |
-| **SonarCloud**（可選） | N/A | 程式碼品質掃描 | SonarSource 授權 |
-| **Trivy** | 0.51.x | 容器映像安全掃描 | Apache 2.0 |
+| **GitHub Actions** | N/A | CI/CD 瘚偌蝺??芸??遣瑽?/ 皜祈岫 / ?澆? | GitHub ??璇狡 |
+| **SonarCloud**嚗?賂? | N/A | 蝔?蝣澆?鞈芣???| SonarSource ?? |
+| **Trivy** | 0.51.x | 摰孵??摰?? | Apache 2.0 |
 
-### CI 流水線觸發條件
+### CI 瘚偌蝺孛?潭?隞?
 
 ```yaml
-# .github/workflows/ci.yml 觸發條件
+# .github/workflows/ci.yml 閫貊璇辣
 on:
   push:
     branches: [main, develop]
@@ -289,72 +287,73 @@ on:
     branches: [main, develop]
 ```
 
-### CI 流水線各語言任務
+### CI 瘚偌蝺?隤?隞餃?
 
-| 語言 | 任務 |
+| 隤? | 隞餃? |
 |---|---|
-| Java | `./gradlew build test` |
+| 後端 | `./gradlew build test` |
 | Python | `poetry run pytest` + `poetry run ruff check` |
 | TypeScript | `npm run build --workspaces` + `npm run test --workspaces` |
 
 ---
 
-## 11. 開發工具建議
+## 11. ?撌亙撱箄降
 
-| 工具 | 版本 | 用途 |
+| 撌亙 | ? | ?券?|
 |---|---|---|
-| **IntelliJ IDEA** | 2024.1+ | Java / Kotlin 開發（Runtime / Scanner / Plugin） |
-| **VSCode** | 最新版 | TypeScript / Python 開發（CLI / Web / AI Engine） |
-| **Docker Desktop** | 4.x | 本地開發環境（Docker Compose） |
-| **DBeaver** | 23.x | SQLite / PostgreSQL 資料庫管理 |
-| **Postman / Bruno** | 最新版 | Runtime REST API 測試 |
+| **IntelliJ IDEA** | 2024.1+ | 後端 / Kotlin ?嚗untime / Scanner / Plugin嚗?|
+| **VSCode** | ??啁? | TypeScript / Python ?嚗LI / Web / AI Engine嚗?|
+| **Docker Desktop** | 4.x | ?砍??啣?嚗ocker Compose嚗?|
+| **DBeaver** | 23.x | SQLite / PostgreSQL 鞈?摨怎恣??|
+| **Postman / Bruno** | ??啁? | Runtime REST API 皜祈岫 |
 
 ---
 
-## 12. 技術版本鎖定策略
+## 12. ?銵??祇?摰???
 
-### 12.1 版本鎖定文件
+### 12.1 ????辣
 
-| 語言 | 鎖定文件 | 說明 |
+| 隤? | ???辣 | 隤芣? |
 |---|---|---|
-| Java | `build.gradle.kts`（`implementation("...")`） | 明確指定版本，不使用 `latest` |
-| Python | `poetry.lock` | Poetry 自動生成，確保完全可重現 |
-| Node.js | `package-lock.json` | npm 自動生成 |
+| 後端 | `build.gradle.kts`嚗implementation("...")`嚗?| ?Ⅱ???嚗?雿輻 `latest` |
+| Python | `poetry.lock` | Poetry ?芸???嚗Ⅱ靽??典? |
+| Node.js | `package-lock.json` | npm ?芸??? |
 
-### 12.2 版本升級政策
+### 12.2 ????輻?
 
-- **安全性修補（Patch）**：每月自動升級，CI 驗證後合并
-- **次要版本（Minor）**：每季評估，需通過完整測試套件
-- **主要版本（Major）**：需架構審查，列入路線圖規劃
-- **Java LTS 版本**：Java 17 → Java 21 於 Phase 3 之後評估
+- **摰?找耨鋆?Patch嚗?*嚗????蝝?CI 撽?敺?撟?
+- **甈∟??嚗inor嚗?*嚗?摮??隡堆????摰皜祈岫憟辣
+- **銝餉??嚗ajor嚗?*嚗??嗆?撖拇嚗??亥楝蝺?閬?
+- **後端 LTS ?**嚗ava 17 ??後端 21 ??Phase 3 銋?閰摯
 
 ---
 
-## 13. 技術排除清單（明確不採用）
+## 13. ?銵??斗??殷??Ⅱ銝?剁?
 
-以下技術因特定原因明確排除，未來不得在未經架構審查的情況下引入：
+隞乩??銵??孵????Ⅱ?嚗靘?敺?芰??嗆?撖拇??瘜?撘嚗?
 
-| 排除技術 | 排除原因 |
+| ??銵?| ??? |
 |---|---|
-| Lombok | 增加 IDE 設定複雜度；Java 14+ record 類別可取代 |
-| Kotlin（Java 模組） | 維持 Java 主線；僅 IntelliJ Plugin 使用 Kotlin |
-| MongoDB | 非結構化儲存不適合知識庫的關聯查詢需求 |
-| Redis | 不引入額外有狀態服務；Session 狀態已由 StorageProvider 管理 |
-| Kafka / RabbitMQ | 單一進程事件匯流排已足夠；不引入分散式訊息佇列 |
-| Django / Flask | FastAPI 效能與現代化程度更優；Pydantic v2 整合更佳 |
-| Angular / Vue | 統一使用 React，降低前端技術多樣性 |
-| GraphQL | REST API 已足夠；GraphQL 增加前後端複雜度 |
-| gRPC | 跨語言通訊已透過 REST API 實現；不引入 Protobuf 依賴 |
+| Lombok | 憓? IDE 閮剖?銴?摨佗?後端 14+ record 憿?臬?隞?|
+| Kotlin嚗ava 璅∠?嚗?| 蝬剜? 後端 銝餌?嚗? IntelliJ Plugin 雿輻 Kotlin |
+| MongoDB | ??瑽??脣?銝?霅澈???舀閰ａ?瘙?|
+| Redis | 銝??仿?憭??????Session ??歇??StorageProvider 蝞∠? |
+| Kafka / RabbitMQ | ?桐??脩?鈭辣?舀??歇頞喳?嚗?撘?撘??臭???|
+| Django / Flask | FastAPI ??隞??蝔漲?游嚗ydantic v2 ?游??港蔔 |
+| Angular / Vue | 蝯曹?雿輻 React嚗?雿?蝡舀?銵?璅??|
+| GraphQL | REST API 撌脰雲憭?GraphQL 憓???蝡航??漲 |
+| gRPC | 頝刻?閮??撌脤? REST API 撖衣嚗?撘 Protobuf 靘陷 |
 
 ---
 
-## 14. 版本歷史
+## 14. ?甇瑕
 
-| 版本 | 日期 | 變更說明 |
+| ? | ?交? | 霈隤芣? |
 |---|---|---|
-| 1.0.0-draft | Phase 1 | 初始技術選型文件 |
+| 1.0.0-draft | Phase 1 | ???銵??隞?|
 
 ---
 
-*本文件為 AIPA Studio Phase 1 架構鎖定的一部分。架構鎖定後，不得在未經架構審查的情況下新增或更換技術。*
+*?祆?隞嗥 AIPA Studio Phase 1 ?嗆??????典??瑽?摰?嚗?敺?芰??嗆?撖拇??瘜??啣????銵?
+
 

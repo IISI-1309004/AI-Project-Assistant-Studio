@@ -1,97 +1,97 @@
-# AIPA Studio 一對多架構實現指南
+﻿# AIPA Studio 銝撠??嗆?撖衣??
 
-**版本**：1.0.0
-**日期**：2026-06-30
-**狀態**：✅ 已實現
-
----
-
-## 📋 目錄
-
-1. [架構概述](#architecture-overview)
-2. [核心組件](#core-components)
-3. [使用指南](#usage-guide)
-4. [API 文檔](#api-documentation)
-5. [最佳實踐](#best-practices)
-6. [常見問題](#faq)
+**?**嚗?.0.0
+**?交?**嚗?026-06-30
+**???*嚗? 撌脣祕??
 
 ---
 
-## <a name="architecture-overview"></a>1. 架構概述
+## ?? ?桅?
 
-### 什麼是一對多架構？
+1. [?嗆?璁膩](#architecture-overview)
+2. [?詨?蝯辣](#core-components)
+3. [雿輻??](#usage-guide)
+4. [API ??](#api-documentation)
+5. [?雿喳祕頦(#best-practices)
+6. [撣貉???](#faq)
+
+---
+
+## <a name="architecture-overview"></a>1. ?嗆?璁膩
+
+### 隞暻潭銝撠??嗆?嚗?
 
 ```
-┌─────────────────────────────────────────┐
-│   AIPA Runtime Service (共用)          │
-│   - ProjectContextHolder                │
-│   - SessionManagementService            │
-│   - WorkflowEngine                      │
-└─────────────────┬───────────────────────┘
-                  │
-      ┌───────────┼───────────┬──────────┐
-      │           │           │          │
-   ┌──▼──┐    ┌──▼──┐    ┌──▼──┐   ┌──▼──┐
-   │Project A │   │Project B │   │Project C│   │...   │
-   │          │   │          │   │         │   │      │
-   │知識庫    │   │知識庫    │   │知識庫   │   │知識庫 │
-   │記憶      │   │記憶      │   │記憶     │   │記憶   │
-   │規則      │   │規則      │   │規則     │   │規則   │
-   └──────────┘   └──────────┘   └─────────┘   └──────┘
+????????????????????????????????????????????
+??  AIPA Runtime Service (?梁)          ??
+??  - ProjectContextHolder                ??
+??  - SessionManagementService            ??
+??  - WorkflowEngine                      ??
+???????????????????砂?????????????????????????
+                  ??
+      ?????????????潑????????????砂????????????
+      ??          ??          ??         ??
+   ????潑????   ????潑????   ????潑????  ????潑????
+   ?roject A ??  ?roject B ??  ?roject C??  ??..   ??
+   ??         ??  ??         ??  ??        ??  ??     ??
+   ?霅澈    ??  ?霅澈    ??  ?霅澈   ??  ?霅澈 ??
+   ????     ??  ????     ??  ????    ??  ????  ??
+   ????     ??  ????     ??  ????    ??  ????  ??
+   ?????????????  ?????????????  ????????????  ?????????
 ```
 
-### 核心原則
+### ?詨???
 
-1. **單一 Runtime** — 所有項目共用一個 AIPA Runtime 服務
-2. **自動隔離** — ProjectContextHolder 在應用層自動隔離數據
-3. **租戶透明** — 開發者無需關心多租戶細節，框架自動處理
-4. **資源高效** — 減少服務部署和維護成本
+1. **?桐? Runtime** ??????桀?其???AIPA Runtime ??
+2. **?芸??** ??ProjectContextHolder ?冽??典惜?芸???豢?
+3. **蝘??** ???????憭??嗥敦蝭嚗??嗉????
+4. **鞈?擃?** ??皜????函蔡?雁霅瑟???
 
 ---
 
-## <a name="core-components"></a>2. 核心組件
+## <a name="core-components"></a>2. ?詨?蝯辣
 
 ### 2.1 ProjectContextHolder
 
-**位置**：`com.aipa.runtime.context.ProjectContextHolder`
+**雿蔭**嚗com.aipa.runtime.context.ProjectContextHolder`
 
-負責在請求的生命週期內管理項目上下文。採用 ThreadLocal 模式。
+鞎痊?刻?瘙???望??抒恣???桐?銝????ThreadLocal 璅∪???
 
 ```java
-// 設置項目 ID
+// 閮剔蔭? ID
 contextHolder.setProjectId("customer-service");
 
-// 獲取項目 ID
+// ?脣?? ID
 String projectId = contextHolder.getProjectId();
 
-// 檢查是否已設置
+// 瑼Ｘ?臬撌脰身蝵?
 if (contextHolder.hasProjectId()) {
-    // 執行業務邏輯
+    // ?瑁?璆剖??摩
 }
 
-// 清理上下文（在請求結束時自動調用）
+// 皜?銝????刻?瘙????芸?隤輻嚗?
 contextHolder.clear();
 ```
 
 ### 2.2 ProjectContextInterceptor
 
-**位置**：`com.aipa.runtime.context.ProjectContextInterceptor`
+**雿蔭**嚗com.aipa.runtime.context.ProjectContextInterceptor`
 
-Servlet Filter，在每個請求開始時提取 project_id 並設置到 ProjectContextHolder。
+Servlet Filter嚗瘥?瘙?憪??? project_id 銝西身蝵桀 ProjectContextHolder??
 
-**優先級排列**：
-1. HTTP Header 中的 `X-Project-ID`
-2. URL 路徑參數 `/api/v1/projects/{projectId}/...`
-3. Query 參數 `?projectId=...`
+**?芸?蝝???*嚗?
+1. HTTP Header 銝剔? `X-Project-ID`
+2. URL 頝臬?? `/api/v1/projects/{projectId}/...`
+3. Query ? `?projectId=...`
 
 ### 2.3 ProjectSpecification
 
-**位置**：`com.aipa.runtime.persistence.ProjectSpecification`
+**雿蔭**嚗com.aipa.runtime.persistence.ProjectSpecification`
 
-JPA Specification 基類。所有業務查詢都應繼承此類，自動加入 `project_id` 過濾。
+JPA Specification ?粹????平?閰ａ?匱?踵迨憿??芸?? `project_id` ?蕪??
 
 ```java
-// 示例：查詢特定狀態的會話
+// 蝷箔?嚗閰Ｙ摰????店
 public class SessionsByStatusSpecification extends ProjectSpecification<Session> {
 
     private final String status;
@@ -107,28 +107,28 @@ public class SessionsByStatusSpecification extends ProjectSpecification<Session>
     }
 }
 
-// 使用
+// 雿輻
 List<Session> sessions = sessionRepository.findAll(
     new SessionsByStatusSpecification(contextHolder, "COMPLETED")
 );
-// 自動生成 SQL：WHERE project_id = ? AND status = 'COMPLETED'
+// ?芸??? SQL嚗HERE project_id = ? AND status = 'COMPLETED'
 ```
 
-### 2.4 Project Entity 和 Repository
+### 2.4 Project Entity ??Repository
 
-**Entity**：`com.aipa.runtime.domain.Project`
-**Repository**：`com.aipa.runtime.persistence.ProjectRepository`
+**Entity**嚗com.aipa.runtime.domain.Project`
+**Repository**嚗com.aipa.runtime.persistence.ProjectRepository`
 
-Project 是特殊的聚合根，它本身定義了租戶邊界，不被 ProjectContextHolder 過濾。
+Project ?舐畾????對?摰頨怠?蝢拐?蝘??嚗?鋡?ProjectContextHolder ?蕪??
 
 ---
 
-## <a name="usage-guide"></a>3. 使用指南
+## <a name="usage-guide"></a>3. 雿輻??
 
-### 3.1 創建新項目
+### 3.1 ?萄遣?圈???
 
 ```bash
-# 通過 REST API 創建
+# ?? REST API ?萄遣
 curl -X POST http://localhost:18080/api/v1/projects \
   -H "Content-Type: application/json" \
   -d '{
@@ -137,7 +137,7 @@ curl -X POST http://localhost:18080/api/v1/projects \
     "description": "Customer Service Module"
   }'
 
-# 響應
+# ?踵?
 {
   "id": "customer-service",
   "name": "customer-service",
@@ -149,52 +149,52 @@ curl -X POST http://localhost:18080/api/v1/projects \
 }
 ```
 
-### 3.2 激活項目
+### 3.2 瞈瘣駁???
 
 ```bash
 curl -X PATCH http://localhost:18080/api/v1/projects/customer-service/activate
 ```
 
-### 3.3 在特定項目中執行工作流
+### 3.3 ?函摰??桐葉?瑁?撌乩?瘚?
 
 ```bash
-# 方式 1：通過 Header 指定項目
+# ?孵? 1嚗? Header ???
 curl -X POST http://localhost:18080/api/v1/session \
   -H "X-Project-ID: customer-service" \
   -H "Content-Type: application/json" \
-  -d '{"requirement": "新增客戶反饋功能"}'
+  -d '{"requirement": "?啣?摰Ｘ???"}'
 
-# 方式 2：通過 URL 路徑
+# ?孵? 2嚗? URL 頝臬?
 curl -X POST http://localhost:18080/api/v1/projects/customer-service/sessions \
   -H "Content-Type: application/json" \
-  -d '{"requirement": "新增客戶反饋功能"}'
+  -d '{"requirement": "?啣?摰Ｘ???"}'
 
-# 方式 3：通過 Query 參數
+# ?孵? 3嚗? Query ?
 curl -X POST http://localhost:18080/api/v1/session?projectId=customer-service \
   -H "Content-Type: application/json" \
-  -d '{"requirement": "新增客戶反饋功能"}'
+  -d '{"requirement": "?啣?摰Ｘ???"}'
 ```
 
-### 3.4 列出項目
+### 3.4 ??
 
 ```bash
-# 列出所有項目
+# ??????
 curl http://localhost:18080/api/v1/projects
 
-# 列出所有活躍項目
+# ???暑頨???
 curl http://localhost:18080/api/v1/projects?status=ACTIVE
 
-# 根據所有者篩選
+# ?寞???祟??
 curl http://localhost:18080/api/v1/projects?owner=user-123
 ```
 
-### 3.5 獲取當前項目上下文
+### 3.5 ?脣??嗅??銝???
 
 ```bash
 curl -H "X-Project-ID: customer-service" \
   http://localhost:18080/api/v1/projects/context/current
 
-# 響應
+# ?踵?
 {
   "projectId": "customer-service",
   "operationId": "a1b2c3d4"
@@ -203,11 +203,11 @@ curl -H "X-Project-ID: customer-service" \
 
 ---
 
-## <a name="api-documentation"></a>4. API 文檔
+## <a name="api-documentation"></a>4. API ??
 
-### 4.1 項目管理端點
+### 4.1 ?蝞∠?蝡舫?
 
-#### 創建項目
+#### ?萄遣?
 
 ```
 POST /api/v1/projects
@@ -215,25 +215,25 @@ Header: Content-Type: application/json
 
 Request Body:
 {
-  "name": "string (required)",           // 項目名稱
-  "rootPath": "string (required)",       // 項目根目錄絕對路徑
-  "description": "string (optional)"     // 項目描述
+  "name": "string (required)",           // ??迂
+  "rootPath": "string (required)",       // ??寧??撠楝敺?
+  "description": "string (optional)"     // ??膩
 }
 
 Response: 201 Created
 {
-  "id": "string",                        // 生成的項目 ID
+  "id": "string",                        // ??????ID
   "name": "string",
   "rootPath": "string",
   "status": "INITIALIZING",
   "description": "string",
   "ownerId": "string",
-  "createdAt": "number",                 // UNIX 時間戳（毫秒）
+  "createdAt": "number",                 // UNIX ???喉?瘥怎?嚗?
   "lastScanAt": "number"
 }
 ```
 
-#### 列出項目
+#### ??
 
 ```
 GET /api/v1/projects[?status=ACTIVE][&owner=userId]
@@ -254,7 +254,7 @@ Response: 200 OK
 ]
 ```
 
-#### 查詢單個項目
+#### ?亥岷?桀???
 
 ```
 GET /api/v1/projects/{projectId}
@@ -274,7 +274,7 @@ Response: 200 OK
 Error: 404 Not Found
 ```
 
-#### 更新項目
+#### ?湔?
 
 ```
 PUT /api/v1/projects/{projectId}
@@ -290,27 +290,27 @@ Response: 200 OK
 {...}
 ```
 
-#### 項目狀態轉換
+#### ??????
 
 ```
-# 激活項目
+# 瞈瘣駁???
 PATCH /api/v1/projects/{projectId}/activate
 Response: 200 OK
 
-# 暫停項目
+# ?怠??
 PATCH /api/v1/projects/{projectId}/suspend
 Response: 200 OK
 
-# 恢復項目
+# ?Ｗ儔?
 PATCH /api/v1/projects/{projectId}/resume
 Response: 200 OK
 
-# 存檔項目
+# 摮??
 PATCH /api/v1/projects/{projectId}/archive
 Response: 200 OK
 ```
 
-#### 獲取當前項目上下文
+#### ?脣??嗅??銝???
 
 ```
 GET /api/v1/projects/context/current
@@ -325,11 +325,11 @@ Response: 200 OK
 
 ---
 
-## <a name="best-practices"></a>5. 最佳實踐
+## <a name="best-practices"></a>5. ?雿喳祕頦?
 
-### 5.1 添加新的 Repository 時
+### 5.1 瘛餃??啁? Repository ??
 
-所有新的 Repository 都應該支持 ProjectSpecification 自動過濾：
+????Repository ?賣?閰脫??ProjectSpecification ?芸??蕪嚗?
 
 ```java
 @Repository
@@ -337,12 +337,12 @@ public interface MyEntityRepository extends
     JpaRepository<MyEntity, String>,
     JpaSpecificationExecutor<MyEntity> {
 
-    // 基本查詢方法也應該考慮 project_id
+    // ?箸?亥岷?寞?銋?閰脰 project_id
     List<MyEntity> findByProjectId(String projectId);
 }
 ```
 
-### 5.2 在 Service 中使用
+### 5.2 ??Service 銝凋蝙??
 
 ```java
 @Service
@@ -352,13 +352,13 @@ public class MyEntityService {
     private final ProjectContextHolder contextHolder;
 
     public List<MyEntity> getActiveEntities() {
-        // 方式 1：使用 ProjectContextHolder 直接構建查詢
+        // ?孵? 1嚗蝙??ProjectContextHolder ?湔瑽遣?亥岷
         String projectId = contextHolder.getProjectId();
         return repository.findByProjectId(projectId);
 
-        // 或
+        // ??
 
-        // 方式 2：使用 Specification（推薦，更優雅）
+        // ?孵? 2嚗蝙??Specification嚗?佗??游??
         return repository.findAll(
             new MyEntitiesByStatusSpec(contextHolder, "ACTIVE")
         );
@@ -366,7 +366,7 @@ public class MyEntityService {
 }
 ```
 
-### 5.3 在 Controller 中提供項目信息
+### 5.3 ??Controller 銝剜?靘??桐縑??
 
 ```java
 @RestController
@@ -378,36 +378,36 @@ public class MyController {
 
     @GetMapping("/my-endpoint")
     public ResponseEntity<?> myEndpoint() {
-        // 項目 ID 已由 ProjectContextInterceptor 自動設置
+        // ? ID 撌脩 ProjectContextInterceptor ?芸?閮剔蔭
         String projectId = contextHolder.getProjectId();
 
-        // 執行業務邏輯，所有查詢都會自動隔離到此項目
+        // ?瑁?璆剖??摩嚗??閰ａ????Ｗ甇日???
         return ResponseEntity.ok(service.doSomething());
     }
 }
 ```
 
-### 5.4 系統端點（不需要 project_id）
+### 5.4 蝟餌絞蝡舫?嚗??閬?project_id嚗?
 
-某些端點不需要項目上下文：
+??蝡舫?銝?閬??桐?銝?嚗?
 
 ```java
 @GetMapping("/api/v1/system/health")
 public ResponseEntity<?> health() {
-    // 不需要 project_id
+    // 銝?閬?project_id
     return ResponseEntity.ok("OK");
 }
 
 @GetMapping("/api/v1/projects")
 public ResponseEntity<List<Project>> listAllProjects() {
-    // 查詢所有項目時不應用單一項目過濾
+    // ?亥岷????格?銝??典銝??蕪
     return ResponseEntity.ok(projectService.getAllProjects());
 }
 ```
 
-### 5.5 日誌記錄
+### 5.5 ?亥?閮?
 
-訂標誌中包含 project_id 以便於問題排查：
+閮?隤葉? project_id 隞乩噶?澆?憿??伐?
 
 ```java
 @Aspect
@@ -436,50 +436,51 @@ public class LoggingAspect {
 
 ---
 
-## <a name="faq"></a>6. 常見問題
+## <a name="faq"></a>6. 撣貉???
 
-**Q：如果客戶端沒有提供 project_id 會發生什麼？**
+**Q嚗??恥?嗥垢瘝??? project_id ???暻潘?**
 
-A：ProjectContextInterceptor 會嘗試從多個來源提取 project_id。如果都找不到且端點需要 project_id，則在 ProjectContextHolder.getProjectId() 時會拋出异常。
+A嚗rojectContextInterceptor ??閰血?憭?皞???project_id????曆??唬?蝡舫??閬?project_id嚗???ProjectContextHolder.getProjectId() ???撘虜??
 
-**Q：可以跨項目查詢嗎？**
+**Q嚗隞亥楊??亥岷??**
 
-A：不推薦。多租戶架構的核心是隔離。如果需要跨項目搜尋（如全局搜索），應該在 RelationalDatabase 層實現單獨的端點，不使用 ProjectContextHolder。
+A嚗??刻??蝘?嗆??敹?????閬楊???嚗??典??揣嚗??府??RelationalDatabase 撅文祕?曉?函?蝡舫?嚗?雿輻 ProjectContextHolder??
 
-**Q：Project Entity 為什麼不被 project_id 過濾？**
+**Q嚗roject Entity ?箔?暻潔?鋡?project_id ?蕪嚗?*
 
-A：因為 Project 本身就是租戶邊界。Project 表中存儲的是所有項目的定義。訪問單個項目時需要使用項目 ID（主鍵）直接查詢，不涉及租戶隔離。
+A嚗???Project ?祈澈撠望蝘???roject 銵其葉摮?????桃?摰儔?赤????格??閬蝙?券???ID嚗蜓?蛛??湔?亥岷嚗?瘨?蝘???
 
-**Q：如何遷移現有的單項目系統到多項目？**
+**Q嚗?雿蝘餌???桅??桃頂蝯勗憭??殷?**
 
-A：
-1. 創建一個默認 Project 實體，project_id = "default"
-2. 所有現有數據的 project_id 都設為 "default"
-3. 更新 ProjectContextInterceptor，如果沒有提供 project_id，默認使用 "default"
-4. 逐步遷移其他項目，切換到新的 project_id
+A嚗?
+1. ?萄遣銝??隤?Project 撖阡?嚗roject_id = "default"
+2. ????? project_id ?質身??"default"
+3. ?湔 ProjectContextInterceptor嚗?????靘?project_id嚗?隤蝙??"default"
+4. ?郊?瑞宏?嗡??嚗???啁? project_id
 
-**Q：生產環境中如何確保租戶隔離的安全性？**
+**Q嚗??Ｙ憓葉憒?蝣箔?蝘????冽改?**
 
-A：
-- 確保所有 Repository 都使用 ProjectSpecification 或手動過濾 project_id
-- 定期審計 SQL 查詢，確保沒有 project_id 泄露
-- 實現 API 級別的身份驗證，驗證用戶是否有權訪問特定項目
-- 使用 PostgrSQL 的 Row Level Security (RLS) 作為最後一道防線
+A嚗?
+- 蝣箔????Repository ?賭蝙??ProjectSpecification ????瞈?project_id
+- 摰?撖抵? SQL ?亥岷嚗Ⅱ靽???project_id 瘜
+- 撖衣 API 蝝?澈隞賡?霅?撽??冽?臬??閮芸??孵??
+- 雿輻 PostgrSQL ??Row Level Security (RLS) 雿?敺??蝺?
 
 ---
 
-## 總結
+## 蝮賜?
 
-一對多架構通過以下關鍵組件實現：
+銝撠??嗆???隞乩??蝯辣撖衣嚗?
 
-| 組件 | 職責 |
+| 蝯辣 | ?瑁痊 |
 |------|------|
-| ProjectContextHolder | 存儲當前請求的項目上下文 |
-| ProjectContextInterceptor | 從 HTTP 請求提取並設置 project_id |
-| ProjectSpecification | JPA Specification 基類，自動加入 project_id 過濾 |
-| Project Entity & Repository | 項目數據的持久化 |
-| MultiTenantConfig | Spring Boot 配置，註冊必要的組件 |
+| ProjectContextHolder | 摮?嗅?隢????桐?銝? |
+| ProjectContextInterceptor | 敺?HTTP 隢???銝西身蝵?project_id |
+| ProjectSpecification | JPA Specification ?粹?嚗????project_id ?蕪 |
+| Project Entity & Repository | ??豢???銋? |
+| MultiTenantConfig | 後端框架 ?蔭嚗酉??閬?蝯辣 |
 
-開發者只需遵循模式操作，框架會自動確保多租戶隔離。
+????萄儐璅∪???嚗??嗆??芸?蝣箔?憭??園??Ｕ?
+
 
 

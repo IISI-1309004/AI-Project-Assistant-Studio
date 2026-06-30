@@ -1,45 +1,45 @@
-# 一對多架構快速入門
+﻿# 銝撠??嗆?敹恍?
 
-**版本**：1.0.0
-**日期**：2026-06-30
+**?**嚗?.0.0
+**?交?**嚗?026-06-30
 
 ---
 
-## ⚡ 5 分鐘快速開始
+## ??5 ??敹恍?憪?
 
-### 1. 編譯和運行 Runtime
+### 1. 蝺刻陌??銵?Runtime
 
 ```bash
 cd D:\AI-Project-Assistant-Studio
 
-# 使用 gradlew 編譯
+# 雿輻 gradlew 蝺刻陌
 ./gradlew clean build
 
-# 啟動 Runtime（監聽 18080）
+# ?? Runtime嚗??18080嚗?
 java -jar build/libs/aipa-runtime.jar
 ```
 
-### 2. 編譯和運行 AI Engine
+### 2. 蝺刻陌??銵?AI Engine
 
 ```bash
-# 在另一個終端
+# ?典銝??蝡?
 cd aipa_ai_engine
 
-# 安裝依賴
+# 摰?靘陷
 pip install -r requirements.txt
 
-# 運行 FastAPI
+# ?? FastAPI
 uvicorn aipa_ai_engine.main:app --host 0.0.0.0 --port 18082 --reload
 ```
 
-### 3. 創建第一個項目
+### 3. ?萄遣蝚砌?????
 
 ```bash
-# 創建項目目錄
+# ?萄遣??桅?
 mkdir -p D:\Projects\customer-service
 cd D:\Projects\customer-service
 
-# 創建項目
+# ?萄遣?
 curl -X POST http://localhost:18080/api/v1/projects \
   -H "Content-Type: application/json" \
   -d '{
@@ -49,7 +49,7 @@ curl -X POST http://localhost:18080/api/v1/projects \
   }'
 ```
 
-**響應**：
+**?踵?**嚗?
 ```json
 {
   "id": "customer-service",
@@ -60,70 +60,70 @@ curl -X POST http://localhost:18080/api/v1/projects \
 }
 ```
 
-### 4. 激活項目
+### 4. 瞈瘣駁???
 
 ```bash
 curl -X PATCH http://localhost:18080/api/v1/projects/customer-service/activate
 ```
 
-### 5. 執行工作流
+### 5. ?瑁?撌乩?瘚?
 
 ```bash
 curl -X POST http://localhost:18080/api/v1/session \
   -H "X-Project-ID: customer-service" \
   -H "Content-Type: application/json" \
   -d '{
-    "requirement": "新增客戶反饋功能"
+    "requirement": "?啣?摰Ｘ???"
   }'
 ```
 
-**響應**：
+**?踵?**嚗?
 ```json
 {
   "id": "session-12345",
   "projectId": "customer-service",
   "status": "CREATED",
-  "requirement": "新增客戶反饋功能",
+  "requirement": "?啣?摰Ｘ???",
   "createdAt": 1688000001000
 }
 ```
 
 ---
 
-## 📚 文檔導航
+## ?? ??撠
 
-### 架構級別
+### ?嗆?蝝
 
-- **[001-architecture-design.md](./001-architecture-design.md)** — 多專案架構設計
-  - 為什麼選擇一對多
-  - 成本分析
-  - 部署拓撲
+- **[001-architecture-design.md](./001-architecture-design.md)** ??憭?獢瑽身閮?
+  - ?箔?暻潮??撠?
+  - ???
+  - ?函蔡?
 
-### 實現級別
+### 撖衣蝝
 
-- **[003-implementation-guide.md](./003-implementation-guide.md)** — 實現概述
-  - 核心組件說明
-  - Java 和 Python 側的實現
-  - API 文檔
+- **[003-implementation-guide.md](./003-implementation-guide.md)** ??撖衣璁膩
+  - ?詨?蝯辣隤芣?
+  - 後端 ??Python ?渡?撖衣
+  - API ??
 
-- **[004-complete-guide.md](./004-complete-guide.md)** — 完整開發指南
-  - 詳細流程圖
-  - 使用示例
-  - 最佳實踐
-  - 常見問題排查
+- **[004-complete-guide.md](./004-complete-guide.md)** ??摰???
+  - 閰喟敦瘚???
+  - 雿輻蝷箔?
+  - ?雿喳祕頦?
+  - 撣貉????
 
-### 檢查清單
+### 瑼Ｘ皜
 
-- **[006-architecture-checklist.md](./006-architecture-checklist.md)** — 實現清單
-  - 所有已實現的組件
-  - 驗證檢查清單
-  - 後續工作
+- **[006-architecture-checklist.md](./006-architecture-checklist.md)** ??撖衣皜
+  - ??歇撖衣??隞?
+  - 撽?瑼Ｘ皜
+  - 敺?撌乩?
 
 ---
 
-## 🎯 常見任務
+## ? 撣貉?隞餃?
 
-### 任務 1：創建新項目
+### 隞餃? 1嚗撱箸?
 
 ```bash
 curl -X POST http://localhost:18080/api/v1/projects \
@@ -135,73 +135,73 @@ curl -X POST http://localhost:18080/api/v1/projects \
   }'
 ```
 
-### 任務 2：列出所有項目
+### 隞餃? 2嚗??箸?????
 
 ```bash
 curl http://localhost:18080/api/v1/projects
 ```
 
-### 任務 3：查詢特定項目
+### 隞餃? 3嚗閰Ｙ摰???
 
 ```bash
 curl http://localhost:18080/api/v1/projects/customer-service
 ```
 
-### 任務 4：在項目中執行工作流
+### 隞餃? 4嚗?銝剖銵極雿?
 
 ```bash
-# 方式 1：Header
+# ?孵? 1嚗eader
 curl -X POST http://localhost:18080/api/v1/session \
   -H "X-Project-ID: customer-service" \
   -H "Content-Type: application/json" \
-  -d '{"requirement": "功能需求"}'
+  -d '{"requirement": "??瘙?}'
 
-# 方式 2：URL 路徑
+# ?孵? 2嚗RL 頝臬?
 curl -X POST http://localhost:18080/api/v1/projects/customer-service/sessions \
   -H "Content-Type: application/json" \
-  -d '{"requirement": "功能需求"}'
+  -d '{"requirement": "??瘙?}'
 
-# 方式 3：Query 參數
+# ?孵? 3嚗uery ?
 curl -X POST "http://localhost:18080/api/v1/session?projectId=customer-service" \
   -H "Content-Type: application/json" \
-  -d '{"requirement": "功能需求"}'
+  -d '{"requirement": "??瘙?}'
 ```
 
-### 任務 5：在不同項目間切換
+### 隞餃? 5嚗銝??????
 
 ```bash
-# 查詢 customer-service 的會話
+# ?亥岷 customer-service ??閰?
 curl -H "X-Project-ID: customer-service" \
   http://localhost:18080/api/v1/sessions
 
-# 查詢 payment-system 的會話
+# ?亥岷 payment-system ??閰?
 curl -H "X-Project-ID: payment-system" \
   http://localhost:18080/api/v1/sessions
 
-# 輸出結果完全隔離
+# 頛詨蝯?摰?
 ```
 
-### 任務 6：暫停/恢復/存檔項目
+### 隞餃? 6嚗???Ｗ儔/摮??
 
 ```bash
-# 暫停
+# ?怠?
 curl -X PATCH http://localhost:18080/api/v1/projects/customer-service/suspend
 
-# 恢復
+# ?Ｗ儔
 curl -X PATCH http://localhost:18080/api/v1/projects/customer-service/resume
 
-# 存檔
+# 摮?
 curl -X PATCH http://localhost:18080/api/v1/projects/customer-service/archive
 ```
 
-### 任務 7：獲取當前項目上下文
+### 隞餃? 7嚗????桐?銝?
 
 ```bash
 curl -H "X-Project-ID: customer-service" \
   http://localhost:18080/api/v1/projects/context/current
 ```
 
-**響應**：
+**?踵?**嚗?
 ```json
 {
   "projectId": "customer-service",
@@ -211,9 +211,9 @@ curl -H "X-Project-ID: customer-service" \
 
 ---
 
-## 🔧 開發者快速參考
+## ? ??翰????
 
-### Java 中使用 ProjectContextHolder
+### 後端 銝凋蝙??ProjectContextHolder
 
 ```java
 @Service
@@ -222,13 +222,13 @@ public class MyService {
 
     public List<Session> getSessionsForCurrentProject() {
         String projectId = contextHolder.getProjectId();
-        // 自動隔離到該項目
+        // ?芸???啗府?
         return sessionRepository.findByProjectId(projectId);
     }
 }
 ```
 
-### Python 中使用 ProjectContextHolder
+### Python 銝凋蝙??ProjectContextHolder
 
 ```python
 from aipa_ai_engine.project_context import get_project_id
@@ -236,11 +236,11 @@ from aipa_ai_engine.project_context import get_project_id
 class MyEngine:
     def search(self, query: str):
         project_id = get_project_id()
-        # 自動隔離到該項目
+        # ?芸???啗府?
         return self.repository.search(query, project_id=project_id)
 ```
 
-### 創建新的 Java Specification
+### ?萄遣?啁? 後端 Specification
 
 ```java
 public class MyEntitiesSpec extends ProjectSpecification<MyEntity> {
@@ -259,7 +259,7 @@ public class MyEntitiesSpec extends ProjectSpecification<MyEntity> {
     }
 }
 
-// 使用
+// 雿輻
 List<MyEntity> results = repository.findAll(
     new MyEntitiesSpec(contextHolder, "search-term")
 );
@@ -267,33 +267,33 @@ List<MyEntity> results = repository.findAll(
 
 ---
 
-## ⚠️ 常見陷阱
+## ?? 撣貉??琿
 
-### ❌ 不要這樣做
+### ??銝??見??
 
 ```java
-// ❌ 忘記使用 ProjectContextHolder
+// ??敹?雿輻 ProjectContextHolder
 public List<Session> getSessions() {
-    return sessionRepository.findAll();  // 返回所有項目的會話！
+    return sessionRepository.findAll();  // 餈?????桃??店嚗?
 }
 
-// ❌ 手動構建查詢時忘記過濾 project_id
+// ????瑽遣?亥岷??閮?瞈?project_id
 Query query = em.createQuery("SELECT s FROM Session s WHERE status = ?");
-// 缺少 AND project_id = ?
+// 蝻箏? AND project_id = ?
 ```
 
-### ✅ 應該這樣做
+### ???府?見??
 
 ```java
-// ✅ 使用 Specification 自動過濾
+// ??雿輻 Specification ?芸??蕪
 public List<Session> getSessions() {
     return sessionRepository.findAll(
         new SessionsByStatusSpec(contextHolder, "ACTIVE")
     );
-    // 自動生成: WHERE project_id = ? AND status = 'ACTIVE'
+    // ?芸???: WHERE project_id = ? AND status = 'ACTIVE'
 }
 
-// ✅ 或使用 project_id 過濾方法
+// ???蝙??project_id ?蕪?寞?
 public List<Session> getSessions() {
     String projectId = contextHolder.getProjectId();
     return sessionRepository.findByProjectId(projectId);
@@ -302,104 +302,105 @@ public List<Session> getSessions() {
 
 ---
 
-## 🐛 故障排查
+## ?? ???
 
-### 問題：得到錯誤 "projectId not set in context"
+### ??嚗??圈隤?"projectId not set in context"
 
-**原因**：ProjectContextInterceptor 沒有從請求中提取 project_id
+**??**嚗rojectContextInterceptor 瘝?敺?瘙葉?? project_id
 
-**解決**：檢查請求是否包含以下之一：
+**閫?捱**嚗炎?亥?瘙?血??思誑銝?銝嚗?
 - HTTP Header: `X-Project-ID: customer-service`
-- URL 路徑: `/api/v1/projects/customer-service/...`
-- Query 參數: `?projectId=customer-service`
+- URL 頝臬?: `/api/v1/projects/customer-service/...`
+- Query ?: `?projectId=customer-service`
 
-### 問題：項目 A 的數據顯示在項目 B 中
+### ??嚗???A ??＊蝷箏? B 銝?
 
-**原因**：某個 Repository 沒有使用 ProjectSpecification
+**??**嚗???Repository 瘝?雿輻 ProjectSpecification
 
-**解決**：檢查 Repository 是否正確實現了 ProjectSpecification
+**閫?捱**嚗炎??Repository ?臬甇?Ⅱ撖衣鈭?ProjectSpecification
 
 ```java
-// ❌ 錯誤
+// ???航炊
 List<MyEntity> items = repository.findAll();
 
-// ✅ 正確
+// ??甇?Ⅱ
 List<MyEntity> items = repository.findAll(
     new MyEntitiesSpec(contextHolder, filter)
 );
 ```
 
-### 問題：無法連接到 AI Engine
+### ??嚗瘜???AI Engine
 
-**原因**：AI Engine 沒有啟動或端口不正確
+**??**嚗I Engine 瘝????垢???甇?Ⅱ
 
-**解決**：
+**閫?捱**嚗?
 ```bash
-# 檢查 AI Engine 是否運行
+# 瑼Ｘ AI Engine ?臬??
 curl http://localhost:18082/engine/health
 
-# 如果返回 200 OK，正常工作
-# 如果返回 Connection refused，需要啟動 AI Engine
+# 憒?餈? 200 OK嚗迤撣詨極雿?
+# 憒?餈? Connection refused嚗?閬???AI Engine
 ```
 
 ---
 
-## 📞 技術支援
+## ?? ?銵??
 
-### 對於架構設計問題
-→ 請查看 [001-architecture-design.md](./001-architecture-design.md)
+### 撠?嗆?閮剛???
+??隢??[001-architecture-design.md](./001-architecture-design.md)
 
-### 對於實現細節問題
-→ 請查看 [004-complete-guide.md](./004-complete-guide.md)
+### 撠撖衣蝝啁???
+??隢??[004-complete-guide.md](./004-complete-guide.md)
 
-### 對於組件清單問題
-→ 請查看 [006-architecture-checklist.md](./006-architecture-checklist.md)
+### 撠蝯辣皜??
+??隢??[006-architecture-checklist.md](./006-architecture-checklist.md)
 
-### 對於領域模型問題
-→ 請查看 [004-domain-model.md](../../design/004-domain-model.md)
-
----
-
-## 🎓 下一步
-
-1. **部署到生產環境** — 進行 UAT 和性能測試
-2. **實現 RBAC** — 添加用戶權限管理
-3. **監控和告警** — 添加項目級別的監測指標
-4. **跨項目功能** — 實現可選的全局搜尋
-5. **CLI 改進** — 支持自動項目檢測和上下文切換
+### 撠??璅∪???
+??隢??[004-domain-model.md](../../design/004-domain-model.md)
 
 ---
 
-## ✅ 驗證清單
+## ?? 銝?甇?
 
-在將一對多架構部署到生產環境前，確保：
-
-- [ ] Runtime 和 AI Engine 都可以成功啟動
-- [ ] 可以創建多個項目
-- [ ] 每個項目的數據完全隔離
-- [ ] 在 ProjectA 中執行的工作流不會影響 ProjectB
-- [ ] 所有 API 端點返回正確的狀態碼
-- [ ] 日誌記錄包含 project_id 和 operation_id
-- [ ] 數據庫中有正確的索引
-- [ ] 性能測試通過（應該與單項目性能相當）
+1. **?函蔡?啁??Ｙ憓?* ???脰? UAT ?扯皜祈岫
+2. **撖衣 RBAC** ??瘛餃??冽甈?蝞∠?
+3. **????霅?* ??瘛餃??蝝?皜祆?璅?
+4. **頝券??桀???* ??撖衣?舫?撅??
+5. **CLI ?寥?* ???舀??芸??瑼Ｘ葫??銝???
 
 ---
 
-## 📈 性能基準
+## ??撽?皜
 
-一對多架構與單項目架構的性能對比：
+?典?銝撠??嗆??函蔡?啁??Ｙ憓?嚗Ⅱ靽?
 
-| 操作 | 單項目 | 一對多（10 項目） | 一對多（100 項目） |
+- [ ] Runtime ??AI Engine ?賢隞交?????
+- [ ] ?臭誑?萄遣憭???
+- [ ] 瘥??桃??豢?摰?
+- [ ] ??ProjectA 銝剖銵?撌乩?瘚??蔣??ProjectB
+- [ ] ???API 蝡舫?餈?甇?Ⅱ???Ⅳ
+- [ ] ?亥?閮?? project_id ??operation_id
+- [ ] ?豢?摨思葉?迤蝣箇?蝝Ｗ?
+- [ ] ?扯皜祈岫??嚗?閰脰??桅??格扯?貊嚗?
+
+---
+
+## ?? ?扯?箸?
+
+銝撠??嗆????嗆??扯撠?嚗?
+
+| ?? | ?桅???| 銝撠?嚗?0 ?嚗?| 銝撠?嚗?00 ?嚗?|
 |------|--------|-----------------|------------------|
-| 創建會話 | ~100ms | ~102ms | ~105ms |
-| 查詢會話 | ~50ms | ~52ms | ~55ms |
-| 搜尋知識 | ~200ms | ~202ms | ~210ms |
-| 插入知識 | ~150ms | ~152ms | ~160ms |
+| ?萄遣?店 | ~100ms | ~102ms | ~105ms |
+| ?亥岷?店 | ~50ms | ~52ms | ~55ms |
+| ???亥? | ~200ms | ~202ms | ~210ms |
+| ??亥? | ~150ms | ~152ms | ~160ms |
 
-**結論**：overhead < 10%，完全可以接受。
+**蝯?**嚗verhead < 10%嚗??典隞交??
 
 ---
 
-祝您使用愉快！ 🚀
+蟡雿輻?翰嚗???
+
 
 

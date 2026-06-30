@@ -1,58 +1,58 @@
-# AIPA Studio — 部署圖（Deployment Diagram）
+﻿# AIPA Studio ???函蔡??Deployment Diagram嚗?
 
-**版本**：1.0.0-draft
-**狀態**：審核中
-**負責人**：AIPA Studio 架構團隊
-**最後更新**：Phase 1 — 架構鎖定階段
-**依賴文件**：[系統架構文件](../../design/003-system-architecture-design.md)、[技術選型](../../infrastructure/001-technology-stack.md)
+**?**嚗?.0.0-draft
+**???*嚗祟?訾葉
+**鞎痊鈭?*嚗IPA Studio ?嗆???
+**?敺??*嚗hase 1 ???嗆????挾
+**靘陷?辣**嚗蝟餌絞?嗆??辣](../../design/003-system-architecture-design.md)??銵?(../../infrastructure/001-technology-stack.md)
 
 ---
 
-## 1. 部署模式總覽
+## 1. ?函蔡璅∪?蝮質汗
 
-AIPA Studio 支援三種安裝部署模式，適用於不同規模與基礎設施需求：
+AIPA Studio ?舀銝車摰??函蔡璅∪?嚗?冽銝?閬芋?蝷身?賡?瘙?
 
-| 模式 | 適用對象 | 安裝方式 | 儲存後端 | 知識庫共享 |
+| 璅∪? | ?拍撠情 | 摰??孵? | ?脣?敺垢 | ?亥?摨怠鈭?|
 |---|---|---|---|---|
-| **Windows MSI** | 單一開發人員工作站 | GUI 安裝精靈 | SQLite（本地） | 否（個人） |
-| **Linux Shell** | 團隊共用伺服器 | Bash 安裝腳本 | PostgreSQL（共享） | 是（團隊） |
-| **Docker Compose** | DevOps / 容器環境 | `docker compose up` | PostgreSQL 容器 | 是（團隊） |
+| **Windows MSI** | ?桐??鈭箏撌乩?蝡?| GUI 摰?蝎暸? | SQLite嚗?堆? | ?佗??犖嚗?|
+| **Linux Shell** | ???梁隡箸???| Bash 摰??單 | PostgreSQL嚗鈭恬? | ?荔???嚗?|
+| **Docker Compose** | DevOps / 摰孵?啣? | `docker compose up` | PostgreSQL 摰孵 | ?荔???嚗?|
 
-### Port 慣例（三種模式一致）
+### Port ???嚗?蝔格芋撘??湛?
 
-| Port | 服務 | 對外範圍 |
+| Port | ?? | 撠?蝭? |
 |---|---|---|
-| **18080** | AIPA Runtime Service REST API | localhost（MSI）/ LAN（Linux / Docker） |
-| **18081** | AIPA Web UI | localhost（MSI）/ LAN（Linux / Docker） |
-| **18082** | AIPA AI Engine API（內部） | localhost only（所有模式） |
-| **18083** | ChromaDB API（內部） | localhost only（所有模式） |
-| **5432** | PostgreSQL（Linux / Docker） | localhost only |
+| **18080** | AIPA Runtime Service REST API | localhost嚗SI嚗? LAN嚗inux / Docker嚗?|
+| **18081** | AIPA Web UI | localhost嚗SI嚗? LAN嚗inux / Docker嚗?|
+| **18082** | AIPA AI Engine API嚗?剁? | localhost only嚗??芋撘? |
+| **18083** | ChromaDB API嚗?剁? | localhost only嚗??芋撘? |
+| **5432** | PostgreSQL嚗inux / Docker嚗?| localhost only |
 
 ---
 
-## 2. 部署模式一：Windows MSI（單一開發人員工作站）
+## 2. ?函蔡璅∪?銝嚗indows MSI嚗銝?鈭箏撌乩?蝡?
 
-### 2.1 拓撲描述
+### 2.1 ??膩
 
 ```plantuml
 @startuml deployment-windows
-title AIPA Studio — Windows MSI 部署拓撲
+title AIPA Studio ??Windows MSI ?函蔡?
 
-node "開發人員工作站\n(Windows 10/11)" as workstation {
+node "?鈭箏撌乩?蝡n(Windows 10/11)" as workstation {
 
   node "AIPA Runtime Service\n(Windows Service)" as runtime {
-    artifact "aipa-runtime.jar\n(Spring Boot)" as rt_jar
+    artifact "aipa-runtime.jar\n(後端框架)" as rt_jar
     artifact "aipa-scanner.jar" as scn_jar
     note right of rt_jar : Port 18080\nlocalhost only
   }
 
-  node "AIPA AI Engine\n(子進程)" as ai_engine {
+  node "AIPA AI Engine\n(摮脩?)" as ai_engine {
     artifact "aipa-ai-engine\n(Python FastAPI)" as ai_py
     note right of ai_py : Port 18082\nlocalhost only
   }
 
-  node "ChromaDB\n(子進程)" as chromadb {
-    artifact "chromadb\n(向量資料庫)" as chroma
+  node "ChromaDB\n(摮脩?)" as chromadb {
+    artifact "chromadb\n(??鞈?摨?" as chroma
     note right of chroma : Port 18083\nlocalhost only
   }
 
@@ -62,7 +62,7 @@ node "開發人員工作站\n(Windows 10/11)" as workstation {
     artifact "sessions.db"
   }
 
-  database "ChromaDB 資料\n(.ai-project/vector/)" as vectordb {
+  database "ChromaDB 鞈?\n(.ai-project/vector/)" as vectordb {
     artifact "knowledge_vectors/"
     artifact "experience_vectors/"
   }
@@ -75,25 +75,25 @@ node "開發人員工作站\n(Windows 10/11)" as workstation {
     artifact "audit/"
   }
 
-  node "aipa CLI\n(全域命令)" as cli {
+  node "aipa CLI\n(?典??賭誘)" as cli {
     artifact "aipa.cmd\n(Node.js)" as cli_cmd
   }
 
-  node "AIPA Web UI\n(靜態服務)" as web {
+  node "AIPA Web UI\n(????)" as web {
     artifact "index.html\n(React SPA)" as web_spa
     note right of web_spa : Port 18081\nlocalhost only
   }
 
-  node "IDE Plugin\n(可選)" as ide {
-    artifact "VSCode Extension\n或 IntelliJ Plugin"
+  node "IDE Plugin\n(?舫)" as ide {
+    artifact "VSCode Extension\n??IntelliJ Plugin"
   }
 }
 
-cloud "外部網路\n(Enterprise Boundary 外)" as internet {
-  node "AI 供應商 API" as ai_provider {
+cloud "憭蝬脰楝\n(Enterprise Boundary 憭?" as internet {
+  node "AI 靘???API" as ai_provider {
     artifact "Claude / OpenAI\n/ Gemini API"
   }
-  node "Ollama（可選）\n(本地 LLM)" as ollama_local {
+  node "Ollama嚗?賂?\n(?砍 LLM)" as ollama_local {
     artifact "localhost:11434"
   }
 }
@@ -106,88 +106,87 @@ ai_engine --> chromadb : REST API\n(localhost:18083)
 runtime --> sqlite : JDBC
 ai_engine --> sqlite : SQLAlchemy
 ai_engine --> vectordb : ChromaDB Client
-runtime --> ai_provider : HTTPS（僅任務上下文）
-runtime ..> ollama_local : HTTP（可選，本地 LLM）
+runtime --> ai_provider : HTTPS嚗?隞餃?銝???
 
 @enduml
 ```
 
-### 2.2 Windows MSI 進程清單
+### 2.2 Windows MSI ?脩?皜
 
-| 進程名稱 | 執行方式 | 啟動方式 | 記憶體用量 |
+| ?脩??迂 | ?瑁??孵? | ???孵? | 閮擃??|
 |---|---|---|---|
-| `AIPA Runtime Service` | JVM（Java 17） | Windows Service 自動啟動 | ~512 MB（閒置）/ ~1.5 GB（活躍） |
-| `AIPA AI Engine` | Python 3.11 | 由 Runtime 子進程啟動 | ~256 MB（閒置）/ ~1 GB（活躍） |
-| `ChromaDB` | Python 3.11 | 由 Runtime 子進程啟動 | ~128 MB |
+| `AIPA Runtime Service` | JVM嚗ava 17嚗?| Windows Service ?芸??? | ~512 MB嚗?蝵殷?/ ~1.5 GB嚗暑頨? |
+| `AIPA AI Engine` | Python 3.11 | ??Runtime 摮脩??? | ~256 MB嚗?蝵殷?/ ~1 GB嚗暑頨? |
+| `ChromaDB` | Python 3.11 | ??Runtime 摮脩??? | ~128 MB |
 
-### 2.3 安裝目錄結構（Windows）
+### 2.3 摰??桅?蝯?嚗indows嚗?
 
 ```
 C:\Program Files\AIPA Studio\
-├── jre\                          # 捆綁 JRE 17
-├── node\                         # 捆綁 Node.js 20
-├── python\                       # 捆綁 Python 3.11
-├── runtime\
-│   └── aipa-runtime.jar
-├── ai-engine\
-│   ├── aipa_ai_engine\           # Python 套件
-│   └── requirements.txt
-├── web\
-│   └── dist\                     # React 靜態檔案
-├── cli\
-│   └── aipa.cmd                  # CLI 全域命令
-├── chromadb\                     # ChromaDB 可執行檔
-├── logs\
-└── uninstall.exe
+??? jre\                          # ?? JRE 17
+??? node\                         # ?? Node.js 20
+??? python\                       # ?? Python 3.11
+??? runtime\
+??  ??? aipa-runtime.jar
+??? ai-engine\
+??  ??? aipa_ai_engine\           # Python 憟辣
+??  ??? requirements.txt
+??? web\
+??  ??? dist\                     # React ??瑼?
+??? cli\
+??  ??? aipa.cmd                  # CLI ?典??賭誘
+??? chromadb\                     # ChromaDB ?臬銵?
+??? logs\
+??? uninstall.exe
 
 %USERPROFILE%\
-└── .aipa\                        # 全域設定（API Keys 加密儲存）
-    └── global-config.yml
+??? .aipa\                        # ?典?閮剖?嚗PI Keys ???脣?嚗?
+    ??? global-config.yml
 
 {PROJECT_ROOT}\
-└── .ai-project\                  # 每個專案的工作空間（由 aipa init 建立）
+??? .ai-project\                  # 瘥?獢?撌乩?蝛粹?嚗 aipa init 撱箇?嚗?
 ```
 
-### 2.4 安全邊界（Windows）
+### 2.4 摰??嚗indows嚗?
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│              localhost（127.0.0.1）                       │
-│                                                           │
-│  Runtime:18080  ←→  AI Engine:18082  ←→  ChromaDB:18083  │
-│  Web UI:18081                                             │
-│  SQLite 檔案（本地磁碟）                                   │
-│  ChromaDB 向量資料（本地磁碟）                             │
-│  .ai-project/ 目錄（本地磁碟）                             │
-│                                                           │
-│  以上資料永遠不離開 localhost                              │
-│                                                           │
-└─────────────────────────────────────────────────────────┘
-         │ 對外 HTTPS（唯一跨邊界流量）
-         ▼
-┌──────────────────────────────────┐
-│  AI 供應商 API（僅傳送任務上下文） │
-│  Claude / OpenAI / Gemini        │
-└──────────────────────────────────┘
+????????????????????????????????????????????????????????????
+??             localhost嚗?27.0.0.1嚗?                      ??
+??                                                          ??
+?? Runtime:18080  ??  AI Engine:18082  ??  ChromaDB:18083  ??
+?? Web UI:18081                                             ??
+?? SQLite 瑼?嚗?啁?蝣?                                   ??
+?? ChromaDB ??鞈?嚗?啁?蝣?                             ??
+?? .ai-project/ ?桅?嚗?啁?蝣?                             ??
+??                                                          ??
+?? 隞乩?鞈?瘞賊?銝??localhost                              ??
+??                                                          ??
+????????????????????????????????????????????????????????????
+         ??撠? HTTPS嚗銝頝券?????
+         ??
+?????????????????????????????????????
+?? AI 靘???API嚗??喲遙??銝?嚗???
+?? Claude / OpenAI / Gemini        ??
+?????????????????????????????????????
 ```
 
 ---
 
-## 3. 部署模式二：Linux Shell（團隊伺服器）
+## 3. ?函蔡璅∪?鈭?Linux Shell嚗??撩?嚗?
 
-### 3.1 拓撲描述
+### 3.1 ??膩
 
 ```plantuml
 @startuml deployment-linux
-title AIPA Studio — Linux Shell 部署拓撲
+title AIPA Studio ??Linux Shell ?函蔡?
 
-node "企業 LAN" as lan {
+node "隡平 LAN" as lan {
 
-  node "AIPA 伺服器\n(Linux, Ubuntu 22.04 / RHEL 8+)" as server {
+  node "AIPA 隡箸??沔n(Linux, Ubuntu 22.04 / RHEL 8+)" as server {
 
     node "AIPA Runtime Service\n(systemd service)" as runtime {
-      artifact "aipa-runtime.jar\n(Spring Boot)" as rt_jar
-      note right of rt_jar : Port 18080\n綁定 0.0.0.0 或內網 IP
+      artifact "aipa-runtime.jar\n(後端框架)" as rt_jar
+      note right of rt_jar : Port 18080\n蝬? 0.0.0.0 ?蝬?IP
     }
 
     node "AIPA AI Engine\n(systemd service)" as ai_engine {
@@ -200,19 +199,19 @@ node "企業 LAN" as lan {
       note right of chroma : Port 18083\nlocalhost only
     }
 
-    node "AIPA Web UI\n(Nginx 靜態服務)" as web {
-      artifact "Nginx\n(反向代理 + 靜態服務)" as nginx
-      note right of nginx : Port 18081\n綁定內網 IP
+    node "AIPA Web UI\n(Nginx ????)" as web {
+      artifact "Nginx\n(??隞?? + ????)" as nginx
+      note right of nginx : Port 18081\n蝬??抒雯 IP
     }
 
-    database "PostgreSQL\n(共享知識庫)" as pg {
+    database "PostgreSQL\n(?曹澈?亥?摨?" as pg {
       artifact "aipa_knowledge DB"
       artifact "aipa_memory DB"
       artifact "aipa_sessions DB"
       note right : Port 5432\nlocalhost only
     }
 
-    database "ChromaDB 資料\n(/var/lib/aipa/vector/)" as vectordb {
+    database "ChromaDB 鞈?\n(/var/lib/aipa/vector/)" as vectordb {
       artifact "knowledge_vectors/"
       artifact "experience_vectors/"
     }
@@ -229,44 +228,44 @@ node "企業 LAN" as lan {
     }
   }
 
-  node "開發人員工作站 A" as dev_a {
+  node "?鈭箏撌乩?蝡?A" as dev_a {
     artifact "aipa CLI\n(npm global install)" as cli_a
     artifact "VSCode Extension" as vsc_a
   }
 
-  node "開發人員工作站 B" as dev_b {
+  node "?鈭箏撌乩?蝡?B" as dev_b {
     artifact "aipa CLI" as cli_b
     artifact "IntelliJ Plugin" as ij_b
   }
 
-  node "瀏覽器（任意工作站）" as browser {
+  node "?汗?剁?隞餅?撌乩?蝡?" as browser {
     artifact "AIPA Web UI\nhttp://{server}:18081"
   }
 }
 
-cloud "外部網路" as internet {
-  node "AI 供應商 API" as ai_provider {
+cloud "憭蝬脰楝" as internet {
+  node "AI 靘???API" as ai_provider {
     artifact "Claude / OpenAI / Gemini"
   }
 }
 
-cli_a --> runtime : REST API（LAN:18080）
-cli_b --> runtime : REST API（LAN:18080）
-vsc_a --> runtime : REST API（LAN:18080）
-ij_b --> runtime : REST API（LAN:18080）
-browser --> nginx : HTTP（LAN:18081）
-nginx --> runtime : 反向代理（localhost:18080）
-runtime --> ai_engine : REST API（localhost:18082）
-ai_engine --> chromadb : REST API（localhost:18083）
-runtime --> pg : JDBC（localhost:5432）
-ai_engine --> pg : SQLAlchemy（localhost:5432）
+cli_a --> runtime : REST API嚗AN:18080嚗?
+cli_b --> runtime : REST API嚗AN:18080嚗?
+vsc_a --> runtime : REST API嚗AN:18080嚗?
+ij_b --> runtime : REST API嚗AN:18080嚗?
+browser --> nginx : HTTP嚗AN:18081嚗?
+nginx --> runtime : ??隞??嚗ocalhost:18080嚗?
+runtime --> ai_engine : REST API嚗ocalhost:18082嚗?
+ai_engine --> chromadb : REST API嚗ocalhost:18083嚗?
+runtime --> pg : JDBC嚗ocalhost:5432嚗?
+ai_engine --> pg : SQLAlchemy嚗ocalhost:5432嚗?
 ai_engine --> vectordb : ChromaDB Client
-runtime --> ai_provider : HTTPS（僅任務上下文）
+runtime --> ai_provider : HTTPS嚗?隞餃?銝???
 
 @enduml
 ```
 
-### 3.2 Linux systemd 服務定義
+### 3.2 Linux systemd ??摰儔
 
 ```ini
 # /etc/systemd/system/aipa-runtime.service
@@ -307,7 +306,7 @@ RestartSec=10
 WantedBy=multi-user.target
 ```
 
-### 3.3 Nginx 設定（Web UI 反向代理）
+### 3.3 Nginx 閮剖?嚗eb UI ??隞??嚗?
 
 ```nginx
 # /etc/nginx/conf.d/aipa.conf
@@ -315,18 +314,18 @@ server {
     listen 18081;
     server_name _;
 
-    # Web UI 靜態檔案
+    # Web UI ??瑼?
     location / {
         root /opt/aipa/web/dist;
         try_files $uri $uri/ /index.html;
     }
 
-    # Runtime API 反向代理（供 Web UI 呼叫）
+    # Runtime API ??隞??嚗? Web UI ?澆嚗?
     location /api/ {
         proxy_pass http://127.0.0.1:18080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        # SSE 支援
+        # SSE ?舀
         proxy_buffering off;
         proxy_cache off;
         proxy_read_timeout 3600s;
@@ -334,110 +333,110 @@ server {
 }
 ```
 
-### 3.4 安裝目錄結構（Linux）
+### 3.4 摰??桅?蝯?嚗inux嚗?
 
 ```
-/opt/aipa/                        # 安裝目錄
-├── jre/                          # JRE 17
-├── python/                       # Python 3.11 虛擬環境
-├── runtime/
-│   └── aipa-runtime.jar
-├── ai-engine/
-│   └── aipa_ai_engine/
-├── web/
-│   └── dist/
-└── logs/
+/opt/aipa/                        # 摰??桅?
+??? jre/                          # JRE 17
+??? python/                       # Python 3.11 ??啣?
+??? runtime/
+??  ??? aipa-runtime.jar
+??? ai-engine/
+??  ??? aipa_ai_engine/
+??? web/
+??  ??? dist/
+??? logs/
 
-/var/lib/aipa/                    # 資料目錄
-├── chromadb/
-└── projects/
-    └── {project-id}/
-        └── .ai-project/
+/var/lib/aipa/                    # 鞈??桅?
+??? chromadb/
+??? projects/
+    ??? {project-id}/
+        ??? .ai-project/
 
-/etc/aipa/                        # 全域設定
-└── config.yml                    # 包含 PostgreSQL 連線、AI API Keys（加密）
+/etc/aipa/                        # ?典?閮剖?
+??? config.yml                    # ? PostgreSQL ????I API Keys嚗?撖?
 ```
 
-### 3.5 安全邊界（Linux）
+### 3.5 摰??嚗inux嚗?
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│              AIPA 伺服器（localhost）                      │
-│                                                           │
-│  AI Engine:18082  ←→  ChromaDB:18083                     │
-│  PostgreSQL:5432                                          │
-│  /var/lib/aipa/ 資料目錄                                  │
-│                                                           │
-└─────────────────────────────────────────────────────────┘
-         ↕ 企業 LAN（受防火牆保護）
-┌─────────────────────────────────────────────────────────┐
-│              企業 LAN（允許存取）                          │
-│                                                           │
-│  Runtime API:18080  ←  開發人員工作站                     │
-│  Web UI:18081       ←  瀏覽器                             │
-│                                                           │
-└─────────────────────────────────────────────────────────┘
-         │ 對外 HTTPS（唯一跨企業邊界流量）
-         ▼
-     AI 供應商 API
+????????????????????????????????????????????????????????????
+??             AIPA 隡箸??剁?localhost嚗?                     ??
+??                                                          ??
+?? AI Engine:18082  ??  ChromaDB:18083                     ??
+?? PostgreSQL:5432                                          ??
+?? /var/lib/aipa/ 鞈??桅?                                  ??
+??                                                          ??
+????????????????????????????????????????????????????????????
+         ??隡平 LAN嚗??脩??霅瘀?
+????????????????????????????????????????????????????????????
+??             隡平 LAN嚗?閮勗???                          ??
+??                                                          ??
+?? Runtime API:18080  ?? ?鈭箏撌乩?蝡?                    ??
+?? Web UI:18081       ?? ?汗??                            ??
+??                                                          ??
+????????????????????????????????????????????????????????????
+         ??撠? HTTPS嚗銝頝其?璆剝?????
+         ??
+     AI 靘???API
 ```
 
 ---
 
-## 4. 部署模式三：Docker Compose（容器環境）
+## 4. ?函蔡璅∪?銝?Docker Compose嚗捆?函憓?
 
-### 4.1 拓撲描述
+### 4.1 ??膩
 
 ```plantuml
 @startuml deployment-docker
-title AIPA Studio — Docker Compose 部署拓撲
+title AIPA Studio ??Docker Compose ?函蔡?
 
 node "Docker Host\n(Linux / Windows / macOS)" as docker_host {
 
   node "aipa-network\n(Docker Bridge Network)" as aipa_net {
 
     node "aipa-runtime\n(Container)" as rt_container {
-      artifact "aipa-runtime:latest\n(Spring Boot JAR)" as rt
-      note right : 對外：host:18080\n對內：18080\nMounts: ./data/projects
+      artifact "aipa-runtime:latest\n(後端框架 JAR)" as rt
+      note right : 撠?嚗ost:18080\n撠嚗?8080\nMounts: ./data/projects
     }
 
     node "aipa-ai-engine\n(Container)" as ai_container {
       artifact "aipa-ai-engine:latest\n(Python FastAPI)" as ai
-      note right : 對內：18082\n(不對外暴露)\nMounts: ./data/chromadb
+      note right : 撠嚗?8082\n(銝?憭??\nMounts: ./data/chromadb
     }
 
     node "chromadb\n(Container)" as chroma_container {
       artifact "chromadb/chroma:latest" as chroma
-      note right : 對內：18083\n(不對外暴露)\nMounts: ./data/chromadb
+      note right : 撠嚗?8083\n(銝?憭??\nMounts: ./data/chromadb
     }
 
     node "aipa-web\n(Container)" as web_container {
       artifact "aipa-web:latest\n(Nginx + React SPA)" as web
-      note right : 對外：host:18081\n對內：80
+      note right : 撠?嚗ost:18081\n撠嚗?0
     }
 
-    node "postgres\n(Container, 可選)" as pg_container {
+    node "postgres\n(Container, ?舫)" as pg_container {
       artifact "postgres:15-alpine" as pg
-      note right : 對內：5432\n(不對外暴露)\nMounts: ./data/postgres
+      note right : 撠嚗?432\n(銝?憭??\nMounts: ./data/postgres
     }
 
   }
 
-  folder "Volume Mounts\n(Host 目錄)" as volumes {
-    artifact "./data/projects/        → /app/data/projects"
-    artifact "./data/chromadb/        → /chroma/chroma"
-    artifact "./data/postgres/        → /var/lib/postgresql/data"
-    artifact "./.env                  → 環境變數（API Keys）"
+  folder "Volume Mounts\n(Host ?桅?)" as volumes {
+    artifact "./data/projects/        ??/app/data/projects"
+    artifact "./data/chromadb/        ??/chroma/chroma"
+    artifact "./data/postgres/        ??/var/lib/postgresql/data"
+    artifact "./.env                  ???啣?霈嚗PI Keys嚗?
   }
 }
 
-cloud "外部網路" as internet {
-  node "AI 供應商 API" as ai_provider {
+cloud "憭蝬脰楝" as internet {
+  node "AI 靘???API" as ai_provider {
     artifact "Claude / OpenAI / Gemini"
   }
 }
 
-actor "開發人員\n(瀏覽器 / CLI / IDE)" as dev
+actor "?鈭箏\n(?汗??/ CLI / IDE)" as dev
 
 dev --> rt_container : host:18080\n(REST API)
 dev --> web_container : host:18081\n(Web UI)
@@ -445,8 +444,8 @@ rt_container --> ai_container : aipa-network:18082
 rt_container --> pg_container : aipa-network:5432
 ai_container --> chroma_container : aipa-network:18083
 ai_container --> pg_container : aipa-network:5432
-web_container --> rt_container : aipa-network:18080\n(反向代理)
-rt_container --> ai_provider : HTTPS（對外）
+web_container --> rt_container : aipa-network:18080\n(??隞??)
+rt_container --> ai_provider : HTTPS嚗?憭?
 
 @enduml
 ```
@@ -568,121 +567,122 @@ networks:
 ### 4.3 `.env.example`
 
 ```dotenv
-# AI 供應商 API Keys（必填至少一項）
+# AI 靘???API Keys嚗?憛怨撠???
 CLAUDE_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
 GEMINI_API_KEY=AI...
 
-# 主要 AI 供應商
+# 銝餉? AI 靘???
 AIPA_PRIMARY_ADAPTER=claude
 
-# 資料庫設定
+# 鞈?摨怨身摰?
 POSTGRES_USER=aipa
 POSTGRES_PASSWORD=change_me_in_production
 
-# 儲存後端（postgresql 或 sqlite）
+# ?脣?敺垢嚗ostgresql ??sqlite嚗?
 AIPA_STORAGE_BACKEND=postgresql
 
-# 信心閾值（預設 70）
+# 靽∪??曉潘??身 70嚗?
 AIPA_CONFIDENCE_THRESHOLD=70
 ```
 
-### 4.4 服務啟動順序（依賴關係）
+### 4.4 ??????嚗?鞈湧?靽?
 
 ```
-postgres（健康後）
-    ↓
-chromadb（健康後）
-    ↓
-aipa-ai-engine（依賴 postgres + chromadb）
-    ↓
-aipa-runtime（依賴 postgres + aipa-ai-engine）
-    ↓
-aipa-web（依賴 aipa-runtime）
+postgres嚗摨瑕?嚗?
+    ??
+chromadb嚗摨瑕?嚗?
+    ??
+aipa-ai-engine嚗?鞈?postgres + chromadb嚗?
+    ??
+aipa-runtime嚗?鞈?postgres + aipa-ai-engine嚗?
+    ??
+aipa-web嚗?鞈?aipa-runtime嚗?
 ```
 
-### 4.5 Volume 目錄結構（Host 端）
+### 4.5 Volume ?桅?蝯?嚗ost 蝡荔?
 
 ```
-./data/                           # 所有持久化資料（需納入備份）
-├── projects/                     # 各專案的 .ai-project/ 工作空間
-│   └── {project-id}/
-│       └── .ai-project/
-├── chromadb/                     # ChromaDB 向量資料
-├── postgres/                     # PostgreSQL 資料
-└── backups/                      # 自動備份目錄（選用）
+./data/                           # ???銋?鞈?嚗?蝝?遢嚗?
+??? projects/                     # ??獢? .ai-project/ 撌乩?蝛粹?
+??  ??? {project-id}/
+??      ??? .ai-project/
+??? chromadb/                     # ChromaDB ??鞈?
+??? postgres/                     # PostgreSQL 鞈?
+??? backups/                      # ?芸??遢?桅?嚗?剁?
 ```
 
 ---
 
-## 5. 三種部署模式比較
+## 5. 銝車?函蔡璅∪?瘥?
 
-| 比較項目 | Windows MSI | Linux Shell | Docker Compose |
+| 瘥?? | Windows MSI | Linux Shell | Docker Compose |
 |---|---|---|---|
-| **目標使用者** | 單一開發人員 | 開發團隊 | DevOps 團隊 |
-| **安裝複雜度** | 低（GUI 精靈） | 中（Bash 腳本） | 低（一行命令） |
-| **資源需求** | 4 GB RAM+ | 8 GB RAM+ | 8 GB RAM+ |
-| **知識庫共享** | 否 | 是 | 是 |
-| **儲存後端** | SQLite | PostgreSQL | PostgreSQL |
-| **服務管理** | Windows Service | systemd | Docker Compose |
-| **更新方式** | 重新執行 MSI | `aipa update` 腳本 | `docker compose pull && up` |
-| **離線支援** | 是（Ollama） | 是（Ollama） | 是（Ollama 容器） |
-| **企業 AD 整合** | 可選 | 可選 | 可選 |
-| **資料備份** | 手動 / 工作排程 | cron 自動備份 | Volume 備份腳本 |
+| **?格?雿輻??* | ?桐??鈭箏 | ??? | DevOps ?? |
+| **摰?銴?摨?* | 雿?GUI 蝎暸?嚗?| 銝哨?Bash ?單嚗?| 雿?銝銵隞歹? |
+| **鞈??瘙?* | 4 GB RAM+ | 8 GB RAM+ | 8 GB RAM+ |
+| **?亥?摨怠鈭?* | ??| ??| ??|
+| **?脣?敺垢** | SQLite | PostgreSQL | PostgreSQL |
+| **??蝞∠?** | Windows Service | systemd | Docker Compose |
+| **?湔?孵?** | ??瑁? MSI | `aipa update` ?單 | `docker compose pull && up` |
+| **?Ｙ??舀** | ?荔?Ollama嚗?| ?荔?Ollama嚗?| ?荔?Ollama 摰孵嚗?|
+| **隡平 AD ?游?** | ?舫 | ?舫 | ?舫 |
+| **鞈??遢** | ?? / 撌乩??? | cron ?芸??遢 | Volume ?遢?單 |
 
 ---
 
-## 6. 資料邊界與安全說明
+## 6. 鞈??????刻牧??
 
-### 6.1 永遠留在企業內部的資料
+### 6.1 瘞賊??隡平?折????
 
-無論任何部署模式，以下資料**絕對不會**離開企業邊界：
+?∟?隞颱??函蔡璅∪?嚗誑銝???*蝯?銝?**?ａ?隡平??嚗?
 
-- 完整原始程式碼（Scanner 掃描本地，結果存本地）
-- 所有知識庫內容（KnowledgeItems）
-- 所有記憶條目（MemoryEntries）
-- 規格文件（Specifications）
+- 摰??蝔?蝣潘?Scanner ???砍嚗????砍嚗?
+- ??霅澈?批捆嚗nowledgeItems嚗?
+- ????嗆??殷?MemoryEntries嚗?
+- 閬?辣嚗pecifications嚗?
 - Project DNA
-- 稽核日誌
-- 任何 `.ai-project/` 目錄內容
+- 蝔賣?亥?
+- 隞颱? `.ai-project/` ?桅??批捆
 
-### 6.2 允許傳送至 AI 供應商的資料
+### 6.2 ?迂?喲 AI 靘???鞈?
 
-每次 AI 呼叫僅傳送**最小必要上下文**：
+瘥活 AI ?澆???*?撠?閬?銝?**嚗?
 
 ```
-允許傳送（任務上下文片段，約 8000 tokens）：
-├── 任務規格（自然語言描述，What to do）
-├── 相關知識摘要（精選 3–5 個知識片段）
-├── 相關記憶摘要（精選 3–5 條記憶規則）
-├── 相關程式碼片段（僅當前任務相關的 1–3 個檔案）
-└── 架構約束清單（自然語言規則）
+?迂?喲?隞餃?銝???畾蛛?蝝?8000 tokens嚗?
+??? 隞餃?閬嚗?嗉?閮?膩嚗hat to do嚗?
+??? ?賊??亥???嚗移??3?? ?霅?畾蛛?
+??? ?賊?閮??嚗移??3?? 璇??嗉???
+??? ?賊?蝔?蝣潛?畾蛛???遙??? 1?? ??獢?
+??? ?嗆?蝝?皜嚗?嗉?閮閬?嚗?
 
-禁止傳送：
-├── 完整程式碼庫
-├── 資料庫 Schema 完整定義
-├── API Key 或密碼
-├── 個人識別資訊（PII）
-└── 符合 excludePatterns 的任何內容
+蝳迫?喲?
+??? 摰蝔?蝣澆澈
+??? 鞈?摨?Schema 摰摰儔
+??? API Key ??蝣?
+??? ?犖霅鞈?嚗II嚗?
+??? 蝚血? excludePatterns ?遙雿摰?
 ```
 
-### 6.3 網路存取控制建議
+### 6.3 蝬脰楝摮??批撱箄降
 
-| 部署模式 | 建議防火牆規則 |
+| ?函蔡璅∪? | 撱箄降?脩????|
 |---|---|
-| Windows MSI | Port 18080–18083 僅允許 127.0.0.1 存取 |
-| Linux Shell | Port 18080, 18081 僅允許企業內網 IP 範圍；18082, 18083 僅允許 127.0.0.1 |
-| Docker Compose | aipa-network 為隔離 Bridge；僅 18080, 18081 映射至 Host；其他 Port 不對外暴露 |
+| Windows MSI | Port 18080??8083 ??閮?127.0.0.1 摮? |
+| Linux Shell | Port 18080, 18081 ??閮曹?璆剖蝬?IP 蝭?嚗?8082, 18083 ??閮?127.0.0.1 |
+| Docker Compose | aipa-network ?粹???Bridge嚗? 18080, 18081 ????Host嚗隞?Port 銝?憭??|
 
 ---
 
-## 7. 版本歷史
+## 7. ?甇瑕
 
-| 版本 | 日期 | 變更說明 |
+| ? | ?交? | 霈隤芣? |
 |---|---|---|
-| 1.0.0-draft | Phase 1 | 初始部署圖文件（3 種部署模式） |
+| 1.0.0-draft | Phase 1 | ???函蔡??隞塚?3 蝔桅蝵脫芋撘? |
 
 ---
 
-*本文件為 AIPA Studio Phase 1 架構鎖定的一部分。所有 Phase 1 文件審核確認後，才可開始任何實作工作。*
+*?祆?隞嗥 AIPA Studio Phase 1 ?嗆??????典?????Phase 1 ?辣撖拇蝣箄?敺????隞颱?撖虫?撌乩???
+
 

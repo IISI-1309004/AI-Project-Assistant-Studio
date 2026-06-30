@@ -1,495 +1,493 @@
-# AIPA Studio — 系統架構文件（SAD）
+﻿# AIPA Studio ??蝟餌絞?嗆??辣嚗AD嚗?
 
-**版本**：1.0.0-draft
-**狀態**：審核中
-**負責人**：AIPA Studio 架構團隊
-**最後更新**：Phase 1 — 架構鎖定階段
-**依賴文件**：[產品願景文件](./001-product-vision.md)、[產品需求文件](./002-product-requirements.md)
-
----
-
-## 1. 架構總覽
-
-### 1.1 架構目標
-
-AIPA Studio 的系統架構必須同時滿足以下目標：
-
-| 目標 | 架構回應 |
-|---|---|
-| 本地優先，資料不離開企業 | 所有引擎本地部署，AI 呼叫僅傳送最小必要上下文 |
-| 支援多種 AI 供應商 | Adapter Pattern 隔離 AI 供應商實作 |
-| CLI / Web / IDE 共用同一套邏輯 | Runtime Service 作為唯一業務邏輯層，所有用戶端透過 REST API |
-| 可升級儲存後端 | Strategy Pattern 抽象儲存層，SQLite → PostgreSQL 不影響業務邏輯 |
-| 可持續學習 | 學習引擎作為獨立模組，由事件觸發，不侵入主流程 |
-| 人工關卡不可繞過 | Checkpoint Gate 在工作流程中為強制同步點，無法跳過 |
-
-### 1.2 架構風格
-
-| 層面 | 選用風格 |
-|---|---|
-| 整體風格 | 模組化單體（Runtime Core） + 微服務（AI Engine 獨立進程） |
-| 整合方式 | REST API（同步）+ 事件匯流排（非同步，用於學習觸發） |
-| 資料存取 | Repository Pattern + 可插拔 StorageProvider |
-| AI 整合 | Adapter Pattern（AIAdapter 介面） |
-| 工作流程 | 狀態機（StateMachine）管理 Session 生命週期 |
-| 安全模型 | 本地優先（Local-first），最小化對外呼叫 |
+**?**嚗?.0.0-draft
+**???*嚗祟?訾葉
+**鞎痊鈭?*嚗IPA Studio ?嗆???
+**?敺??*嚗hase 1 ???嗆????挾
+**靘陷?辣**嚗?Ｗ?憿?辣](./001-product-vision.md)??Ｗ??瘙?隞跑(./002-product-requirements.md)
 
 ---
 
-## 2. 系統元件拓撲
+## 1. ?嗆?蝮質汗
+
+### 1.1 ?嗆??格?
+
+AIPA Studio ?頂蝯望瑽????遛頞喃誑銝璅?
+
+| ?格? | ?嗆??? |
+|---|---|
+| ?砍?芸?嚗????ａ?隡平 | ?????圈蝵莎?AI ?澆???撠?閬?銝? |
+| ?舀憭車 AI 靘???| Adapter Pattern ? AI 靘??祕雿?|
+| CLI / Web / IDE ?梁??憟?頛?| Runtime Service 雿?臭?璆剖??摩撅歹????嗥垢?? REST API |
+| ?臬?蝝摮?蝡?| Strategy Pattern ?質情?脣?撅歹?SQLite ??PostgreSQL 銝蔣?踵平??頛?|
+| ?舀?蝥飛蝧?| 摮貊?撘?雿?函?璅∠?嚗鈭辣閫貊嚗?靘萄銝餅?蝔?|
+| 鈭箏極?銝蝜? | Checkpoint Gate ?典極雿?蝔葉?箏撥?嗅?甇仿?嚗瘜歲??|
+
+### 1.2 ?嗆?憸冽
+
+| 撅日 | ?貊憸冽 |
+|---|---|
+| ?湧?憸冽 | 璅∠??擃?Runtime Core嚗?+ 敺格???AI Engine ?函??脩?嚗?|
+| ?游??孵? | REST API嚗?甇伐?+ 鈭辣?舀?????甇伐??冽摮貊?閫貊嚗?|
+| 鞈?摮? | Repository Pattern + ?舀???StorageProvider |
+| AI ?游? | Adapter Pattern嚗IAdapter 隞嚗?|
+| 撌乩?瘚? | ???嚗tateMachine嚗恣??Session ??望? |
+| 摰璅∪? | ?砍?芸?嚗ocal-first嚗??撠?撠??澆 |
+
+---
+
+## 2. 蝟餌絞?辣?
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        用戶端層（Clients）                        │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────┐  ┌─────────┐  │
-│  │  aipa CLI    │  │  Web UI      │  │  VSCode  │  │IntelliJ │  │
-│  │ (Node.js/TS) │  │ (React/TS)   │  │Extension │  │ Plugin  │  │
-│  └──────┬───────┘  └──────┬───────┘  └────┬─────┘  └────┬────┘  │
-└─────────┼─────────────────┼───────────────┼──────────────┼───────┘
-          │                 │               │              │
-          └─────────────────┴───────────────┴──────────────┘
-                                    │
-                            REST API（Port 18080）
-                                    │
-┌───────────────────────────────────▼─────────────────────────────┐
-│                  AIPA Runtime Service（Spring Boot）              │
-│                                                                   │
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────┐    │
-│  │  Workflow   │  │  Checkpoint  │  │  Session Manager     │    │
-│  │  Engine     │  │  Gate        │  │  (State Machine)     │    │
-│  └──────┬──────┘  └──────┬───────┘  └──────────────────────┘    │
-│         │                │                                        │
-│  ┌──────▼──────────────────────────────────────────────────┐     │
-│  │              核心引擎呼叫協調層（Orchestrator）            │     │
-│  └──┬──────────┬──────────┬──────────┬──────────┬──────────┘     │
-│     │          │          │          │          │                 │
-│  Spec      Planning   Confidence  Review    Testing               │
-│  Engine    Engine     Engine      Engine    Engine                │
-│                                                                   │
-└─────────────────────────────┬───────────────────────────────────┘
-                              │  REST API（Port 18082）
-                              │
-┌─────────────────────────────▼───────────────────────────────────┐
-│                   AIPA AI Engine（Python/FastAPI）                │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
-│  │  Knowledge   │  │  Memory      │  │  Learning Engine     │   │
-│  │  Engine      │  │  Engine      │  │                      │   │
-│  └──────────────┘  └──────────────┘  └──────────────────────┘   │
-│                                                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
-│  │  Experience  │  │  Wisdom      │  │  Scanner Engine      │   │
-│  │  Engine      │  │  Engine      │  │  (Java，透過 IPC)     │   │
-│  └──────────────┘  └──────────────┘  └──────────────────────┘   │
-│                                                                   │
-└─────────────────────────────┬───────────────────────────────────┘
-                              │
-          ┌───────────────────┴──────────────────┐
-          │                                       │
-┌─────────▼──────────┐               ┌───────────▼──────────────┐
-│   儲存層（Storage） │               │   AI 介面卡層（Adapters） │
-│                    │               │                           │
-│  SQLite（預設）     │               │  GitHub Copilot           │
-│  PostgreSQL        │               │  Claude Code              │
-│  Elasticsearch     │               │  Gemini CLI               │
-│  ChromaDB（向量）   │               │  OpenAI                   │
-└────────────────────┘               │  Ollama（本地）            │
-                                     │  MCP                      │
-                                     └───────────────────────────┘
+????????????????????????????????????????????????????????????????????
+??                       ?冽蝡臬惜嚗lients嚗?                       ??
+??                                                                  ??
+?? ????????????????? ????????????????? ????????????? ???????????? ??
+?? ?? aipa CLI    ?? ?? Web UI      ?? ?? VSCode  ?? ?ntelliJ ?? ??
+?? ??(Node.js/TS) ?? ??(React/TS)   ?? ?xtension ?? ??Plugin  ?? ??
+?? ????????砂????????? ????????砂????????? ??????砂??????? ??????砂?????? ??
+???????????潑??????????????????潑????????????????潑???????????????潑?????????
+          ??                ??              ??             ??
+          ???????????????????氯????????????????氯????????????????
+                                    ??
+                            REST API嚗ort 18080嚗?
+                                    ??
+?????????????????????????????????????潑???????????????????????????????
+??                 AIPA Runtime Service嚗pring Boot嚗?             ??
+??                                                                  ??
+?? ???????????????? ????????????????? ?????????????????????????   ??
+?? ?? Workflow   ?? ?? Checkpoint  ?? ?? Session Manager     ??   ??
+?? ?? Engine     ?? ?? Gate        ?? ?? (State Machine)     ??   ??
+?? ????????砂???????? ????????砂????????? ?????????????????????????   ??
+??        ??               ??                                       ??
+?? ????????潑????????????????????????????????????????????????????    ??
+?? ??             ?詨?撘??澆?矽撅歹?Orchestrator嚗?           ??    ??
+?? ????砂???????????砂???????????砂???????????砂???????????砂????????????    ??
+??    ??         ??         ??         ??         ??                ??
+?? Spec      Planning   Confidence  Review    Testing               ??
+?? Engine    Engine     Engine      Engine    Engine                ??
+??                                                                  ??
+???????????????????????????????砂?????????????????????????????????????
+                              ?? REST API嚗ort 18082嚗?
+                              ??
+???????????????????????????????潑?????????????????????????????????????
+??                  AIPA AI Engine嚗ython/FastAPI嚗?               ??
+??                                                                  ??
+?? ????????????????? ????????????????? ?????????????????????????  ??
+?? ?? Knowledge   ?? ?? Memory      ?? ?? Learning Engine     ??  ??
+?? ?? Engine      ?? ?? Engine      ?? ??                     ??  ??
+?? ????????????????? ????????????????? ?????????????????????????  ??
+??                                                                  ??
+?? ????????????????? ????????????????? ?????????????????????????  ??
+?? ?? Experience  ?? ?? Wisdom      ?? ?? Scanner Engine      ??  ??
+?? ?? Engine      ?? ?? Engine      ?? ?? (Java嚗? IPC)     ??  ??
+?? ????????????????? ????????????????? ?????????????????????????  ??
+??                                                                  ??
+???????????????????????????????砂?????????????????????????????????????
+                              ??
+          ?????????????????????氯????????????????????
+          ??                                      ??
+???????????潑????????????              ?????????????潑????????????????
+??  ?脣?撅歹?Storage嚗???              ??  AI 隞?∪惜嚗dapters嚗???
+??                   ??              ??                          ??
+?? SQLite嚗?閮哨?     ??              ?? GitHub Copilot           ??
+?? PostgreSQL        ??              ?? Claude Code              ??
+?? Elasticsearch     ??              ?? Gemini CLI               ??
+?? ChromaDB嚗???   ??              ?? OpenAI                   ??
+???????????????????????              ??????????????????????????????
 ```
 
 ---
 
-## 3. AIPA Runtime Service 架構
+## 3. AIPA Runtime Service ?嗆?
 
-### 3.1 職責
+### 3.1 ?瑁痊
 
-AIPA Runtime Service 是整個系統的中央樞紐，負責：
+AIPA Runtime Service ?舀?頂蝯梁?銝剖亢璅?嚗?鞎穿?
 
-- 提供 REST API 供所有用戶端（CLI、Web UI、IDE Plugin）呼叫
-- 管理 Session 生命週期（狀態機）
-- 協調各引擎的呼叫順序（Orchestrator）
-- 強制執行 Human Checkpoint 關卡（Checkpoint Gate）
-- 管理工作流程執行（Workflow Engine）
-- 提供系統設定管理
+- ?? REST API 靘???嗥垢嚗LI?eb UI?DE Plugin嚗??
+- 蝞∠? Session ??望?嚗???嚗?
+- ?矽?????澆??嚗rchestrator嚗?
+- 撘瑕?瑁? Human Checkpoint ?嚗heckpoint Gate嚗?
+- 蝞∠?撌乩?瘚??瑁?嚗orkflow Engine嚗?
+- ??蝟餌絞閮剖?蝞∠?
 
-### 3.2 REST API 設計原則
+### 3.2 REST API 閮剛???
 
-- 所有 API 路徑以 `/api/v1/` 開頭
-- 使用 JSON 格式傳輸
-- 使用 HTTP 狀態碼表達結果
-- 長時間執行的操作使用非同步模式（回傳 Job ID，可輪詢狀態）
-- Server-Sent Events（SSE）用於即時進度推送（CLI 的流式輸出）
+- ???API 頝臬?隞?`/api/v1/` ?
+- 雿輻 JSON ?澆??唾撓
+- 雿輻 HTTP ??Ⅳ銵券?蝯?
+- ?瑟??銵???雿輻??甇交芋撘?? Job ID嚗頛芾岷???
+- Server-Sent Events嚗SE嚗?澆?脣漲?券?CLI ??撘撓?綽?
 
-### 3.3 主要 REST API 端點
+### 3.3 銝餉? REST API 蝡舫?
 
-| 分類 | 方法 | 路徑 | 描述 |
+| ?? | ?寞? | 頝臬? | ?膩 |
 |---|---|---|---|
-| **初始化** | POST | `/api/v1/project/init` | 啟動專案初始化 |
-| **初始化** | GET | `/api/v1/project/init/{jobId}/status` | 查詢初始化進度 |
-| **Ask** | POST | `/api/v1/session` | 建立新 Session（輸入需求） |
-| **Ask** | GET | `/api/v1/session/{id}` | 查詢 Session 狀態 |
-| **Ask** | GET | `/api/v1/session/{id}/stream` | 訂閱 Session 進度（SSE） |
-| **Checkpoint** | GET | `/api/v1/checkpoint` | 列出待審核的 Checkpoint |
-| **Checkpoint** | POST | `/api/v1/checkpoint/{id}/approve` | 核准 Checkpoint |
-| **Checkpoint** | POST | `/api/v1/checkpoint/{id}/reject` | 拒絕 Checkpoint |
-| **知識庫** | GET | `/api/v1/knowledge` | 列出知識項目 |
-| **知識庫** | POST | `/api/v1/knowledge` | 新增知識項目 |
-| **知識庫** | GET | `/api/v1/knowledge/search` | 語意搜尋 |
-| **記憶** | GET | `/api/v1/memory` | 列出記憶條目（按類型） |
-| **智慧規則** | GET | `/api/v1/wisdom` | 列出智慧規則 |
-| **智慧規則** | POST | `/api/v1/wisdom` | 新增智慧規則 |
-| **學習** | POST | `/api/v1/learn` | 手動觸發學習 |
-| **系統** | GET | `/api/v1/health` | 健康檢查 |
-| **系統** | GET | `/api/v1/version` | 版本資訊 |
+| **????* | POST | `/api/v1/project/init` | ??撠?????|
+| **????* | GET | `/api/v1/project/init/{jobId}/status` | ?亥岷???脣漲 |
+| **Ask** | POST | `/api/v1/session` | 撱箇???Session嚗撓?仿?瘙? |
+| **Ask** | GET | `/api/v1/session/{id}` | ?亥岷 Session ???|
+| **Ask** | GET | `/api/v1/session/{id}/stream` | 閮 Session ?脣漲嚗SE嚗?|
+| **Checkpoint** | GET | `/api/v1/checkpoint` | ?敺祟?貊? Checkpoint |
+| **Checkpoint** | POST | `/api/v1/checkpoint/{id}/approve` | ?詨? Checkpoint |
+| **Checkpoint** | POST | `/api/v1/checkpoint/{id}/reject` | ?? Checkpoint |
+| **?亥?摨?* | GET | `/api/v1/knowledge` | ??亥?? |
+| **?亥?摨?* | POST | `/api/v1/knowledge` | ?啣??亥?? |
+| **?亥?摨?* | GET | `/api/v1/knowledge/search` | 隤??? |
+| **閮** | GET | `/api/v1/memory` | ?閮璇嚗?憿?嚗?|
+| **?箸閬?** | GET | `/api/v1/wisdom` | ??箸閬? |
+| **?箸閬?** | POST | `/api/v1/wisdom` | ?啣??箸閬? |
+| **摮貊?** | POST | `/api/v1/learn` | ??閫貊摮貊? |
+| **蝟餌絞** | GET | `/api/v1/health` | ?亙熒瑼Ｘ |
+| **蝟餌絞** | GET | `/api/v1/version` | ?鞈? |
 
-### 3.4 Session 狀態機
+### 3.4 Session ???
 
 ```
-                    ┌─────────┐
-                    │ CREATED │
-                    └────┬────┘
-                         │ 啟動知識/記憶查詢
-                         ▼
-                 ┌───────────────┐
-                 │ CONTEXT_BUILT │
-                 └───────┬───────┘
-                         │ 規格引擎生成規格
-                         ▼
-                 ┌───────────────┐
-                 │ SPEC_PENDING  │◄── 等待 Spec Approval
-                 └───────┬───────┘
-                         │ 核准
-                         ▼
-              ┌──────────────────────┐
-              │ CONFIDENCE_CHECKING  │
-              └──────┬─────────┬─────┘
-                     │≥70      │<70
-                     ▼         ▼
-            ┌──────────┐  ┌─────────┐
-            │ PLANNING │  │NMI_WAIT │◄── 等待更多資訊
-            └────┬─────┘  └────┬────┘
-                 │              │ 補充後重新評估
-                 ▼              └──────────────►
-          ┌─────────────┐
-          │ TASK_PENDING │◄── 等待 Task Approval
-          └──────┬───────┘
-                 │ 核准
-                 ▼
-          ┌─────────────┐
-          │  EXECUTING  │◄── 逐任務執行 AI Coding
-          └──────┬───────┘
-                 │ 所有任務完成
-                 ▼
-          ┌─────────────┐
-          │ PR_PENDING  │◄── 等待 PR Approval
-          └──────┬───────┘
-                 │ 核准
-                 ▼
-          ┌─────────────┐
-          │  PR_CREATED │
-          └──────┬───────┘
-                 │ Merge
-                 ▼
-          ┌─────────────┐
-          │  LEARNING   │
-          └──────┬───────┘
-                 │
-                 ▼
-          ┌─────────────┐
-          │  COMPLETED  │
-          └─────────────┘
+                    ????????????
+                    ??CREATED ??
+                    ??????砂??????
+                         ?????亥?/閮?亥岷
+                         ??
+                 ??????????????????
+                 ??CONTEXT_BUILT ??
+                 ?????????砂?????????
+                         ??閬撘???閬
+                         ??
+                 ??????????????????
+                 ??SPEC_PENDING  ???? 蝑? Spec Approval
+                 ?????????砂?????????
+                         ???詨?
+                         ??
+              ?????????????????????????
+              ??CONFIDENCE_CHECKING  ??
+              ????????砂??????????砂???????
+                     ?70      ??70
+                     ??        ??
+            ????????????? ????????????
+            ??PLANNING ?? ?MI_WAIT ???? 蝑??游?鞈?
+            ??????砂??????? ??????砂??????
+                 ??             ??鋆?敺??啗?隡?
+                 ??             ?????????????????
+          ????????????????
+          ??TASK_PENDING ???? 蝑? Task Approval
+          ????????砂?????????
+                 ???詨?
+                 ??
+          ????????????????
+          ?? EXECUTING  ???? ?遙?銵?AI Coding
+          ????????砂?????????
+                 ????遙????
+                 ??
+          ????????????????
+          ??PR_PENDING  ???? 蝑? PR Approval
+          ????????砂?????????
+                 ???詨?
+                 ??
+          ????????????????
+          ?? PR_CREATED ??
+          ????????砂?????????
+                 ??Merge
+                 ??
+          ????????????????
+          ?? LEARNING   ??
+          ????????砂?????????
+                 ??
+                 ??
+          ????????????????
+          ?? COMPLETED  ??
+          ????????????????
 
-  任何狀態 ──► FAILED（錯誤發生）
-  任何狀態 ──► CANCELLED（使用者取消）
+  隞颱????????FAILED嚗隤斤??
+  隞颱????????CANCELLED嚗蝙?刻?瘨?
 ```
 
 ---
 
-## 4. AIPA AI Engine 架構
+## 4. AIPA AI Engine ?嗆?
 
-### 4.1 職責
+### 4.1 ?瑁痊
 
-AIPA AI Engine 是獨立的 Python/FastAPI 進程，負責所有 AI 相關的繁重工作：
+AIPA AI Engine ?舐蝡? Python/FastAPI ?脩?嚗?鞎祆???AI ?賊????極雿?
 
-- 向量嵌入（Embedding）計算
-- 語意搜尋（Semantic Search）
-- 知識圖譜維護
-- 記憶管理與檢索
-- 學習分析（Git Diff、Commit、Review Comment 解析）
-- 經驗庫管理
-- 智慧規則引擎
+- ??撋嚗mbedding嚗?蝞?
+- 隤???嚗emantic Search嚗?
+- ?亥???蝬剛風
+- 閮蝞∠??炎蝝?
+- 摮貊???嚗it Diff?ommit?eview Comment 閫??嚗?
+- 蝬?摨怎恣??
+- ?箸閬?撘?
 
-### 4.2 為什麼 AI Engine 獨立部署
+### 4.2 ?箔?暻?AI Engine ?函??函蔡
 
-| 理由 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| Python 生態 | LangChain、LlamaIndex、ChromaDB、sentence-transformers 均為 Python 原生 |
-| 進程隔離 | AI Engine 高記憶體使用不影響 Runtime Service 的穩定性 |
-| 獨立擴展 | 在 Docker/Linux 部署時可獨立調整 AI Engine 資源配額 |
-| 技術替換 | AI 技術演進快速，獨立進程使未來替換 Embedding 模型更容易 |
+| Python ?? | LangChain?lamaIndex?hromaDB?entence-transformers ? Python ?? |
+| ?脩?? | AI Engine 擃??園?雿輻銝蔣??Runtime Service ?帘摰?|
+| ?函??游? | ??Docker/Linux ?函蔡??函?隤踵 AI Engine 鞈??? |
+| ?銵??| AI ?銵??脣翰???函??脩?雿踵靘??Embedding 璅∪??游捆??|
 
-### 4.3 AI Engine REST API（Port 18082，僅供 Runtime 內部呼叫）
+### 4.3 AI Engine REST API嚗ort 18082嚗?靘?Runtime ?折?澆嚗?
 
-| 方法 | 路徑 | 描述 |
+| ?寞? | 頝臬? | ?膩 |
 |---|---|---|
-| POST | `/engine/knowledge/search` | 語意搜尋知識庫 |
-| POST | `/engine/knowledge/items` | 新增知識項目（含向量化） |
-| POST | `/engine/memory/query` | 查詢記憶 |
-| POST | `/engine/memory/store` | 儲存記憶 |
-| POST | `/engine/experience/search` | 搜尋相似經驗 |
-| POST | `/engine/learning/analyze` | 分析 PR Diff 並更新知識 |
-| POST | `/engine/scan/analyze` | 接收 Scanner 結果並建立知識 |
-| GET | `/engine/health` | 健康檢查 |
+| POST | `/engine/knowledge/search` | 隤????亥?摨?|
+| POST | `/engine/knowledge/items` | ?啣??亥??嚗???? |
+| POST | `/engine/memory/query` | ?亥岷閮 |
+| POST | `/engine/memory/store` | ?脣?閮 |
+| POST | `/engine/experience/search` | ???訾撮蝬? |
+| POST | `/engine/learning/analyze` | ?? PR Diff 銝行?啁霅?|
+| POST | `/engine/scan/analyze` | ?交 Scanner 蝯?銝血遣蝡霅?|
+| GET | `/engine/health` | ?亙熒瑼Ｘ |
 
 ---
 
-## 5. Scanner Engine 架構
+## 5. Scanner Engine ?嗆?
 
-### 5.1 職責與位置
+### 5.1 ?瑁痊??蝵?
 
-Scanner Engine 以 Java 實作（與 Runtime 共享 JVM），負責：
+Scanner Engine 隞?後端 撖虫?嚗? Runtime ?曹澈 JVM嚗?鞎痊嚗?
 
-- 靜態分析專案原始碼
-- 解析 XML、YAML、Properties、SQL 等設定檔
-- 分析 Maven/Gradle 相依關係樹
-- 解析 OpenAPI 規格
-- 建構呼叫圖、相依圖、架構圖
+- ????撠???蝣?
+- 閫?? XML?AML?roperties?QL 蝑身摰?
+- ?? Maven/Gradle ?訾???璅?
+- 閫?? OpenAPI 閬
+- 撱箸??澆?靘??瑽?
 
-### 5.2 Scanner 技術棧支援矩陣
+### 5.2 Scanner ?銵ㄖ?舀?拚
 
-| 技術類別 | 支援項目 |
+| ?銵???| ?舀? |
 |---|---|
-| **JVM 語言** | Java 8 / 11 / 17 / 21 |
-| **框架** | Spring Boot、Spring MVC、Spring Security、Spring Batch |
-| **ORM** | MyBatis（Mapper XML + Interface）、Hibernate / JPA Entity |
-| **資料庫** | Oracle DDL、PostgreSQL DDL、SQL Server DDL（Schema 分析） |
-| **建構工具** | Maven pom.xml、Gradle build.gradle / build.gradle.kts |
-| **部署描述符** | JBoss / WildFly jboss-web.xml、web.xml |
-| **API 規格** | OpenAPI 3.0 yaml/json、Swagger 2.0 |
-| **前端** | Vue SFC（.vue）、React JSX/TSX、JSP |
-| **設定檔** | application.yml、application.properties、logback.xml |
-| **容器** | Dockerfile、docker-compose.yml |
+| **JVM 隤?** | 後端 8 / 11 / 17 / 21 |
+| **獢** | 後端框架?pring MVC?pring Security?pring Batch |
+| **ORM** | MyBatis嚗apper XML + Interface嚗ibernate / JPA Entity |
+| **鞈?摨?* | Oracle DDL?ostgreSQL DDL?QL Server DDL嚗chema ??嚗?|
+| **撱箸?撌亙** | Maven pom.xml?radle build.gradle / build.gradle.kts |
+| **?函蔡?膩蝚?* | JBoss / WildFly jboss-web.xml?eb.xml |
+| **API 閬** | OpenAPI 3.0 yaml/json?wagger 2.0 |
+| **?垢** | Vue SFC嚗?vue嚗eact JSX/TSX?SP |
+| **閮剖?瑼?* | application.yml?pplication.properties?ogback.xml |
+| **摰孵** | Dockerfile?ocker-compose.yml |
 
-### 5.3 Scanner 輸出格式
+### 5.3 Scanner 頛詨?澆?
 
-Scanner 分析結果轉換為標準化的 `ScanResult` 物件，包含：
+Scanner ??蝯?頧??箸?皞???`ScanResult` ?拐辣嚗??恬?
 
 ```
 ScanResult
-├── projectMeta（專案基本資訊）
-│   ├── name, version, buildTool, javaVersion
-│   └── frameworkList[]
-├── apiInventory（API 清單）
-│   ├── RestEndpoint[]（path, method, controller, handler）
-│   └── OpenApiSpec（若有 OpenAPI 規格）
-├── databaseSchema（資料庫 Schema）
-│   ├── TableDefinition[]（name, columns[], indexes[], constraints[]）
-│   └── EntityMapping[]（JPA Entity ↔ Table 對應）
-├── architectureGraph（架構圖）
-│   ├── LayerDefinition[]（Controller / Service / Repository / Domain）
-│   └── DependencyEdge[]（from, to, type）
-├── callGraph（呼叫圖）
-│   └── CallEdge[]（caller, callee, callType）
-├── dependencyTree（相依樹）
-│   └── Dependency[]（groupId, artifactId, version, scope）
-└── configInventory（設定清單）
-    └── ConfigProperty[]（key, value, source）
+??? projectMeta嚗?獢?祈?閮?
+??  ??? name, version, buildTool, javaVersion
+??  ??? frameworkList[]
+??? apiInventory嚗PI 皜嚗?
+??  ??? RestEndpoint[]嚗ath, method, controller, handler嚗?
+??  ??? OpenApiSpec嚗??OpenAPI 閬嚗?
+??? databaseSchema嚗??澈 Schema嚗?
+??  ??? TableDefinition[]嚗ame, columns[], indexes[], constraints[]嚗?
+??  ??? EntityMapping[]嚗PA Entity ??Table 撠?嚗?
+??? architectureGraph嚗瑽?嚗?
+??  ??? LayerDefinition[]嚗ontroller / Service / Repository / Domain嚗?
+??  ??? DependencyEdge[]嚗rom, to, type嚗?
+??? callGraph嚗?怠?嚗?
+??  ??? CallEdge[]嚗aller, callee, callType嚗?
+??? dependencyTree嚗靘邦嚗?
+??  ??? Dependency[]嚗roupId, artifactId, version, scope嚗?
+??? configInventory嚗身摰??殷?
+    ??? ConfigProperty[]嚗ey, value, source嚗?
 ```
 
 ---
 
-## 6. 儲存架構
+## 6. ?脣??嗆?
 
-### 6.1 StorageProvider 抽象
+### 6.1 StorageProvider ?質情
 
-所有持久化操作透過 `StorageProvider` 介面，業務邏輯不直接依賴資料庫。
+???銋????? `StorageProvider` 隞嚗平??頛臭??湔靘陷鞈?摨怒?
 
 ```
-StorageProvider（介面）
-├── SQLiteStorageProvider（預設，本地檔案）
-├── PostgreSQLStorageProvider（企業共享）
-└── ElasticsearchStorageProvider（全文搜尋增強）
+StorageProvider嚗??ｇ?
+??? SQLiteStorageProvider嚗?閮哨??砍瑼?嚗?
+??? PostgreSQLStorageProvider嚗?璆剖鈭恬?
+??? ElasticsearchStorageProvider嚗??撠?撘瘀?
 
-VectorStoreProvider（介面）
-└── ChromaDBVectorStore（預設，本地）
-    └── （未來可擴充 pgvector、Weaviate 等）
+VectorStoreProvider嚗??ｇ?
+??? ChromaDBVectorStore嚗?閮哨??砍嚗?
+    ??? 嚗靘?游? pgvector?eaviate 蝑?
 ```
 
-### 6.2 資料分類與儲存對應
+### 6.2 鞈????摮???
 
-| 資料類型 | 儲存位置 | 說明 |
+| 鞈?憿? | ?脣?雿蔭 | 隤芣? |
 |---|---|---|
-| 知識項目（結構化） | StorageProvider（SQLite / PostgreSQL） | 知識的 Metadata、分類、來源 |
-| 知識向量（嵌入） | VectorStoreProvider（ChromaDB） | 語意搜尋使用 |
-| 記憶條目 | StorageProvider | 各類記憶的結構化資料 |
-| 規格文件 | 檔案系統（`specs/` 目錄）+ StorageProvider | Markdown 文件 + 索引 |
-| Session 狀態 | StorageProvider | Session 生命週期與 Checkpoint 狀態 |
-| 稽核日誌 | StorageProvider | Human Checkpoint 操作記錄 |
-| 智慧規則 | StorageProvider | 企業規則定義 |
-| AI 呼叫記錄 | StorageProvider | Token 用量、延遲、結果 |
-| Project DNA | 檔案系統（`.ai-project/dna/`） | YAML 格式，人類可讀 |
-| 設定 | 檔案系統（`.ai-project/config.yml`） | 專案級設定 |
+| ?亥??嚗?瑽?嚗?| StorageProvider嚗QLite / PostgreSQL嚗?| ?亥???Metadata??憿?皞?|
+| ?亥???嚗??伐? | VectorStoreProvider嚗hromaDB嚗?| 隤???雿輻 |
+| 閮璇 | StorageProvider | ??閮??瑽?鞈? |
+| 閬?辣 | 瑼?蝟餌絞嚗specs/` ?桅?嚗? StorageProvider | Markdown ?辣 + 蝝Ｗ? |
+| Session ???| StorageProvider | Session ??望???Checkpoint ???|
+| 蝔賣?亥? | StorageProvider | Human Checkpoint ??閮? |
+| ?箸閬? | StorageProvider | 隡平閬?摰儔 |
+| AI ?澆閮? | StorageProvider | Token ?券??辣?脯???|
+| Project DNA | 瑼?蝟餌絞嚗.ai-project/dna/`嚗?| YAML ?澆?嚗犖憿霈 |
+| 閮剖? | 瑼?蝟餌絞嚗.ai-project/config.yml`嚗?| 撠?蝝身摰?|
 
-### 6.3 .ai-project/ 目錄結構
+### 6.3 .ai-project/ ?桅?蝯?
 
-由 `aipa init` 生成，每個被 AIPA 管理的專案根目錄下建立：
+??`aipa init` ??嚗??◤ AIPA 蝞∠???獢?桅?銝遣蝡?
 
 ```
 .ai-project/
-├── config.yml                    # 專案設定（AI 供應商、儲存後端等）
-├── dna/
-│   ├── project-dna.yml           # Project DNA（Coding Style、架構模式）
-│   ├── coding-style.yml          # Coding Style 規則
-│   ├── architecture-rules.yml    # 架構規則
-│   └── business-rules.yml        # 業務規則摘要
-├── knowledge/
-│   └── db/                       # SQLite 知識庫（StorageProvider = sqlite）
-├── memory/
-│   └── db/                       # SQLite 記憶庫
-├── vector/
-│   └── chromadb/                 # ChromaDB 向量資料
-├── specs/                        # 生成的規格文件（Markdown）
-│   └── YYYY-MM-DD-{slug}.md
-├── sessions/                     # Session 歷史
-│   └── {session-id}/
-├── audit/
-│   └── checkpoint-audit.log      # Checkpoint 稽核日誌
-└── .gitignore                    # 排除敏感資料（db 檔案等）
+??? config.yml                    # 撠?閮剖?嚗I 靘??摮?蝡舐?嚗?
+??? dna/
+??  ??? project-dna.yml           # Project DNA嚗oding Style?瑽芋撘?
+??  ??? coding-style.yml          # Coding Style 閬?
+??  ??? architecture-rules.yml    # ?嗆?閬?
+??  ??? business-rules.yml        # 璆剖?閬???
+??? knowledge/
+??  ??? db/                       # SQLite ?亥?摨恬?StorageProvider = sqlite嚗?
+??? memory/
+??  ??? db/                       # SQLite 閮摨?
+??? vector/
+??  ??? chromadb/                 # ChromaDB ??鞈?
+??? specs/                        # ?????潭?隞塚?Markdown嚗?
+??  ??? YYYY-MM-DD-{slug}.md
+??? sessions/                     # Session 甇瑕
+??  ??? {session-id}/
+??? audit/
+??  ??? checkpoint-audit.log      # Checkpoint 蝔賣?亥?
+??? .gitignore                    # ???鞈?嚗b 瑼?蝑?
 ```
 
 ---
 
-## 7. AI Adapter 架構
+## 7. AI Adapter ?嗆?
 
-### 7.1 Adapter Pattern 設計
+### 7.1 Adapter Pattern 閮剛?
 
 ```
-AIAdapter（介面）
-├── name(): String
-├── isAvailable(): boolean
-├── generate(AIRequest): AIResponse
-├── getCapabilities(): AdapterCapabilities
-└── estimateTokens(String): int
+AIAdapter嚗??ｇ?
+??? name(): String
+??? isAvailable(): boolean
+??? generate(AIRequest): AIResponse
+??? getCapabilities(): AdapterCapabilities
+??? estimateTokens(String): int
 
-實作類別：
-├── CopilotAdapter      → GitHub Copilot API / CLI 橋接
-├── ClaudeAdapter       → Anthropic API（claude-3-opus / sonnet）
-├── GeminiAdapter       → Google AI API（gemini-1.5-pro）
-├── OpenAIAdapter       → OpenAI API（gpt-4o）
-├── OllamaAdapter       → Ollama 本地 HTTP API
-└── MCPAdapter          → Model Context Protocol
+撖虫?憿嚗?
+??? CopilotAdapter      ??GitHub Copilot API / CLI 璈
+??? ClaudeAdapter       ??Anthropic API嚗laude-3-opus / sonnet嚗?
+??? GeminiAdapter       ??Google AI API嚗emini-1.5-pro嚗?
+??? OpenAIAdapter       ??OpenAI API嚗pt-4o嚗?
+??? OllamaAdapter       ??Ollama ?砍 HTTP API
+??? MCPAdapter          ??Model Context Protocol
 ```
 
-### 7.2 AIRequest / AIResponse 標準格式
+### 7.2 AIRequest / AIResponse 璅??澆?
 
 ```
 AIRequest {
-    taskSpec: String           // 任務規格（What to do）
-    contextKnowledge: String   // 相關知識上下文
-    contextMemory: String      // 相關記憶片段
-    codeContext: String        // 相關程式碼（當前檔案 + 相關類別）
-    constraints: String[]      // 約束條件（架構規則、編碼規則）
-    outputFormat: String       // 期望輸出格式
+    taskSpec: String           // 隞餃?閬嚗hat to do嚗?
+    contextKnowledge: String   // ?賊??亥?銝???
+    contextMemory: String      // ?賊?閮?挾
+    codeContext: String        // ?賊?蝔?蝣潘??嗅?瑼? + ?賊?憿嚗?
+    constraints: String[]      // 蝝?璇辣嚗瑽??楊蝣潸???
+    outputFormat: String       // ??頛詨?澆?
     maxTokens: int
 }
 
 AIResponse {
-    content: String            // AI 生成的內容
-    provider: String           // 使用的供應商
-    model: String              // 使用的模型
+    content: String            // AI ???摰?
+    provider: String           // 雿輻????
+    model: String              // 雿輻?芋??
     inputTokens: int
     outputTokens: int
     latencyMs: long
     success: boolean
-    errorMessage: String       // 若失敗
+    errorMessage: String       // ?亙仃??
 }
 ```
 
-### 7.3 Adapter 選擇策略
+### 7.3 Adapter ?豢?蝑
 
 ```
-1. 讀取 .ai-project/config.yml 中的 primaryAdapter 設定
-2. 若 primaryAdapter 不可用（isAvailable() = false）：
-   a. 依 fallbackAdapters 清單順序嘗試
-   b. 若全部不可用：拋出 NoAvailableAdapterException
-3. Ollama（本地）永遠可用作最後備援（若已安裝）
+1. 霈??.ai-project/config.yml 銝剔? primaryAdapter 閮剖?
+2. ??primaryAdapter 銝?剁?isAvailable() = false嚗?
+|    a. 靘?fallbackAdapters 皜???岫
+|    b. ?亙?其??舐嚗???NoAvailableAdapterException
+|    c. 敹??喳?閮剖?銝??函? AI 靘???
 ```
 
 ---
 
-## 8. 工作流程引擎架構
+## 8. 撌乩?瘚?撘??嗆?
 
-### 8.1 Workflow Engine 設計
+### 8.1 Workflow Engine 閮剛?
 
-工作流程引擎負責管理 `aipa ask` 的完整執行流程，基於狀態機實作：
+撌乩?瘚?撘?鞎痊蝞∠? `aipa ask` ???游銵?蝔??箸???撖虫?嚗?
 
-- 每個狀態對應一個 `WorkflowStep` 處理器
-- Checkpoint 狀態為同步等待點（掛起 Session，等待人工輸入）
-- 所有狀態轉換記錄於 Session 歷史
-- 支援從任意中間狀態恢復（系統崩潰後可續接）
+- 瘥???????`WorkflowStep` ????
+- Checkpoint ???郊蝑?暺??絲 Session嚗?敺犖撌亥撓?伐?
+- ???????? Session 甇瑕
+- ?舀敺遙?葉???敺抬?蝟餌絞撏拇蔑敺蝥嚗?
 
-### 8.2 Workflow Step 定義
+### 8.2 Workflow Step 摰儔
 
-| Step | 輸入 | 輸出 | 可失敗 | 可恢復 |
+| Step | 頛詨 | 頛詨 | ?臬仃??| ?舀敺?|
 |---|---|---|---|---|
-| `BuildContextStep` | 需求字串 | Knowledge + Memory + Experience 上下文 | ✓ | ✓ |
-| `GenerateSpecStep` | 上下文 | SpecDocument | ✓ | ✓ |
-| `SpecApprovalStep` | SpecDocument | ApprovalResult | 不失敗（等待） | ✓ |
-| `EvaluateConfidenceStep` | SpecDocument | ConfidenceScore | ✓ | ✓ |
-| `NMIStep` | 缺少知識清單 | 補充的知識 | 不失敗（等待） | ✓ |
-| `PlanTasksStep` | SpecDocument | TaskPlan | ✓ | ✓ |
-| `TaskApprovalStep` | TaskPlan | ApprovalResult | 不失敗（等待） | ✓ |
-| `ExecuteTaskStep` | TaskItem | 程式碼變更 | ✓ | ✓ |
-| `RunTestsStep` | 程式碼變更 | TestResult | ✓ | ✓ |
-| `ReviewCodeStep` | 程式碼變更 | ReviewResult | ✓ | ✓ |
-| `PRApprovalStep` | ReviewResult | ApprovalResult | 不失敗（等待） | ✓ |
-| `CreatePRStep` | ApprovalResult | PRUrl | ✓ | ✓ |
-| `TriggerLearningStep` | PRMergeEvent | LearningResult | ✓ | ✓ |
+| `BuildContextStep` | ?瘙?銝?| Knowledge + Memory + Experience 銝???| ??| ??|
+| `GenerateSpecStep` | 銝???| SpecDocument | ??| ??|
+| `SpecApprovalStep` | SpecDocument | ApprovalResult | 銝仃??蝑?嚗?| ??|
+| `EvaluateConfidenceStep` | SpecDocument | ConfidenceScore | ??| ??|
+| `NMIStep` | 蝻箏??亥?皜 | 鋆??霅?| 銝仃??蝑?嚗?| ??|
+| `PlanTasksStep` | SpecDocument | TaskPlan | ??| ??|
+| `TaskApprovalStep` | TaskPlan | ApprovalResult | 銝仃??蝑?嚗?| ??|
+| `ExecuteTaskStep` | TaskItem | 蝔?蝣潸???| ??| ??|
+| `RunTestsStep` | 蝔?蝣潸???| TestResult | ??| ??|
+| `ReviewCodeStep` | 蝔?蝣潸???| ReviewResult | ??| ??|
+| `PRApprovalStep` | ReviewResult | ApprovalResult | 銝仃??蝑?嚗?| ??|
+| `CreatePRStep` | ApprovalResult | PRUrl | ??| ??|
+| `TriggerLearningStep` | PRMergeEvent | LearningResult | ??| ??|
 
 ---
 
-## 9. 安全架構
+## 9. 摰?嗆?
 
-### 9.1 資料邊界
+### 9.1 鞈???
 
 ```
-企業內部網路邊界（不得跨越）：
-├── 完整程式碼庫
-├── 知識庫
-├── 記憶庫
-├── 專案 DNA
-├── 稽核日誌
-└── 規格文件
+隡平?折蝬脰楝??嚗?敺楊頞?嚗?
+??? 摰蝔?蝣澆澈
+??? ?亥?摨?
+??? 閮摨?
+??? 撠? DNA
+??? 蝔賣?亥?
+??? 閬?辣
 
-允許跨越企業邊界（對外 HTTPS 呼叫）：
-└── AI API 呼叫（僅包含任務上下文片段，不含完整程式碼庫）
-    ├── 任務規格（What to do）
-    ├── 相關知識摘要（精選片段）
-    ├── 相關程式碼片段（最小必要上下文）
-    └── 約束條件清單
+?迂頝刻?隡平??嚗?憭?HTTPS ?澆嚗?
+??? AI API ?澆嚗??隞餃?銝???畾蛛?銝摰蝔?蝣澆澈嚗?
+    ??? 隞餃?閬嚗hat to do嚗?
+    ??? ?賊??亥???嚗移?貊?畾蛛?
+    ??? ?賊?蝔?蝣潛?畾蛛??撠?閬?銝?嚗?
+    ??? 蝝?璇辣皜
 ```
 
-### 9.2 API Key 安全管理
+### 9.2 API Key 摰蝞∠?
 
-- API Key 以 AES-256 加密儲存於 `.ai-project/config.yml`
-- 加密金鑰由作業系統 Keychain / Credential Manager 管理
-- Windows：Windows Credential Manager
-- macOS：Keychain
-- Linux：Secret Service API（或 `.env` 檔案加密）
+- API Key 隞?AES-256 ???脣???`.ai-project/config.yml`
+- ????曹?璆剔頂蝯?Keychain / Credential Manager 蝞∠?
+- Windows嚗indows Credential Manager
+- macOS嚗eychain
+- Linux嚗ecret Service API嚗? `.env` 瑼???嚗?
 
-### 9.3 Runtime API 存取控制
+### 9.3 Runtime API 摮??批
 
-| 部署模式 | 存取範圍 |
+| ?函蔡璅∪? | 摮?蝭? |
 |---|---|
-| Windows MSI（開發人員工作站） | 僅 localhost（127.0.0.1:18080） |
-| Linux Shell（團隊伺服器） | 企業 LAN（設定允許的 IP 範圍） |
-| Docker Compose | 容器內部網路（`aipa-network`），Web UI 獨立對外開放 |
+| Windows MSI嚗??潔犖?∪極雿?嚗?| ??localhost嚗?27.0.0.1:18080嚗?|
+| Linux Shell嚗??撩?嚗?| 隡平 LAN嚗身摰?閮梁? IP 蝭?嚗?|
+| Docker Compose | 摰孵?折蝬脰楝嚗aipa-network`嚗?Web UI ?函?撠?? |
 
-### 9.4 不掃描 / 不傳送清單
+### 9.4 銝???/ 銝????
 
-在 `.ai-project/config.yml` 中可設定：
+??`.ai-project/config.yml` 銝剖閮剖?嚗?
 
 ```yaml
 scan:
@@ -506,195 +504,196 @@ ai:
 
 ---
 
-## 10. 資料流圖
+## 10. 鞈?瘚?
 
-### 10.1 `aipa init` 資料流
+### 10.1 `aipa init` 鞈?瘚?
 
 ```
-開發人員
-    │ aipa init
-    ▼
-CLI（Node.js）
-    │ POST /api/v1/project/init
-    ▼
-Runtime Service（Spring Boot）
-    │ 建立 InitJob
-    ▼
-Scanner Engine（Java）
-    │ 掃描專案目錄
-    │ → 解析 Java、XML、SQL、YAML、OpenAPI
-    │ → 建立 ScanResult
-    ▼
-AI Engine（Python）
-    │ POST /engine/scan/analyze
-    │ → 向量化知識項目（Embedding）
-    │ → 建立 KnowledgeItems
-    │ → 初始化 MemoryItems
-    │ → 儲存至 ChromaDB + SQLite
-    ▼
-DNA Builder（Runtime）
-    │ 分析 ScanResult
-    │ → 推斷 Coding Style
-    │ → 推斷架構模式
-    │ → 推斷 Transaction 邊界
-    ▼
-檔案系統
-    │ 建立 .ai-project/
-    │ → dna/*.yml
-    │ → config.yml
-    ▼
+?鈭箏
+    ??aipa init
+    ??
+CLI嚗ode.js嚗?
+    ??POST /api/v1/project/init
+    ??
+Runtime Service嚗pring Boot嚗?
+    ??撱箇? InitJob
+    ??
+Scanner Engine嚗ava嚗?
+    ????撠??桅?
+    ????閫?? 後端?ML?QL?AML?penAPI
+    ????撱箇? ScanResult
+    ??
+AI Engine嚗ython嚗?
+    ??POST /engine/scan/analyze
+    ???????霅??殷?Embedding嚗?
+    ????撱箇? KnowledgeItems
+    ????????MemoryItems
+    ?????脣???ChromaDB + SQLite
+    ??
+DNA Builder嚗untime嚗?
+    ???? ScanResult
+    ?????冽 Coding Style
+    ?????冽?嗆?璅∪?
+    ?????冽 Transaction ??
+    ??
+瑼?蝟餌絞
+    ??撱箇? .ai-project/
+    ????dna/*.yml
+    ????config.yml
+    ??
 CLI
-    │ 顯示初始化摘要報告
-    ▼
-開發人員
+    ??憿舐內????閬??
+    ??
+?鈭箏
 ```
 
-### 10.2 `aipa ask` 資料流（簡化版）
+### 10.2 `aipa ask` 鞈?瘚?蝪∪???
 
 ```
-開發人員
-    │ aipa ask "新增案件提醒功能"
-    ▼
+?鈭箏
+    ??aipa ask "?啣?獢辣???"
+    ??
 CLI
-    │ POST /api/v1/session（需求字串）
-    │ GET /api/v1/session/{id}/stream（SSE 訂閱進度）
-    ▼
+    ??POST /api/v1/session嚗?瘙?銝莎?
+    ??GET /api/v1/session/{id}/stream嚗SE 閮?脣漲嚗?
+    ??
 Runtime Service
-    ├── 1. POST /engine/knowledge/search → 相關知識
-    ├── 2. POST /engine/memory/query → 相關記憶
-    ├── 3. POST /engine/experience/search → 相似經驗
-    ├── 4. Spec Engine → FeatureSpec（含影響分析）
-    ├── 5. [CHECKPOINT] Spec Approval → 等待人工核准
-    ├── 6. Confidence Engine → 信心分數評估
-    │       └── 若 < 70 → [WAIT] NMI
-    ├── 7. Planning Engine → TaskPlan
-    ├── 8. [CHECKPOINT] Task Approval → 等待人工核准
-    ├── 9. 逐任務執行迴圈：
-    │       a. AI Adapter → AI 呼叫（附帶任務規格 + 知識 + 記憶 + 程式碼）
-    │       b. Testing Engine → 生成並執行測試
-    │       c. Review Engine → 多維度審查
-    │       d. 若 b 或 c 失敗 → 回到 a 修正
-    ├── 10. [CHECKPOINT] PR Approval → 等待人工核准
-    ├── 11. Git PR 建立
-    └── 12. POST /engine/learning/analyze（非同步，PR Merge 後）
-    ▼
-CLI（SSE 即時顯示每個步驟進度）
-    ▼
-開發人員
+    ??? 1. POST /engine/knowledge/search ???賊??亥?
+    ??? 2. POST /engine/memory/query ???賊?閮
+    ??? 3. POST /engine/experience/search ???訾撮蝬?
+    ??? 4. Spec Engine ??FeatureSpec嚗敶梢??嚗?
+    ??? 5. [CHECKPOINT] Spec Approval ??蝑?鈭箏極?詨?
+    ??? 6. Confidence Engine ??靽∪??閰摯
+    ??      ??? ??< 70 ??[WAIT] NMI
+    ??? 7. Planning Engine ??TaskPlan
+    ??? 8. [CHECKPOINT] Task Approval ??蝑?鈭箏極?詨?
+    ??? 9. ?遙?銵艘??
+    ??      a. AI Adapter ??AI ?澆嚗?撣嗡遙????+ ?亥? + 閮 + 蝔?蝣潘?
+    ??      b. Testing Engine ????銝血銵葫閰?
+    ??      c. Review Engine ??憭雁摨血祟??
+    ??      d. ??b ??c 憭望? ??? a 靽格迤
+    ??? 10. [CHECKPOINT] PR Approval ??蝑?鈭箏極?詨?
+    ??? 11. Git PR 撱箇?
+    ??? 12. POST /engine/learning/analyze嚗??郊嚗R Merge 敺?
+    ??
+CLI嚗SE ?單?憿舐內瘥郊撽脣漲嚗?
+    ??
+?鈭箏
 ```
 
-### 10.3 Learning 資料流（PR Merge 後）
+### 10.3 Learning 鞈?瘚?PR Merge 敺?
 
 ```
-Git（CI 系統 / Git Hook）
-    │ PR Merge Webhook / 手動 aipa learn --pr={id}
-    ▼
+Git嚗I 蝟餌絞 / Git Hook嚗?
+    ??PR Merge Webhook / ?? aipa learn --pr={id}
+    ??
 Runtime Service
-    │ POST /engine/learning/analyze
-    ▼
-AI Engine（Learning Engine）
-    ├── Git Diff 解析 → 變更摘要
-    ├── Commit Message 分析 → 語意標籤
-    ├── PR Review Comment 分析 → 規則提取
-    ├── 模式識別 → 新增 / 更新 KnowledgeItems
-    ├── 記憶更新 → PatternMemory + DecisionMemory + StyleMemory
-    ├── 經驗更新 → ExperienceLibrary 新增案例
-    └── 生成學習摘要報告
-    ▼
+    ??POST /engine/learning/analyze
+    ??
+AI Engine嚗earning Engine嚗?
+    ??? Git Diff 閫?? ??霈??
+    ??? Commit Message ?? ??隤?璅惜
+    ??? PR Review Comment ?? ??閬???
+    ??? 璅∪?霅 ???啣? / ?湔 KnowledgeItems
+    ??? 閮?湔 ??PatternMemory + DecisionMemory + StyleMemory
+    ??? 蝬??湔 ??ExperienceLibrary ?啣?獢?
+    ??? ??摮貊????勗?
+    ??
 Runtime Service
-    │ 儲存學習結果
-    │ 通知用戶端（SSE / Web UI）
-    ▼
-開發人員（可查閱學習摘要）
+    ???脣?摮貊?蝯?
+    ????冽蝡荔?SSE / Web UI嚗?
+    ??
+?鈭箏嚗?仿摮貊???嚗?
 ```
 
 ---
 
-## 11. 事件匯流排設計
+## 11. 鈭辣?舀??身閮?
 
-### 11.1 用途
+### 11.1 ?券?
 
-事件匯流排用於非同步通知，避免主流程等待耗時的非同步操作。
+鈭辣?舀???潮??郊?嚗?蜓瘚?蝑??????郊????
 
-| 事件 | 發布者 | 訂閱者 | 說明 |
+| 鈭辣 | ?澆???| 閮??| 隤芣? |
 |---|---|---|---|
-| `ProjectInitialized` | Runtime | AI Engine | 觸發初始知識向量化 |
-| `PRMerged` | Git Hook / 手動 | Learning Engine | 觸發自動學習 |
-| `KnowledgeUpdated` | AI Engine | Spec Engine、Confidence Engine | 知識更新後通知相關引擎清除快取 |
-| `CheckpointCreated` | Runtime | Web UI、IDE Plugin | 通知用戶端有新的 Checkpoint 待審核 |
-| `SessionCompleted` | Runtime | Learning Engine | Session 結束後更新 Session Memory |
+| `ProjectInitialized` | Runtime | AI Engine | 閫貊???亥?????|
+| `PRMerged` | Git Hook / ?? | Learning Engine | 閫貊?芸?摮貊? |
+| `KnowledgeUpdated` | AI Engine | Spec Engine?onfidence Engine | ?亥??湔敺?賊?撘?皜敹怠? |
+| `CheckpointCreated` | Runtime | Web UI?DE Plugin | ??冽蝡舀??啁? Checkpoint 敺祟??|
+| `SessionCompleted` | Runtime | Learning Engine | Session 蝯?敺??Session Memory |
 
-### 11.2 事件匯流排實作
+### 11.2 鈭辣?舀??祕雿?
 
-- **Windows MSI / Linux Shell**：In-process Event Bus（Spring 內部 `ApplicationEventPublisher`）
-- **Docker Compose**：可選升級為 Redis Pub/Sub（多容器通訊）
+- **Windows MSI / Linux Shell**嚗n-process Event Bus嚗pring ?折 `ApplicationEventPublisher`嚗?
+- **Docker Compose**嚗?詨?蝝 Redis Pub/Sub嚗?摰孵??嚗?
 
 ---
 
-## 12. 部署架構概覽
+## 12. ?函蔡?嗆?璁汗
 
-詳細部署圖見獨立文件 [`003-deployment-diagram.md`](../architecture/diagrams/003-deployment-diagram.md)。
+閰喟敦?函蔡???函??辣 [`003-deployment-diagram.md`](../architecture/diagrams/003-deployment-diagram.md)??
 
-| 部署模式 | Runtime Service | AI Engine | 儲存 | 向量庫 |
+| ?函蔡璅∪? | Runtime Service | AI Engine | ?脣? | ??摨?|
 |---|---|---|---|---|
-| Windows MSI | Windows Service（Port 18080） | 子進程（Port 18082） | SQLite | ChromaDB（本地） |
-| Linux Shell | systemd service（Port 18080） | systemd service（Port 18082） | SQLite / PostgreSQL | ChromaDB（本地） |
-| Docker Compose | `aipa-runtime` 容器（Port 18080） | `aipa-ai-engine` 容器（Port 18082） | `postgres` 容器 | `chromadb` 容器 |
+| Windows MSI | Windows Service嚗ort 18080嚗?| 摮脩?嚗ort 18082嚗?| SQLite | ChromaDB嚗?堆? |
+| Linux Shell | systemd service嚗ort 18080嚗?| systemd service嚗ort 18082嚗?| SQLite / PostgreSQL | ChromaDB嚗?堆? |
+| Docker Compose | `aipa-runtime` 摰孵嚗ort 18080嚗?| `aipa-ai-engine` 摰孵嚗ort 18082嚗?| `postgres` 摰孵 | `chromadb` 摰孵 |
 
-### Port 慣例
+### Port ???
 
-| Port | 服務 | 存取範圍 |
+| Port | ?? | 摮?蝭? |
 |---|---|---|
 | 18080 | AIPA Runtime Service REST API | localhost / LAN |
 | 18081 | AIPA Web UI | localhost / LAN |
-| 18082 | AIPA AI Engine API（內部） | localhost only |
-| 18083 | ChromaDB API（內部） | localhost only |
+| 18082 | AIPA AI Engine API嚗?剁? | localhost only |
+| 18083 | ChromaDB API嚗?剁? | localhost only |
 
 ---
 
-## 13. 技術架構決策記錄（ADR）
+## 13. ?銵瑽捱蝑???ADR嚗?
 
-### ADR-001：Runtime Core 選用 Java / Spring Boot
+### ADR-001嚗untime Core ?貊 後端 / 後端框架
 
-**決策**：AIPA Runtime Service 使用 Java 17 + Spring Boot 3.x
-**理由**：目標使用者多為 Java 企業開發者，Java 生態對企業級功能（Transaction、Security、JPA）支援最完整；Spring Boot 提供成熟的 REST API 框架；可直接呼叫 Scanner Engine（同 JVM）
-**替代方案**：Node.js（異步 IO 佳，但企業功能生態較弱）、Go（效能佳，但生態不成熟）
-**後果**：需要 JRE 17 作為部署依賴；啟動時間較 Go 慢
+**瘙箇?**嚗IPA Runtime Service 雿輻 後端 17 + 後端框架 3.x
+**?**嚗璅蝙?刻???後端 隡平???後端 ??撠?璆剔??嚗ransaction?ecurity?PA嚗?湔?摰嚗pring Boot ??????REST API 獢嚗?湔?澆 Scanner Engine嚗? JVM嚗?
+**?蹂誨?寞?**嚗ode.js嚗甇?IO 雿喉?雿?璆剖??賜???撘梧??o嚗??賭蔔嚗???銝???
+**敺?**嚗?閬?JRE 17 雿?函蔡靘陷嚗????? Go ??
 
-### ADR-002：AI Engine 獨立為 Python 進程
+### ADR-002嚗I Engine ?函???Python ?脩?
 
-**決策**：知識 / 記憶 / 學習引擎使用 Python 3.11 + FastAPI，獨立進程部署
-**理由**：LangChain、LlamaIndex、ChromaDB、sentence-transformers 均為 Python 原生；AI 技術棧更新快，獨立部署降低耦合
-**替代方案**：在 Java 中透過 JNI 呼叫 Python（複雜度高）；使用純 Java AI 框架（DJL，但生態遠不如 Python）
-**後果**：部署增加 Python 依賴；進程間通訊增加少量延遲
+**瘙箇?**嚗霅?/ 閮 / 摮貊?撘?雿輻 Python 3.11 + FastAPI嚗蝡脩??函蔡
+**?**嚗angChain?lamaIndex?hromaDB?entence-transformers ? Python ??嚗I ?銵ㄖ?湔敹恬??函??函蔡???血?
+**?蹂誨?寞?**嚗 後端 銝剝? JNI ?澆 Python嚗??漲擃?嚗蝙?函? 後端 AI 獢嚗JL嚗?????憒?Python嚗?
+**敺?**嚗蝵脣???Python 靘陷嚗脩???憓?撠?撱園
 
-### ADR-003：儲存後端採用可插拔設計
+### ADR-003嚗摮?蝡舀?典??閮剛?
 
-**決策**：StorageProvider 介面 + SQLite（預設）/ PostgreSQL / Elasticsearch 實作
-**理由**：小型團隊無需額外基礎設施；企業可升級；Elasticsearch 支援全文搜尋知識庫
-**後果**：需維護多個 StorageProvider 實作；Schema 遷移需要跨後端設計
+**瘙箇?**嚗torageProvider 隞 + SQLite嚗?閮哨?/ PostgreSQL / Elasticsearch 撖虫?
+**?**嚗?????憿??箇?閮剜嚗?璆剖??嚗lasticsearch ?舀?冽????亥?摨?
+**敺?**嚗?蝬剛風憭?StorageProvider 撖虫?嚗chema ?瑞宏?閬楊敺垢閮剛?
 
-### ADR-004：所有用戶端透過 REST API 呼叫 Runtime
+### ADR-004嚗???嗥垢?? REST API ?澆 Runtime
 
-**決策**：CLI、Web UI、IDE Plugin 均為 REST API 的薄用戶端，不含業務邏輯
-**理由**：業務邏輯集中在 Runtime，確保所有用戶端行為一致；未來增加新用戶端（如 Slack Bot）只需對接 REST API
-**後果**：CLI 需要 Runtime Service 在線才能運作；需要處理 Runtime 未啟動的優雅降級
+**瘙箇?**嚗LI?eb UI?DE Plugin ? REST API ???冽蝡荔?銝璆剖??摩
+**?**嚗平??頛舫?銝剖 Runtime嚗Ⅱ靽???嗥垢銵銝?湛??芯?憓??啁?嗥垢嚗? Slack Bot嚗?撠 REST API
+**敺?**嚗LI ?閬?Runtime Service ?函????嚗?閬???Runtime ?芸????芷???
 
-### ADR-005：Human Checkpoint 為強制同步點
+### ADR-005嚗uman Checkpoint ?箏撥?嗅?甇仿?
 
-**決策**：四個 Checkpoint 均為強制同步等待，Session 不可跳過
-**理由**：LSDD 核心原則；防止 AI 在未經人工確認的情況下修改程式碼
-**後果**：流程不可完全自動化；在 CI 環境中需要特殊設定（批次模式）
+**瘙箇?**嚗???Checkpoint ?撘瑕?郊蝑?嚗ession 銝頝喲?
+**?**嚗SDD ?詨???嚗甇?AI ?冽蝬犖撌亦Ⅱ隤???銝耨?寧?撘Ⅳ
+**敺?**嚗?蝔??臬??刻??嚗 CI ?啣?銝剝?閬畾身摰??寞活璅∪?嚗?
 
 ---
 
-## 14. 版本歷史
+## 14. ?甇瑕
 
-| 版本 | 日期 | 變更說明 |
+| ? | ?交? | 霈隤芣? |
 |---|---|---|
-| 1.0.0-draft | Phase 1 | 初始系統架構文件 |
+| 1.0.0-draft | Phase 1 | ??蝟餌絞?嗆??辣 |
 
 ---
 
-*本文件為 AIPA Studio Phase 1 架構鎖定的一部分。架構鎖定宣告後，不得在未經架構審查的情況下變更本文件中的任何架構決策。*
+*?祆?隞嗥 AIPA Studio Phase 1 ?嗆??????典??瑽?摰恐??嚗?敺?芰??嗆?撖拇??瘜?霈?祆?隞嗡葉?遙雿瑽捱蝑?
+
 

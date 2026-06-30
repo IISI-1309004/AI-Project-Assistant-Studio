@@ -290,8 +290,7 @@ aipa wisdom add \
 ### 5.3 模型共享
 
 ```powershell
-# 若使用 Claude/Copilot（API 成本固定），可跨專案共用
-# 若使用 Ollama（本機模型），自動跨專案共用，零成本
+# 若使用 Copilot/Claude/Gemini/OpenAI（API 成本固定），可跨專案共用
 ```
 
 ---

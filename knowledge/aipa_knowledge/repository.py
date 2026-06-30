@@ -4,6 +4,7 @@ Knowledge Engine — 核心業務邏輯（Phase 2 實作）
 from __future__ import annotations
 
 import uuid
+import os
 from datetime import datetime
 from typing import Optional
 
@@ -38,6 +39,12 @@ class KnowledgeItemORM(Base):
 def get_engine():
     db_url = settings.db_url
     if db_url.startswith("sqlite"):
+        # 確保 SQLite 檔案所在目錄存在，避免首次 ingest 時無法建立資料庫
+        if db_url.startswith("sqlite:////"):
+            db_path = db_url.removeprefix("sqlite:////")
+            db_dir = os.path.dirname(db_path)
+            if db_dir:
+                os.makedirs(db_dir, exist_ok=True)
         return create_engine(db_url, connect_args={"check_same_thread": False})
     return create_engine(db_url)
 
@@ -75,6 +82,35 @@ class KnowledgeRepository:
             session.merge(orm)
             session.commit()
             return self._to_dict(orm)
+
+    def save_batch(self, items: list[dict]) -> int:
+        """批量儲存知識項目（避免 N+1 查詢）"""
+        if not items:
+            return 0
+        with get_session() as session:
+            saved = 0
+            for item in items:
+                try:
+                    orm = KnowledgeItemORM(
+                        id=item.get("id", str(uuid.uuid4())),
+                        project_id=item["project_id"],
+                        category=item["category"],
+                        title=item["title"],
+                        content=item["content"],
+                        source_type=item.get("source_type", "MANUAL"),
+                        source_ref=item.get("source_ref"),
+                        tags=",".join(item.get("tags", [])),
+                        confidence=item.get("confidence", 80),
+                        vector_id=item.get("vector_id"),
+                    )
+                    session.merge(orm)
+                    saved += 1
+                except Exception as e:
+                    import logging
+                    logging.error(f"Error saving item {item.get('id', 'unknown')}: {e}")
+                    continue
+            session.commit()
+            return saved
 
     def find_all(self, project_id: str, category: Optional[str] = None) -> list[dict]:
         with get_session() as session:

@@ -13,9 +13,19 @@ logger = logging.getLogger(__name__)
 class VectorStore:
     """ChromaDB 向量儲存封裝（Phase 2 實作）"""
 
-    def __init__(self, collection_name: str = "aipa_knowledge", persist_path: str = ".ai-project/vector/chromadb"):
+    def __init__(self, collection_name: str = "aipa_knowledge", persist_path: str = None, project_id: str = None):
         self.collection_name = collection_name
-        self.persist_path = persist_path
+        self.project_id = project_id
+
+        # 如果指定了 project_id，則為該專案建立獨立的向量庫路徑
+        if persist_path is None:
+            if project_id:
+                self.persist_path = f".ai-project/vector/chromadb_{project_id}"
+            else:
+                self.persist_path = ".ai-project/vector/chromadb"
+        else:
+            self.persist_path = persist_path
+
         self._client = None
         self._collection = None
 

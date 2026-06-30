@@ -1,65 +1,63 @@
-# AIPA Studio 安裝手冊（Installation Guide）
+﻿# AIPA Studio 摰???嚗nstallation Guide嚗?
 
-**版本**：1.0.0-SNAPSHOT
-**最後更新**：2026-06-30
-**適用對象**：系統管理員、DevOps 工程師
+**?**嚗?.0.0-SNAPSHOT
+**?敺??*嚗?026-06-30
+**?拍撠情**嚗頂蝯梁恣??evOps 撌亦?撣?
 
-> 如果你是一般使用者，請直接參閱 **[使用手冊 (002-user-guide.md)](./002-user-guide.md)**。
-> 本手冊專注於詳細安裝步驟、設定說明、服務管理與升級流程。
-
----
-
-## 目錄
-
-1. [安裝前準備](#1-安裝前準備)
-2. [方式 A：Windows 本機模式（無 Docker — 推薦企業環境）](#2-方式-a-windows-本機模式無-docker-推薦企業環境)
-3. [方式 B：社群伺服器模式（連線遠端）](#3-方式-b-社群伺服器模式連線遠端)
-4. [方式 C：Docker Compose（Linux/macOS）](#4-方式-cdocker-composelinuxmacos)
-5. [方式 D：Linux 伺服器安裝](#5-方式-dlinux-伺服器安裝)
-6. [方式 E：Windows Docker 安裝（可選）](#6-方式-ewindows-docker-安裝可選)
-7. [安裝後設定](#7-安裝後設定)
-8. [服務管理](#8-服務管理)
-9. [升級流程](#9-升級流程)
-10. [解除安裝](#10-解除安裝)
-11. [安裝驗收清單](#11-安裝驗收清單)
+> 憒?雿銝?砌蝙?刻?隢?亙???**[雿輻?? (002-user-guide.md)](./002-user-guide.md)**??
+> ?祆???瘜冽閰喟敦摰?甇仿??身摰牧???恣????瘚???
 
 ---
 
-## 1. 安裝前準備
+## ?桅?
 
-### 1.1 硬體需求
+1. [摰????(#1-摰?????
+2. [?孵? A嚗indows ?祆?璅∪?嚗 Docker ???刻隡平?啣?嚗(#2-?孵?-a-windows-?祆?璅∪???docker-?刻隡平?啣?)
+3. [?孵? B嚗冗蝢支撩?璅∪?嚗???垢嚗(#3-?孵?-b-蝷曄黎隡箸??冽芋撘???垢)
+4. [?孵? C嚗ocker Compose嚗inux/macOS嚗(#4-?孵?-cdocker-composelinuxmacos)
+5. [?孵? D嚗inux 隡箸??典?鋆(#5-?孵?-dlinux-隡箸??典?鋆?
+6. [?孵? E嚗indows Docker 摰?嚗?賂?](#6-?孵?-ewindows-docker-摰??舫)
+7. [摰?敺身摰(#7-摰?敺身摰?
+8. [??蝞∠?](#8-??蝞∠?)
+9. [??瘚?](#9-??瘚?)
+10. [閫?摰?](#10-閫?摰?)
+11. [摰?撽皜](#11-摰?撽皜)
 
-| 規格 | 最低 | 建議（生產環境） |
+---
+
+## 1. 摰?????
+
+### 1.1 蝖祇??瘙?
+
+| 閬 | ?雿?| 撱箄降嚗??Ｙ憓? |
 |------|------|----------------|
-| CPU | 4 核心 | 8 核心以上 |
-| 記憶體 | 8 GB | 16 GB 以上 |
-| 儲存空間 | 20 GB | 50 GB 以上（含日誌、知識庫） |
-| 網路 | 10 Mbps | 100 Mbps（AI API 呼叫） |
+| CPU | 4 ?詨? | 8 ?詨?隞乩? |
+| 閮擃?| 8 GB | 16 GB 隞乩? |
+| ?脣?蝛粹? | 20 GB | 50 GB 隞乩?嚗?亥??霅澈嚗?|
+| 蝬脰楝 | 10 Mbps | 100 Mbps嚗I API ?澆嚗?|
 
-### 1.2 作業系統相容性
+### 1.2 雿平蝟餌絞?詨捆??
 
-| 作業系統 | 版本 | 支援狀態 |
+| 雿平蝟餌絞 | ? | ?舀???|
 |----------|------|----------|
-| Ubuntu | 22.04 LTS | ✅ 完整支援 |
-| Ubuntu | 20.04 LTS | ✅ 支援 |
-| RHEL | 8.x、9.x | ✅ 完整支援 |
-| CentOS Stream | 9 | ✅ 支援 |
-| Windows | 10 Build 19041+ | ✅ 支援 |
-| Windows | 11 | ✅ 完整支援 |
-| macOS | 12+ | ⚠️ 社群支援（未官方測試） |
+| Ubuntu | 22.04 LTS | ??摰?舀 |
+| Ubuntu | 20.04 LTS | ???舀 |
+| RHEL | 8.x??.x | ??摰?舀 |
+| CentOS Stream | 9 | ???舀 |
+| Windows | 10 Build 19041+ | ???舀 |
+| Windows | 11 | ??摰?舀 |
+| macOS | 12+ | ?? 蝷曄黎?舀嚗摰皜祈岫嚗?|
 
-### 1.3 網路需求
+### 1.3 蝬脰楝?瘙?
 
-| 目的 | 目標 | 說明 |
+| ?桃? | ?格? | 隤芣? |
 |------|------|------|
-| AI API 呼叫 | `api.anthropic.com`、`api.openai.com` | 如使用雲端 AI |
-| Docker 映像下載 | `registry-1.docker.io` | 初次安裝 |
-| 套件下載 | `npmjs.com`、`pypi.org`、`repo1.maven.org` | 初次建置 |
-| 內部通訊 | localhost | Runtime ↔ AI Engine ↔ Web |
+| AI API ?澆 | `api.anthropic.com`?api.openai.com` | 憒蝙?券蝡?AI |
+| Docker ??銝? | `registry-1.docker.io` | ?活摰? |
+| 憟辣銝? | `npmjs.com`?pypi.org`?repo1.maven.org` | ?活撱箇蔭 |
+| ?折?? | localhost | Runtime ??AI Engine ??Web |
 
-> 如為**完全隔離網路**環境，請使用 Ollama 本地 AI 模型，並預先備妥所有 Docker 映像。
-
-### 1.4 取得安裝包
+### 1.4 ??摰???
 
 ```bash
 git clone https://github.com/your-org/AI-Project-Assistant-Studio.git
@@ -68,98 +66,98 @@ cd AI-Project-Assistant-Studio
 
 ---
 
-## 2. 方式 A：Windows 本機模式 — 推薦企業環境
+## 2. ?孵? A嚗indows ?祆?璅∪? ???刻隡平?啣?
 
-**適用於 Windows 開發環境**
+**?拍??Windows ??啣?**
 
-### 2.1 前置軟體（手動安裝）
+### 2.1 ?蔭頠?嚗???鋆?
 
 ```powershell
-# 1. 安裝 Node.js 20 LTS
-#    下載：https://nodejs.org/en/download/
-#    或聯絡貴公司 IT 協助安裝
+# 1. 摰? Node.js 20 LTS
+#    銝?嚗ttps://nodejs.org/en/download/
+#    ?蝯∟眼?砍 IT ?摰?
 
-# 驗證安裝
-node --version  # 應顯示 v20.x.x 或更新版本
+# 撽?摰?
+node --version  # ?＊蝷?v20.x.x ??啁???
 npm --version
 ```
 
-### 2.2 克隆並安裝 CLI
+### 2.2 ??銝血?鋆?CLI
 
 ```powershell
-# 導航到工作目錄
+# 撠?啣極雿??
 cd C:\Users\YourUsername\work
 
-# 克隆程式碼
+# ??蝔?蝣?
 git clone https://github.com/your-org/AI-Project-Assistant-Studio.git
 cd AI-Project-Assistant-Studio
 
-# 安裝 CLI 工具
+# 摰? CLI 撌亙
 cd cli
 npm install
 npm run build
 npm install -g .
 
-# 驗證
-aipa version  # 應顯示版本號
+# 撽?
+aipa version  # ?＊蝷箇??祈?
 ```
 
-### 2.3 配置本機模式
+### 2.3 ?蔭?祆?璅∪?
 
-編輯 `cli\.env.local` 檔案（如無此檔案則在 `cli` 目錄下建立）：
+蝺刻摩 `cli\.env.local` 瑼?嚗??⊥迨瑼?? `cli` ?桅?銝遣蝡?嚗?
 
 ```ini
-# .env.local — Windows 本機模式設定
+# .env.local ??Windows ?祆?璅∪?閮剖?
 AIPA_MODE=LOCAL
 SKIP_SERVER_CHECK=true
 AIPA_AI_PROVIDER=OLLAMA
 OLLAMA_BASE_URL=http://localhost:11434
 ```
 
-### 2.4（推薦）安裝 Ollama 本機 AI 模型
+### 2.4嚗?佗?摰? Ollama ?祆? AI 璅∪?
 
-Ollama 是獨立應用程式，可在本機離線運行 AI 模型。
+Ollama ?舐蝡??函?撘??臬?祆??Ｙ??? AI 璅∪???
 
 ```powershell
-# 1. 下載 Ollama Windows 版本
+# 1. 銝? Ollama Windows ?
 #    https://ollama.ai/download
-#    直接安裝
+#    ?湔摰?
 
-# 2. 確認 Ollama 已啟動（應在背景執行）
-#    檢查：http://localhost:11434 是否回應
+# 2. 蝣箄? Ollama 撌脣??????瑁?嚗?
+#    瑼Ｘ嚗ttp://localhost:11434 ?臬??
 
-# 3. 在新 PowerShell 視窗下載模型
-ollama pull llama3.1:8b   # 輕量，推薦一般開發（4GB）
-# 或
-ollama pull qwen2.5-coder:7b  # 程式碼生成最佳化（6GB）
+# 3. ?冽 PowerShell 閬?銝?璅∪?
+ollama pull llama3.1:8b   # 頛?嚗?虫??祇??潘?4GB嚗?
+# ??
+ollama pull qwen2.5-coder:7b  # 蝔?蝣潛???雿喳?嚗?GB嚗?
 ```
 
-### 2.5 驗證本機模式安裝
+### 2.5 撽??祆?璅∪?摰?
 
 ```powershell
-# 檢查 CLI
+# 瑼Ｘ CLI
 aipa version
 
-# 測試 Ollama 連線
+# 皜祈岫 Ollama ???
 Invoke-WebRequest -Uri "http://localhost:11434/api/tags" -UseBasicParsing
-# 應返回已安裝的模型列表
+# ???歇摰??芋??銵?
 ```
 
 ---
 
-## 3. 方式 B：社群伺服器模式（連線遠端）
+## 3. ?孵? B嚗冗蝢支撩?璅∪?嚗???垢嚗?
 
-**適用於有公司 Linux 伺服器或已有 AIPA 部署的企業**
+**?拍?潭??砍 Linux 隡箸??冽?撌脫? AIPA ?函蔡??璆?*
 
-此模式下 Windows 上只安裝 CLI 工具，連線到已有的遠端 AIPA Runtime 服務。
+甇斗芋撘? Windows 銝摰? CLI 撌亙嚗???啣歇???垢 AIPA Runtime ????
 
-### 3.1 前置條件
+### 3.1 ?蔭璇辣
 
-- IT 部門已在公司 Linux 伺服器上部署 AIPA Runtime（使用方式 D 的一鍵安裝腳本）
-- 公司網路允許 Windows 連線到該伺服器
-- 伺服器 IP 或 DNS 名稱（例如：`company-aipa-server` 或 `10.0.1.100`）
+- IT ?券?撌脣?砍 Linux 隡箸??其??函蔡 AIPA Runtime嚗蝙?冽撘?D ???萄?鋆?穿?
+- ?砍蝬脰楝?迂 Windows ????啗府隡箸???
+- 隡箸???IP ??DNS ?迂嚗?憒?`company-aipa-server` ??`10.0.1.100`嚗?
 
-### 3.2 安裝 CLI
+### 3.2 摰? CLI
 
 ```powershell
 cd AI-Project-Assistant-Studio\cli
@@ -168,133 +166,133 @@ npm run build
 npm install -g .
 ```
 
-### 3.3 設定遠端伺服器位址
+### 3.3 閮剖??垢隡箸??其??
 
 ```powershell
-# 設定環境變數指向公司伺服器
+# 閮剖??啣?霈???砍隡箸???
 [System.Environment]::SetEnvironmentVariable("AIPA_RUNTIME_URL", "http://company-aipa-server:8080", "Machine")
 ```
 
-或編輯 `cli\.env` 檔案：
+?楊頛?`cli\.env` 瑼?嚗?
 
 ```ini
 AIPA_RUNTIME_URL=http://company-aipa-server:8080
 AIPA_MODE=REMOTE
 ```
 
-### 3.4 測試連線
+### 3.4 皜祈岫???
 
 ```powershell
 aipa health
-# 應顯示遠端 Runtime 版本信息
+# ?＊蝷粹?蝡?Runtime ?靽⊥
 ```
 
-完成！Windows 用戶現在可以透過 CLI 連線到公司的 AIPA 服務。
+摰?嚗indows ?冽?曉?臭誑?? CLI ????啣?貊? AIPA ????
 
 ---
 
-## 4. 方式 C：Docker Compose（Linux/macOS 自訂部署）
+## 4. ?孵? C嚗ocker Compose嚗inux/macOS ?芾??函蔡嚗?
 
-適合：大多數 Linux 場景、自訂部署需求。
+?拙?嚗之憭 Linux ?湔?閮蝵脤?瘙?
 
-### 4.1 前置需求安裝
+### 4.1 ?蔭?瘙?鋆?
 
 #### Ubuntu/Debian
 
 ```bash
-# 安裝 Docker
+# 摰? Docker
 curl -fsSL https://get.docker.com | bash
 sudo usermod -aG docker $USER
 newgrp docker
 
-# 確認版本
-docker --version    # 需要 24.0+
-docker compose version  # 需要 2.20+
+# 蝣箄??
+docker --version    # ?閬?24.0+
+docker compose version  # ?閬?2.20+
 ```
 
 #### RHEL/CentOS
 
 ```bash
-# 安裝 Docker
+# 摰? Docker
 sudo dnf install -y yum-utils
 sudo yum-config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
 sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
-# 啟動 Docker
+# ?? Docker
 sudo systemctl enable --now docker
 sudo usermod -aG docker $USER
 ```
 
-### 4.2 設定環境變數
+### 4.2 閮剖??啣?霈
 
 ```bash
 cd installer/docker
 cp .env.example .env
 ```
 
-編輯 `.env` 檔案：
+蝺刻摩 `.env` 瑼?嚗?
 
 ```ini
 # ======================================================
-# AIPA Studio — Docker Compose 環境設定
+# AIPA Studio ??Docker Compose ?啣?閮剖?
 # ======================================================
 
-# 基本設定
+# ?箸閮剖?
 COMPOSE_PROJECT_NAME=aipa-studio
 AIPA_VERSION=1.0.0-SNAPSHOT
 
-# 端口設定（若有端口衝突，在此修改）
-RUNTIME_PORT=8080        # Runtime Service 對外端口
-WEB_PORT=80              # Web Dashboard 對外端口
+# 蝡臬閮剖?嚗?垢???蝒??冽迨靽格嚗?
+RUNTIME_PORT=8080        # Runtime Service 撠?蝡臬
+WEB_PORT=80              # Web Dashboard 撠?蝡臬
 
 # ======================================================
-# AI 供應商設定（至少設定一個）
+# AI 靘??身摰??喳?閮剖?銝??
 # ======================================================
 CLAUDE_API_KEY=           # Anthropic Claude API Key
 OPENAI_API_KEY=           # OpenAI API Key
 GEMINI_API_KEY=           # Google Gemini API Key
-OLLAMA_BASE_URL=          # Ollama 本地: http://host.docker.internal:11434
+OLLAMA_BASE_URL=          # Ollama ?砍: http://host.docker.internal:11434
 
 # ======================================================
-# 資料庫設定
+# 鞈?摨怨身摰?
 # ======================================================
-# 預設使用 SQLite（無需額外設定）
+# ?身雿輻 SQLite嚗?憿?閮剖?嚗?
 
-# 若要使用 PostgreSQL，取消以下注釋：
+# ?亥?雿輻 PostgreSQL嚗?瘨誑銝釣??
 # POSTGRES_USER=aipa
 # POSTGRES_PASSWORD=your_secure_password_here
 # POSTGRES_DB=aipa_studio
 
 # ======================================================
-# 安全設定
+# 摰閮剖?
 # ======================================================
-# IP 白名單（生產環境建議啟用）
+# IP ?賢??殷???啣?撱箄降?嚗?
 ENABLE_IP_WHITELIST=false
 IP_WHITELIST=127.0.0.1,::1
 
-# 敏感資訊遮罩（正規表達式，逗號分隔）
+# ??鞈??桃蔗嚗迤閬”??嚗???嚗?
 AIPA_CONTEXT_EXCLUDE_PATTERNS=
 
 # ======================================================
-# 日誌設定
+# ?亥?閮剖?
 # ======================================================
 LOG_PATH=/var/log/aipa
 LOG_LEVEL=INFO
 ```
 
-### 4.3 啟動服務
+### 4.3 ????
 
 ```bash
 docker compose up -d
 ```
 
-啟動過程約需 2–3 分鐘。查看啟動狀態：
+????蝝? 2?? ?????????
 
 ```bash
 docker compose ps
 ```
 
-預期輸出：
+??頛詨嚗?
 ```
 NAME                    STATUS          PORTS
 aipa-studio-runtime-1   Up (healthy)    0.0.0.0:8080->18080/tcp
@@ -303,7 +301,7 @@ aipa-studio-web-1       Up (healthy)    0.0.0.0:80->80/tcp
 aipa-studio-chromadb-1  Up (healthy)
 ```
 
-### 4.4 安裝 CLI 工具
+### 4.4 摰? CLI 撌亙
 
 ```bash
 cd cli
@@ -312,132 +310,132 @@ npm run build
 sudo npm install -g .
 ```
 
-驗證：
+撽?嚗?
 ```bash
-which aipa   # 應顯示 /usr/local/bin/aipa 或類似路徑
+which aipa   # ?＊蝷?/usr/local/bin/aipa ??隡潸楝敺?
 aipa version # AIPA Studio CLI v1.0.0-SNAPSHOT
 ```
 
-### 4.5 驗證安裝
+### 4.5 撽?摰?
 
 ```bash
 aipa doctor
 ```
 
-所有項目應顯示 ✅ 或 ⚠️（警告可暫時忽略）。
+????格?憿舐內 ??????嚗郎??急?敹賜嚗?
 
 ```bash
-# 執行部署驗證腳本
+# ?瑁??函蔡撽??單
 bash installer/docker/verify-deployment.sh
 ```
 
-### 4.6 Docker Compose 服務說明
+### 4.6 Docker Compose ??隤芣?
 
-| 服務名稱 | 映像 | 端口 | 說明 |
+| ???迂 | ?? | 蝡臬 | 隤芣? |
 |----------|------|------|------|
-| `runtime` | `aipa-runtime:1.0.0` | 8080→18080 | Java Spring Boot 主服務 |
-| `ai-engine` | `aipa-ai-engine:1.0.0` | (內部 18082) | Python FastAPI AI 引擎 |
-| `web` | `aipa-web:1.0.0` | 80→80 | React Web Dashboard |
-| `chromadb` | `chromadb/chroma:0.5.0` | (內部 18083) | 向量資料庫 |
-| `postgres` | `postgres:15-alpine` | (內部 5432) | 關聯式資料庫（可選） |
+| `runtime` | `aipa-runtime:1.0.0` | 8080??8080 | 後端 後端框架 銝餅???|
+| `ai-engine` | `aipa-ai-engine:1.0.0` | (?折 18082) | Python FastAPI AI 撘? |
+| `web` | `aipa-web:1.0.0` | 80??0 | React Web Dashboard |
+| `chromadb` | `chromadb/chroma:0.5.0` | (?折 18083) | ??鞈?摨?|
+| `postgres` | `postgres:15-alpine` | (?折 5432) | ?撘??澈嚗?賂? |
 
 ---
 
-## 5. 方式 D：Linux 伺服器安裝
+## 5. ?孵? D嚗inux 隡箸??典?鋆?
 
-適合：生產伺服器、需要 systemd 服務管理、長期穩定運行。
+?拙?嚗??Ｖ撩???閬?systemd ??蝞∠???帘摰?銵?
 
-### 5.1 快速安裝（線上）
+### 5.1 敹恍?鋆?蝺?嚗?
 
 ```bash
-# 需要 root 或 sudo 權限
+# ?閬?root ??sudo 甈?
 curl -sSL https://raw.githubusercontent.com/your-org/AI-Project-Assistant-Studio/main/installer/linux/install.sh | bash
 ```
 
-### 5.2 本機安裝（離線或審查後執行）
+### 5.2 ?祆?摰?嚗蝺?撖拇敺銵?
 
 ```bash
-# 首先審查腳本內容
+# 擐?撖拇?單?批捆
 cat installer/linux/install.sh
 
-# 執行安裝
+# ?瑁?摰?
 chmod +x installer/linux/install.sh
 sudo ./installer/linux/install.sh
 ```
 
-### 5.3 安裝腳本執行過程
+### 5.3 摰??單?瑁???
 
-腳本執行以下操作（全自動，約 10–15 分鐘）：
-
-```
-[1/8] 系統相容性檢查
-      ✓ 作業系統：Ubuntu 22.04.3 LTS
-      ✓ CPU 核心：8
-      ✓ 記憶體：16 GB
-
-[2/8] 安裝系統相依套件
-      ✓ curl, git, jq
-
-[3/8] 安裝 Docker Engine
-      ✓ Docker 24.0.7
-      ✓ Docker Compose 2.21.0
-
-[4/8] 克隆 AIPA Studio
-      安裝路徑：/opt/aipa-studio/
-
-[5/8] 設定環境變數
-      請輸入 AI API Key（或按 Enter 跳過）：
-
-[6/8] 建置 Docker 映像
-      ✓ aipa-runtime:1.0.0
-      ✓ aipa-ai-engine:1.0.0
-      ✓ aipa-web:1.0.0
-
-[7/8] 啟動服務
-      ✓ 所有容器已啟動
-
-[8/8] 安裝 CLI 工具
-      ✓ aipa 已安裝至 /usr/local/bin/
-
-安裝完成！執行 aipa doctor 驗證環境。
-```
-
-### 5.4 安裝後的目錄結構
+?單?瑁?隞乩???嚗?芸?嚗? 10??5 ??嚗?
 
 ```
-/opt/aipa-studio/          # 安裝目錄
-├── installer/docker/
-│   ├── docker-compose.yml
-│   └── .env
-├── cli/
-└── ...
+[1/8] 蝟餌絞?詨捆?扳炎??
+      ??雿平蝟餌絞嚗buntu 22.04.3 LTS
+      ??CPU ?詨?嚗?
+      ??閮擃?16 GB
+
+[2/8] 摰?蝟餌絞?訾?憟辣
+      ??curl, git, jq
+
+[3/8] 摰? Docker Engine
+      ??Docker 24.0.7
+      ??Docker Compose 2.21.0
+
+[4/8] ?? AIPA Studio
+      摰?頝臬?嚗?opt/aipa-studio/
+
+[5/8] 閮剖??啣?霈
+      隢撓??AI API Key嚗???Enter 頝喲?嚗?
+
+[6/8] 撱箇蔭 Docker ??
+      ??aipa-runtime:1.0.0
+      ??aipa-ai-engine:1.0.0
+      ??aipa-web:1.0.0
+
+[7/8] ????
+      ????捆?典歇??
+
+[8/8] 摰? CLI 撌亙
+      ??aipa 撌脣?鋆 /usr/local/bin/
+
+摰?摰?嚗銵?aipa doctor 撽??啣???
+```
+
+### 5.4 摰?敺??桅?蝯?
+
+```
+/opt/aipa-studio/          # 摰??桅?
+??? installer/docker/
+??  ??? docker-compose.yml
+??  ??? .env
+??? cli/
+??? ...
 
 /etc/systemd/system/
-└── aipa-studio.service    # systemd 服務定義
+??? aipa-studio.service    # systemd ??摰儔
 
-/var/log/aipa/             # 日誌目錄
-├── aipa-runtime-json.log
-└── aipa-ai-engine-json.log
+/var/log/aipa/             # ?亥??桅?
+??? aipa-runtime-json.log
+??? aipa-ai-engine-json.log
 ```
 
-### 5.5 設定 AI API Key（安裝後）
+### 5.5 閮剖? AI API Key嚗?鋆?嚗?
 
 ```bash
-# 編輯環境設定
+# 蝺刻摩?啣?閮剖?
 sudo nano /opt/aipa-studio/installer/docker/.env
 
-# 修改完後重啟服務
+# 靽格摰?????
 sudo systemctl restart aipa-studio
 ```
 
-### 5.6 設定防火牆
+### 5.6 閮剖??脩??
 
 ```bash
-# Ubuntu（ufw）
+# Ubuntu嚗fw嚗?
 sudo ufw allow 8080/tcp comment "AIPA Runtime"
 sudo ufw allow 80/tcp comment "AIPA Web"
 
-# RHEL/CentOS（firewalld）
+# RHEL/CentOS嚗irewalld嚗?
 sudo firewall-cmd --permanent --add-port=8080/tcp
 sudo firewall-cmd --permanent --add-port=80/tcp
 sudo firewall-cmd --reload
@@ -445,164 +443,157 @@ sudo firewall-cmd --reload
 
 ---
 
-## 6. 方式 E：Windows Docker 安裝（可選）
+## 6. ?孵? E嚗indows Docker 摰?嚗?賂?
 
-適合：Windows 10/11 個人開發者使用。
+?拙?嚗indows 10/11 ?犖??蝙?具?
 
-### 6.1 前置需求
+### 6.1 ?蔭?瘙?
 
-1. **確認 Windows 版本**：
-   - 開啟「執行」（Win+R）→ 輸入 `winver`
-   - 需要 Build 19041 或更高版本
+1. **蝣箄? Windows ?**嚗?
+   - ???銵?Win+R嚗? 頛詨 `winver`
+   - ?閬?Build 19041 ?擃???
 
-2. **確認已啟用 WSL 2**（Docker Desktop 需要）：
+2. **蝣箄?撌脣???WSL 2**嚗ocker Desktop ?閬?嚗?
 ```powershell
-# 以管理員身份執行 PowerShell
+# 隞亦恣?頨思遢?瑁? PowerShell
 wsl --install
 wsl --set-default-version 2
 ```
 
-### 6.2 執行安裝腳本
+### 6.2 ?瑁?摰??單
 
-1. 以**管理員身份**開啟 PowerShell
+1. 隞?*蝞∠??∟澈隞?*?? PowerShell
 
-2. 設定執行原則（允許腳本執行）：
+2. 閮剖??瑁???嚗?閮梯?砍銵?嚗?
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force
 ```
 
-3. 執行安裝腳本：
+3. ?瑁?摰??單嚗?
 ```powershell
 cd AI-Project-Assistant-Studio
 .\installer\windows\install.ps1
 ```
 
-### 6.3 安裝過程
+### 6.3 摰???
 
-腳本會自動：
+?單???
 
-1. 檢查 Windows 版本和 WSL 2 狀態
-2. 下載並安裝 Docker Desktop（如尚未安裝）
-3. 等待 Docker Desktop 啟動（約 2–3 分鐘）
-4. 設定環境變數
-5. 啟動所有服務
-6. 安裝 CLI 工具
+1. 瑼Ｘ Windows ???WSL 2 ???
+2. 銝?銝血?鋆?Docker Desktop嚗?撠摰?嚗?
+3. 蝑? Docker Desktop ??嚗? 2?? ??嚗?
+4. 閮剖??啣?霈
+5. ???????
+6. 摰? CLI 撌亙
 
-> ⚠️ Docker Desktop 安裝完成後可能需要**重新開機**。
+> ?? Docker Desktop 摰?摰?敺?賡?閬?*???**??
 
-### 6.4 設定 AI API Key（安裝後）
+### 6.4 閮剖? AI API Key嚗?鋆?嚗?
 
 ```powershell
-# 設定系統環境變數（管理員 PowerShell）
+# 閮剖?蝟餌絞?啣?霈嚗恣? PowerShell嚗?
 [System.Environment]::SetEnvironmentVariable("CLAUDE_API_KEY", "sk-ant-xxxxx", "Machine")
 [System.Environment]::SetEnvironmentVariable("OPENAI_API_KEY", "sk-xxxxx", "Machine")
 
-# 重新啟動 Docker 服務以套用
+# ??? Docker ??隞亙???
 cd C:\Program Files\aipa-studio\installer\docker
 docker compose down
 docker compose up -d
 ```
 
-### 6.5 開機自動啟動
+### 6.5 ???芸???
 
-安裝腳本預設設定 Docker Compose 服務為自動啟動。
-如需手動管理：
+摰??單?身閮剖? Docker Compose ???箄????
+憒???蝞∠?嚗?
 
 ```powershell
-# 查看排程任務
+# ?亦???隞餃?
 Get-ScheduledTask | Where-Object {$_.TaskName -like "*aipa*"}
 
-# 手動啟動
+# ????
 cd "C:\Program Files\aipa-studio\installer\docker"
 docker compose up -d
 ```
 
 ---
 
-## 7. 安裝後設定
+## 7. 摰?敺身摰?
 
-### 7.1 設定 AI 供應商
+### 7.1 閮剖? AI 靘???
 
-至少設定一個 AI 供應商才能使用程式碼生成功能。
+?喳?閮剖?銝??AI 靘????賭蝙?函?撘Ⅳ?????
 
-#### GitHub Copilot（推薦 — 公司已購買）
+#### GitHub Copilot嚗?????砍撌脰頃鞎瘀?
 
-GitHub Copilot 是公司已購買的方案，推薦優先使用。
+GitHub Copilot ?臬?詨歇鞈潸眺?獢??刻?芸?雿輻??
 
 ```bash
-# 1. 取得 GitHub Personal Access Token
-#    前往：https://github.com/settings/tokens
-#    建立新 Token（勾選 copilot scope）
-#    複製 Token
+# 1. ?? GitHub Personal Access Token
+#    ??嚗ttps://github.com/settings/tokens
+#    撱箇???Token嚗??copilot scope嚗?
+#    銴ˊ Token
 
-# 2. 設定環境變數
+# 2. 閮剖??啣?霈
 export GITHUB_TOKEN=ghp_xxxxxxxxxxxxx
 
-# 3. 驗證連線
+# 3. 撽????
 curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/user
 ```
 
-#### Anthropic Claude（付費備選）
+#### Anthropic Claude嚗?鞎餃??賂?
 
 ```bash
-# 取得 API Key：https://console.anthropic.com/
+# ?? API Key嚗ttps://console.anthropic.com/
 export CLAUDE_API_KEY=sk-ant-xxxxx
 ```
 
-#### OpenAI（付費備選）
+#### OpenAI嚗?鞎餃??賂?
 
 ```bash
-# 取得 API Key：https://platform.openai.com/api-keys
+# ?? API Key嚗ttps://platform.openai.com/api-keys
 export OPENAI_API_KEY=sk-xxxxx
 ```
 
-#### Google Gemini（付費備選，含免費配額）
+#### Google Gemini嚗?鞎餃??賂??怠?鞎駁?憿?
 
 ```bash
-# 取得 API Key：https://makersuite.google.com/app/apikey
+# ?? API Key嚗ttps://makersuite.google.com/app/apikey
 export GEMINI_API_KEY=AIxxxxx
 ```
 
-#### Ollama（完全免費，離線備選）
+#### GitHub Copilot嚗??????GitHub 撣單?游?嚗?
 
 ```bash
-# 安裝 Ollama（Linux）
-curl -fsSL https://ollama.ai/install.sh | sh
-
-# 下載模型（選其一）
-ollama pull llama3.1:8b      # 輕量，適合一般開發
-ollama pull qwen2.5-coder:7b # 程式碼生成最佳化
-ollama pull codellama:13b    # Coding 專用大模型
-
-# 設定環境變數
-export OLLAMA_BASE_URL=http://localhost:11434
+# ?? GitHub Token嚗ttps://github.com/settings/tokens
+# ?閬?repo ??gist 甈?
+export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-### 7.2 設定日誌目錄（Linux 生產環境）
+### 7.2 閮剖??亥??桅?嚗inux ??啣?嚗?
 
 ```bash
-# 建立日誌目錄
+# 撱箇??亥??桅?
 sudo mkdir -p /var/log/aipa
 sudo chown $USER:$USER /var/log/aipa
 
-# 在 .env 中設定
+# ??.env 銝剛身摰?
 echo "LOG_PATH=/var/log/aipa" >> installer/docker/.env
 ```
 
-### 7.3 設定 IP 白名單（生產環境必要）
+### 7.3 閮剖? IP ?賢??殷???啣?敹?嚗?
 
 ```bash
-# 在 .env 中設定
+# ??.env 銝剛身摰?
 echo "ENABLE_IP_WHITELIST=true" >> installer/docker/.env
 echo "IP_WHITELIST=127.0.0.1,::1,10.0.0.0/8" >> installer/docker/.env
 
-# 重啟服務套用設定
+# ????憟閮剖?
 docker compose restart runtime
 ```
 
-### 7.4 設定 HTTPS（Nginx 反向代理）
+### 7.4 閮剖? HTTPS嚗ginx ??隞??嚗?
 
-如需 HTTPS，在 Nginx 設定中添加 SSL 憑證：
+憒? HTTPS嚗 Nginx 閮剖?銝剜溶??SSL ??嚗?
 
 ```nginx
 # /etc/nginx/conf.d/aipa.conf
@@ -628,119 +619,119 @@ server {
 }
 ```
 
-### 7.5 CLI 快捷語彙與 project_id 自動偵測（建議啟用）
+### 7.5 CLI 敹急隤???project_id ?芸??菜葫嚗遣霅啣??剁?
 
-安裝完成後，CLI 支援自然語言風格快捷語彙（slash wrapper），例如：
+摰?摰?敺?CLI ?舀?芰隤?憸冽敹急隤?嚗lash wrapper嚗?靘?嚗?
 
 ```powershell
-/spec 新增付款提醒功能
+/spec ?啣?隞狡???
 /plan
 /test
 /learn
 ```
 
-`project_id` 自動偵測順序：
+`project_id` ?芸??菜葫??嚗?
 
-1. 顯式 `--project-id`
-2. 環境變數 `AIPA_PROJECT_ID`
-3. 目前目錄 `.ai-project/project.json`
-4. 目前目錄名稱（正規化）
+1. 憿臬? `--project-id`
+2. ?啣?霈 `AIPA_PROJECT_ID`
+3. ?桀??桅? `.ai-project/project.json`
+4. ?桀??桅??迂嚗迤閬?嚗?
 
-> 詳細使用方式請參考 `docs/guides/002-user-guide.md` 的「5.10 自然語言風格快捷指令」章節。
+> 閰喟敦雿輻?孵?隢???`docs/guides/002-user-guide.md` ??.10 ?芰隤?憸冽敹急?誘??蝭??
 
 ---
 
-## 8. 服務管理
+## 8. ??蝞∠?
 
-### 8.1 Docker Compose 環境
+### 8.1 Docker Compose ?啣?
 
 ```bash
-# 查看服務狀態
+# ?亦??????
 docker compose ps
 docker compose top
 
-# 查看日誌
-docker compose logs -f              # 所有服務
-docker compose logs -f runtime      # 只看 Runtime
-docker compose logs -f ai-engine    # 只看 AI Engine
+# ?亦??亥?
+docker compose logs -f              # ?????
+docker compose logs -f runtime      # ?芰? Runtime
+docker compose logs -f ai-engine    # ?芰? AI Engine
 
-# 重啟服務
-docker compose restart              # 重啟所有
-docker compose restart runtime      # 重啟特定服務
+# ????
+docker compose restart              # ?????
+docker compose restart runtime      # ???孵???
 
-# 停止/啟動
+# ?迫/??
 docker compose stop
 docker compose start
 
-# 完全停止並移除容器
+# 摰?迫銝衣宏?文捆??
 docker compose down
-# 啟動
+# ??
 docker compose up -d
 ```
 
-### 8.2 Linux systemd 環境
+### 8.2 Linux systemd ?啣?
 
 ```bash
-# 查看狀態
+# ?亦????
 systemctl status aipa-studio
 
-# 啟動/停止/重啟
+# ??/?迫/??
 sudo systemctl start aipa-studio
 sudo systemctl stop aipa-studio
 sudo systemctl restart aipa-studio
 
-# 查看即時日誌
+# ?亦??單??亥?
 journalctl -u aipa-studio -f
 
-# 設定開機自動啟動
+# 閮剖????芸???
 sudo systemctl enable aipa-studio
 
-# 取消開機自動啟動
+# ?????芸???
 sudo systemctl disable aipa-studio
 ```
 
-### 8.3 服務健康狀態
+### 8.3 ???亙熒???
 
 ```bash
 # Runtime Service
 curl http://localhost:8080/api/v1/health
-# 預期：{"status":"UP","version":"1.0.0-SNAPSHOT"}
+# ??嚗"status":"UP","version":"1.0.0-SNAPSHOT"}
 
 # AI Engine
 curl http://localhost:18082/engine/health
-# 預期：{"status":"UP","engines":{...}}
+# ??嚗"status":"UP","engines":{...}}
 
 # Web Dashboard
 curl -I http://localhost
-# 預期：HTTP/1.1 200 OK
+# ??嚗TTP/1.1 200 OK
 ```
 
 ---
 
-## 9. 升級流程
+## 9. ??瘚?
 
-### 9.1 Docker Compose 升級
+### 9.1 Docker Compose ??
 
 ```bash
-# 進入安裝目錄
+# ?脣摰??桅?
 cd /opt/aipa-studio
 
-# 拉取最新程式碼
+# ????啁?撘Ⅳ
 git fetch origin
 git pull origin main
 
-# 重新建置映像
+# ?撱箇蔭??
 docker compose build --no-cache
 
-# 滾動重啟（最小化停機時間）
+# 皛曉???嚗?撠?????嚗?
 docker compose up -d --force-recreate
 
-# 驗證升級
+# 撽???
 aipa version
 aipa health
 ```
 
-### 9.2 CLI 升級
+### 9.2 CLI ??
 
 ```bash
 cd cli
@@ -749,68 +740,68 @@ npm install
 npm run build
 sudo npm install -g . --force
 
-# 驗證
+# 撽?
 aipa version
 ```
 
-### 9.3 資料庫遷移
+### 9.3 鞈?摨恍蝘?
 
-升級後如有 Schema 變更，Flyway 會自動執行遷移：
+??敺???Schema 霈嚗lyway ??銵蝘鳴?
 
 ```bash
-# 查看遷移歷史
+# ?亦??瑞宏甇瑕
 docker compose exec runtime java -jar aipa-runtime.jar --spring.flyway.out-of-order=true
 
-# 如遷移失敗，查看錯誤日誌
+# 憒蝘餃仃???亦??航炊?亥?
 docker compose logs runtime | grep "Flyway"
 ```
 
 ---
 
-## 10. 解除安裝
+## 10. 閫?摰?
 
-### 10.1 Docker Compose 解除安裝
+### 10.1 Docker Compose 閫?摰?
 
 ```bash
-# 停止並移除所有容器
+# ?迫銝衣宏?斗??捆??
 cd installer/docker
-docker compose down -v  # -v 同時移除 volume
+docker compose down -v  # -v ??蝘駁 volume
 
-# 移除 Docker 映像
+# 蝘駁 Docker ??
 docker rmi aipa-runtime:1.0.0 aipa-ai-engine:1.0.0 aipa-web:1.0.0
 
-# 移除 CLI 工具
+# 蝘駁 CLI 撌亙
 sudo npm uninstall -g aipa
 
-# 移除程式碼目錄（可選）
+# 蝘駁蝔?蝣潛???舫嚗?
 cd ~
 rm -rf /opt/aipa-studio
 ```
 
-### 10.2 Linux systemd 解除安裝
+### 10.2 Linux systemd 閫?摰?
 
 ```bash
-# 停止並禁用服務
+# ?迫銝衣??冽???
 sudo systemctl stop aipa-studio
 sudo systemctl disable aipa-studio
 
-# 移除 systemd 服務檔案
+# 蝘駁 systemd ??瑼?
 sudo rm /etc/systemd/system/aipa-studio.service
 sudo systemctl daemon-reload
 
-# 後續同 Docker 解除安裝
+# 敺???Docker 閫?摰?
 ```
 
-### 10.3 資料備份（解除前）
+### 10.3 鞈??遢嚗圾?文?嚗?
 
 ```bash
-# 備份知識庫資料庫
+# ?遢?亥?摨怨??澈
 cp .ai-project/knowledge/db/aipa.db ~/backup/aipa-backup-$(date +%Y%m%d).db
 
-# 備份智慧規則
+# ?遢?箸閬?
 cp -r templates/wisdom ~/backup/wisdom-rules-$(date +%Y%m%d)
 
-# 備份 Docker Volumes
+# ?遢 Docker Volumes
 docker run --rm \
   -v aipa_data:/data \
   -v ~/backup:/backup \
@@ -819,85 +810,86 @@ docker run --rm \
 
 ---
 
-## 11. 安裝驗收清單
+## 11. 摰?撽皜
 
-安裝完成後，請逐一確認以下項目：
+摰?摰?敺?隢?蝣箄?隞乩??嚗?
 
-### 基本功能
+### ?箸?
 
-- [ ] `aipa version` 顯示正確版本
-- [ ] `aipa health` 顯示 Runtime Service UP
-- [ ] `aipa doctor` 所有項目 ✅（或只有可接受的 ⚠️）
-- [ ] 瀏覽器能開啟 `http://localhost`（Web Dashboard）
+- [ ] `aipa version` 憿舐內甇?Ⅱ?
+- [ ] `aipa health` 憿舐內 Runtime Service UP
+- [ ] `aipa doctor` ??????????亙?????嚗?
+- [ ] ?汗?刻?? `http://localhost`嚗eb Dashboard嚗?
 
-### AI 供應商
+### AI 靘???
 
-- [ ] 至少一個 AI 供應商 API Key 已設定
-- [ ] `aipa doctor` 的 `ai-provider` 項目顯示 ✅
+- [ ] ?喳?銝??AI 靘???API Key 撌脰身摰?
+- [ ] `aipa doctor` ??`ai-provider` ?憿舐內 ??
 
-### 核心功能驗證
+### ?詨??撽?
 
 ```bash
-# 測試知識庫（無需真實專案）
+# 皜祈岫?亥?摨恬??⊿??祕撠?嚗?
 aipa knowledge search "test"
 
-# 測試 slash wrapper
+# 皜祈岫 slash wrapper
 /plan
 
-# 應輸出：No knowledge found.（代表服務正常，只是知識庫為空）
+# ?撓?綽?No knowledge found.嚗誨銵冽??迤撣賂??芣?亥?摨怎蝛綽?
 ```
 
-- [ ] 以上測試指令執行無錯誤
+- [ ] 隞乩?皜祈岫?誘?瑁??⊿隤?
 
-### 安全設定
+### 摰閮剖?
 
-- [ ] IP 白名單已根據環境需求設定（生產環境必須啟用）
-- [ ] 敏感資訊遮罩規則已設定（`AIPA_CONTEXT_EXCLUDE_PATTERNS`）
-- [ ] 日誌目錄存在且可寫入
+- [ ] IP ?賢??桀歇?寞??啣??瘙身摰???啣?敹??嚗?
+- [ ] ??鞈??桃蔗閬?撌脰身摰?`AIPA_CONTEXT_EXCLUDE_PATTERNS`嚗?
+- [ ] ?亥??桅?摮銝撖怠
 
-### 連線測試
+### ???皜祈岫
 
-- [ ] CLI → Runtime 連線正常（`aipa health`）
-- [ ] Runtime → AI Engine 連線正常（查看 health 回應中的 engines 狀態）
-- [ ] 瀏覽器 → Web Dashboard 正常
+- [ ] CLI ??Runtime ???甇?虜嚗aipa health`嚗?
+- [ ] Runtime ??AI Engine ???甇?虜嚗??health ??銝剔? engines ???
+- [ ] ?汗????Web Dashboard 甇?虜
 
 ---
 
-## 附錄：疑難排解
+## ??嚗????閫?
 
-### 容器啟動失敗
+### 摰孵??憭望?
 
 ```bash
-# 查看詳細錯誤
+# ?亦?閰喟敦?航炊
 docker compose logs runtime --tail 50
 
-# 常見原因：
-# 1. 端口衝突 → 修改 .env 中的 RUNTIME_PORT
-# 2. 記憶體不足 → 增加 Docker 記憶體限制（Docker Desktop → 設定 → 資源）
-# 3. 權限問題 → 確認 docker 群組設定
+# 撣貉???嚗?
+# 1. 蝡臬銵? ??靽格 .env 銝剔? RUNTIME_PORT
+# 2. 閮擃?頞???憓? Docker 閮擃??塚?Docker Desktop ??閮剖? ??鞈?嚗?
+# 3. 甈??? ??蝣箄? docker 蝢斤?閮剖?
 ```
 
-### CLI 安裝失敗
+### CLI 摰?憭望?
 
 ```bash
-# 確認 Node.js 版本
-node --version  # 需要 v20+
+# 蝣箄? Node.js ?
+node --version  # ?閬?v20+
 
-# 清除 npm 快取後重試
+# 皜 npm 敹怠?敺?閰?
 npm cache clean --force
 cd cli && npm install && npm run build && sudo npm install -g .
 ```
 
-### Windows Docker 無法啟動
+### Windows Docker ?⊥???
 
-1. 確認 BIOS 已啟用虛擬化（Virtualization）
-2. 確認 WSL 2 已安裝：`wsl --status`
-3. 重新安裝 WSL 2：`wsl --install --no-distribution`
-4. 重啟電腦後再試
+1. 蝣箄? BIOS 撌脣??刻??砍?嚗irtualization嚗?
+2. 蝣箄? WSL 2 撌脣?鋆?`wsl --status`
+3. ?摰? WSL 2嚗wsl --install --no-distribution`
+4. ???餉敺?閰?
 
 ---
 
-*AIPA Studio 安裝手冊 v1.0.0-SNAPSHOT*
-*如有問題請聯絡 AIPA Studio 團隊*
+*AIPA Studio 摰??? v1.0.0-SNAPSHOT*
+*憒???隢蝯?AIPA Studio ??*
+
 
 

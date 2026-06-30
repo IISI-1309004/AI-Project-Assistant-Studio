@@ -13,7 +13,7 @@ Phase 7 最小可交付版本。
 
 在 IntelliJ IDE 中：
 
-- 系統屬性 `aipa.runtime.url`（預設：`http://localhost:8080`）
+- 系統屬性 `aipa.runtime.url`（預設：`http://localhost:18080`）
 - 系統屬性 `aipa.poll.interval`（預設：`10000` 毫秒）
 
 ## 開發

@@ -4,6 +4,8 @@ EmbeddingService — 使用 sentence-transformers 本地模型進行文字向量
 from __future__ import annotations
 
 import logging
+import os
+import hashlib
 from functools import lru_cache
 from typing import Optional
 
@@ -14,9 +16,14 @@ _model = None
 
 
 def _get_model(model_name: str = "all-MiniLM-L6-v2"):
-    """延遲載入 sentence-transformers 模型（首次呼叫時下載並快取）"""
+    """延遲載入模型：預設使用本地快速 embedder，必要時才啟用 sentence-transformers。"""
     global _model
     if _model is None:
+        enable_st = os.getenv("AIPA_ENABLE_SENTENCE_TRANSFORMERS", "0") == "1"
+        if not enable_st:
+            logger.info("AIPA_ENABLE_SENTENCE_TRANSFORMERS is not set; using fast local hash embeddings")
+            _model = FastHashEmbedder()
+            return _model
         try:
             from sentence_transformers import SentenceTransformer
             logger.info(f"Loading embedding model: {model_name}")
@@ -78,3 +85,27 @@ class DummyEmbedder:
         if isinstance(texts, str):
             return np.zeros(384)
         return np.zeros((len(texts), 384))
+
+
+class FastHashEmbedder:
+    """Lightweight deterministic embedder that avoids external model downloads."""
+
+    def _encode_one(self, text: str) -> list[float]:
+        if not text or not text.strip():
+            return [0.0] * 384
+        vec = [0.0] * 384
+        for token in text.lower().split():
+            digest = hashlib.sha256(token.encode("utf-8")).digest()
+            idx = int.from_bytes(digest[:2], "little") % 384
+            sign = 1.0 if (digest[2] & 1) == 0 else -1.0
+            vec[idx] += sign
+        norm = sum(v * v for v in vec) ** 0.5
+        if norm > 0:
+            vec = [v / norm for v in vec]
+        return vec
+
+    def encode(self, texts, **kwargs):
+        if isinstance(texts, str):
+            return self._encode_one(texts)
+        return [self._encode_one(t) for t in texts]
+

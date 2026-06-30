@@ -1,109 +1,109 @@
-# 一對多架構實現完全指南
+﻿# 銝撠??嗆?撖衣摰??
 
-**版本**：1.0.0
-**日期**：2026-06-30
-**狀態**：✅ 完全實現
+**?**嚗?.0.0
+**?交?**嚗?026-06-30
+**???*嚗? 摰撖衣
 
 ---
 
-## 概述
+## 璁膩
 
-本文檔詳細說明了如何在 AIPA Studio 中實現完整的一對多架構（1 個 Runtime Service 對應多個獨立項目）。
+?祆?瑼底蝝啗牧??憒???AIPA Studio 銝剖祕?曉??渡?銝撠??嗆?嚗? ??Runtime Service 撠?憭蝡??殷???
 
-### 核心改變
+### ?詨??寡?
 
-| 層級 | 之前 | 之後 |
+| 撅斤? | 銋? | 銋? |
 |------|------|------|
-| **架構** | 多個獨立 Runtime 實例 | 單一共用 Runtime + ProjectContextHolder |
-| **數據隔離** | 實例級隔離 | 應用層 + 數據庫層隔離 |
-| **成本** | 高（N × 部署成本） | 低（1 × 部署成本） |
-| **知識共享** | 不可能 | 可選支持跨項目搜尋 |
+| **?嗆?** | 憭蝡?Runtime 撖虫? | ?桐??梁 Runtime + ProjectContextHolder |
+| **?豢??** | 撖虫?蝝???| ?撅?+ ?豢?摨怠惜? |
+| **?** | 擃?N ? ?函蔡?嚗?| 雿?1 ? ?函蔡?嚗?|
+| **?亥??曹澈** | 銝??| ?舫?舀?頝券??格?撠?|
 
 ---
 
-## 📐 架構圖
+## ?? ?嗆???
 
 ```
-╔════════════════════════════════════════════════════════════╗
-║                 CLI / IDE Plugin / Web UI                  ║
-║              (輸入 project_id 或自動偵測)                  ║
-╚════════════════║═════════════════════════════════════════╝
-                 │
-                 ▼
-╔════════════════════════════════════════════════════════════╗
-║              ProjectContextInterceptor                      ║
-║      (提取 project_id 並設置到 ProjectContextHolder)      ║
-╚════════════════║═════════════════════════════════════════╝
-                 │
-                 ▼
-┌────────────────────────────────────────────────────────────┐
-│           AIPA Runtime Service (共用)                       │
-│                                                             │
-│  ┌──────────────────────────────────┐                      │
-│  │ ProjectContextHolder              │                      │
-│  │ ├── projectId: ThreadLocal<String>│                      │
-│  │ ├── userId: ThreadLocal<String>   │                      │
-│  │ ├── operationId: ThreadLocal<String> │                      │
-│  └──────────────────────────────────┘                      │
-│                 ▲                                           │
-│                 │                                           │
-│     ┌───────────┴───────────┐                              │
-│     │                       │                              │
-│  ┌──▼──────┐         ┌──────▼──┐                           │
-│  │Controllers    │         │Services     │                         │
-│  │ (取得 context)│         │(使用 context)│                         │
-│  └──────────┘         └──────────┘                         │
-│     │                       │                              │
-│     └───────────┬───────────┘                              │
-│                 │                                           │
-│       ┌─────────▼─────────┐                                │
-│       │ Repository Layer  │                                │
-│       │ (ProjectSpec      │                                │
-│       │  自動過濾)         │                                │
-│       └─────────┬─────────┘                                │
-└────────────────┼────────────────────────────────────────┘
-                 │
-                 ▼
-╔════════════════════════════════════════════════════════════╗
-║                   Database Layer                            ║
-║                                                             ║
-║  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     ║
-║  │ aipa.db      │  │ memory.db    │  │ knowledge.db │     ║
-║  │              │  │              │  │              │     ║
-║  │ projects     │  │ memory_      │  │ knowledge_   │     ║
-║  │ sessions     │  │ entries      │  │ items        │     ║
-║  │ checkpoints  │  │              │  │              │     ║
-║  │              │  │ (project_id  │  │ (project_id  │     ║
-║  │ (project_id  │  │  隔離)        │  │  隔離)        │     ║
-║  │  隔離)        │  │              │  │              │     ║
-║  └──────────────┘  └──────────────┘  └──────────────┘     ║
-║                                                             ║
-║  ┌────────────────────────────────────┐                   ║
-║  │  ChromaDB Vector Store             │                   ║
-║  │  (collection: knowledge_{pid})      │                   ║
-║  │  (collection: memory_{pid})         │                   ║
-║  └────────────────────────────────────┘                   ║
-╚════════════════════════════════════════════════════════════╝
-                 ▲
-                 │
-         ┌───────┴───────┐
-         │               │
-    ┌────▼──┐      ┌─────▼──┐
-    │Knowledge    │Memory   │
-    │Engine   │      │Engine   │
-    └─────────┘      └─────────┘
-    ... (其他 Python Engines)
+??????????????????????????????????????????????????????????????
+??                CLI / IDE Plugin / Web UI                  ??
+??             (頛詨 project_id ??皜?                  ??
+????????????????????????????????????????????????????????????
+                 ??
+                 ??
+??????????????????????????????????????????????????????????????
+??             ProjectContextInterceptor                      ??
+??     (?? project_id 銝西身蝵桀 ProjectContextHolder)      ??
+????????????????????????????????????????????????????????????
+                 ??
+                 ??
+???????????????????????????????????????????????????????????????
+??          AIPA Runtime Service (?梁)                       ??
+??                                                            ??
+?? ?????????????????????????????????????                     ??
+?? ??ProjectContextHolder              ??                     ??
+?? ????? projectId: ThreadLocal<String>??                     ??
+?? ????? userId: ThreadLocal<String>   ??                     ??
+?? ????? operationId: ThreadLocal<String> ??                     ??
+?? ?????????????????????????????????????                     ??
+??                ??                                          ??
+??                ??                                          ??
+??    ?????????????氯?????????????                             ??
+??    ??                      ??                             ??
+?? ????潑????????        ????????潑????                          ??
+?? ?ontrollers    ??        ?ervices     ??                        ??
+?? ??(?? context)??        ??雿輻 context)??                        ??
+?? ?????????????        ?????????????                        ??
+??    ??                      ??                             ??
+??    ?????????????砂?????????????                             ??
+??                ??                                          ??
+??      ???????????潑???????????                               ??
+??      ??Repository Layer  ??                               ??
+??      ??(ProjectSpec      ??                               ??
+??      ?? ?芸??蕪)         ??                               ??
+??      ???????????砂???????????                               ??
+??????????????????潑??????????????????????????????????????????
+                 ??
+                 ??
+??????????????????????????????????????????????????????????????
+??                  Database Layer                            ??
+??                                                            ??
+?? ????????????????? ????????????????? ?????????????????    ??
+?? ??aipa.db      ?? ??memory.db    ?? ??knowledge.db ??    ??
+?? ??             ?? ??             ?? ??             ??    ??
+?? ??projects     ?? ??memory_      ?? ??knowledge_   ??    ??
+?? ??sessions     ?? ??entries      ?? ??items        ??    ??
+?? ??checkpoints  ?? ??             ?? ??             ??    ??
+?? ??             ?? ??(project_id  ?? ??(project_id  ??    ??
+?? ??(project_id  ?? ?? ?)        ?? ?? ?)        ??    ??
+?? ?? ?)        ?? ??             ?? ??             ??    ??
+?? ????????????????? ????????????????? ?????????????????    ??
+??                                                            ??
+?? ???????????????????????????????????????                  ??
+?? ?? ChromaDB Vector Store             ??                  ??
+?? ?? (collection: knowledge_{pid})      ??                  ??
+?? ?? (collection: memory_{pid})         ??                  ??
+?? ???????????????????????????????????????                  ??
+??????????????????????????????????????????????????????????????
+                 ??
+                 ??
+         ?????????氯?????????
+         ??              ??
+    ??????潑????     ???????潑????
+    ?nowledge    ?emory   ??
+    ?ngine   ??     ?ngine   ??
+    ????????????     ????????????
+    ... (?嗡? Python Engines)
 ```
 
 ---
 
-## 🔧 實現細節
+## ? 撖衣蝝啁?
 
-### Java/Spring Boot 側
+### 後端/後端框架 ??
 
 #### 1. ProjectContextHolder
 
-**文件**：`runtime/src/main/java/com/aipa/runtime/context/ProjectContextHolder.java`
+**?辣**嚗runtime/src/main/java/com/aipa/runtime/context/ProjectContextHolder.java`
 
 ```java
 @Component
@@ -117,33 +117,33 @@ public class ProjectContextHolder {
 }
 ```
 
-**用方式**：
+**?冽撘?*嚗?
 ```java
-// 在 Service 中
+// ??Service 銝?
 String projectId = contextHolder.getProjectId();
 
-// 在 Controller 中
+// ??Controller 銝?
 @GetMapping("/api/v1/sessions")
 public ResponseEntity<?> listSessions() {
-    // projectId 已由 ProjectContextInterceptor 自動設置
+    // projectId 撌脩 ProjectContextInterceptor ?芸?閮剔蔭
     return ResponseEntity.ok(service.getAllSessions());
 }
 ```
 
 #### 2. ProjectContextInterceptor
 
-**文件**：`runtime/src/main/java/com/aipa/runtime/context/ProjectContextInterceptor.java`
+**?辣**嚗runtime/src/main/java/com/aipa/runtime/context/ProjectContextInterceptor.java`
 
-Servlet Filter，在每個請求開始時從以下位置提取 project_id：
+Servlet Filter嚗瘥?瘙?憪?敺誑銝?蝵格???project_id嚗?
 1. HTTP Header: `X-Project-ID`
-2. URL 路徑參數: `/api/v1/projects/{projectId}/...`
-3. Query 參數: `?projectId=...`
+2. URL 頝臬??: `/api/v1/projects/{projectId}/...`
+3. Query ?: `?projectId=...`
 
 #### 3. ProjectSpecification
 
-**文件**：`runtime/src/main/java/com/aipa/runtime/persistence/ProjectSpecification.java`
+**?辣**嚗runtime/src/main/java/com/aipa/runtime/persistence/ProjectSpecification.java`
 
-JPA Specification 基類，所有業務查詢都應使用它：
+JPA Specification ?粹?嚗??平?閰ａ?蝙?典?嚗?
 
 ```java
 public class SessionsByStatusSpecification extends ProjectSpecification<Session> {
@@ -156,24 +156,24 @@ public class SessionsByStatusSpecification extends ProjectSpecification<Session>
     }
 }
 
-// 使用
+// 雿輻
 List<Session> sessions = sessionRepository.findAll(
     new SessionsByStatusSpecification(contextHolder, "COMPLETED")
 );
-// 自動生成 SQL：
+// ?芸??? SQL嚗?
 // SELECT * FROM sessions WHERE project_id = ? AND status = 'COMPLETED'
 ```
 
 #### 4. Project Entity & Repository
 
-**實體**：`com.aipa.runtime.domain.Project`
-**版本庫**：`com.aipa.runtime.persistence.ProjectRepository`
+**撖阡?**嚗com.aipa.runtime.domain.Project`
+**?摨?*嚗com.aipa.runtime.persistence.ProjectRepository`
 
-Project 是特殊的，不被 ProjectContextHolder 過濾。
+Project ?舐畾?嚗?鋡?ProjectContextHolder ?蕪??
 
-#### 5. 配置
+#### 5. ?蔭
 
-**文件**：`runtime/src/main/java/com/aipa/runtime/config/MultiTenantConfig.java`
+**?辣**嚗runtime/src/main/java/com/aipa/runtime/config/MultiTenantConfig.java`
 
 ```java
 @Configuration
@@ -191,13 +191,13 @@ public class MultiTenantConfig {
 
 ---
 
-### Python 側（FastAPI）
+### Python ?湛?FastAPI嚗?
 
 #### 1. ProjectContextHolder
 
-**文件**：`aipa_ai_engine/project_context.py`
+**?辣**嚗aipa_ai_engine/project_context.py`
 
-使用 `contextvars` 而非 `threading.local`（支持異步）：
+雿輻 `contextvars` ?? `threading.local`嚗?甇伐?嚗?
 
 ```python
 from contextvars import ContextVar
@@ -221,9 +221,9 @@ class ProjectContextHolder:
 
 #### 2. ProjectContextMiddleware
 
-**文件**：`aipa_ai_engine/project_context_middleware.py`
+**?辣**嚗aipa_ai_engine/project_context_middleware.py`
 
-FastAPI 中間件，從 HTTP 請求提取 project_id：
+FastAPI 銝剝?隞塚?敺?HTTP 隢??? project_id嚗?
 
 ```python
 class ProjectContextMiddleware(BaseHTTPMiddleware):
@@ -239,7 +239,7 @@ class ProjectContextMiddleware(BaseHTTPMiddleware):
             ProjectContextHolder.clear()
 ```
 
-#### 3. 在 Engine 中使用
+#### 3. ??Engine 銝凋蝙??
 
 ```python
 from aipa_ai_engine.project_context import get_project_id
@@ -247,68 +247,68 @@ from aipa_ai_engine.project_context import get_project_id
 class KnowledgeEngine:
     def search(self, query: str) -> list:
         project_id = get_project_id()
-        # 查詢時自動附加 project_id 過濾
+        # ?亥岷?????project_id ?蕪
         return self.repository.search(query, project_id=project_id)
 ```
 
 ---
 
-## 📡 通信流程
+## ? ?縑瘚?
 
-### 場景：在 customer-service 項目中執行工作流
+### ?湔嚗 customer-service ?銝剖銵極雿?
 
 ```
 Client
-  │
-  ├─► POST /api/v1/session
-  │   Header: X-Project-ID: customer-service
-  │   Body: {"requirement": "新增客戶反饋功能"}
-  │
-  ▼
+  ??
+  ????POST /api/v1/session
+  ??  Header: X-Project-ID: customer-service
+  ??  Body: {"requirement": "?啣?摰Ｘ???"}
+  ??
+  ??
 Runtime Service
-  │
-  ├─► ProjectContextInterceptor
-  │   └─► 提取 project_id = "customer-service"
-  │   └─► ProjectContextHolder.setProjectId("customer-service")
-  │
-  ├─► SessionController.createSession()
-  │   └─► contextHolder.getProjectId() = "customer-service"
-  │   └─► sessionService.create(requirement)
-  │
-  ├─► SessionService.create()
-  │   └─► Session 自動記錄 project_id
-  │   └─► sessionRepository.save(session)
-  │
-  ├─► SessionRepository
-  │   └─► SQL: INSERT INTO sessions (id, project_id, requirement, ...)
-  │   └─► project_id = "customer-service" 自動填入
-  │
-  ├─► KnowledgeEngineClient.search()
-  │   └─► POST http://localhost:18082/engine/knowledge/customer-service/search
-  │   └─► Header: X-Project-ID: customer-service
-  │
-  ▼
+  ??
+  ????ProjectContextInterceptor
+  ??  ?????? project_id = "customer-service"
+  ??  ????ProjectContextHolder.setProjectId("customer-service")
+  ??
+  ????SessionController.createSession()
+  ??  ????contextHolder.getProjectId() = "customer-service"
+  ??  ????sessionService.create(requirement)
+  ??
+  ????SessionService.create()
+  ??  ????Session ?芸?閮? project_id
+  ??  ????sessionRepository.save(session)
+  ??
+  ????SessionRepository
+  ??  ????SQL: INSERT INTO sessions (id, project_id, requirement, ...)
+  ??  ????project_id = "customer-service" ?芸?憛怠
+  ??
+  ????KnowledgeEngineClient.search()
+  ??  ????POST http://localhost:18082/engine/knowledge/customer-service/search
+  ??  ????Header: X-Project-ID: customer-service
+  ??
+  ??
 AI Engine (Python)
-  │
-  ├─► ProjectContextMiddleware
-  │   └─► 提取 project_id = "customer-service"
-  │   └─► ProjectContextHolder.set_project_id("customer-service")
-  │
-  ├─► KnowledgeEngine.search()
-  │   └─► project_id = get_project_id() = "customer-service"
-  │   └─► vectorStore.search(query, where={"project_id": project_id})
-  │   └─► 只返回 customer-service 的知識項目
-  │
-  ▼
+  ??
+  ????ProjectContextMiddleware
+  ??  ?????? project_id = "customer-service"
+  ??  ????ProjectContextHolder.set_project_id("customer-service")
+  ??
+  ????KnowledgeEngine.search()
+  ??  ????project_id = get_project_id() = "customer-service"
+  ??  ????vectorStore.search(query, where={"project_id": project_id})
+  ??  ?????芾???customer-service ?霅???
+  ??
+  ??
 Response
-  └─► 工作流繼續...
+  ????撌乩?瘚匱蝥?..
 ```
 
 ---
 
-## 🚀 使用示例
+## ?? 雿輻蝷箔?
 
-### 1. 創建新項目
+### 1. ?萄遣?圈???
 
 ```bash
 curl -X POST http://localhost:18080/api/v1/projects \
@@ -319,7 +319,7 @@ curl -X POST http://localhost:18080/api/v1/projects \
     "description": "Payment Processing Module"
   }'
 
-# 響應
+# ?踵?
 {
   "id": "payment-system",
   "name": "payment-system",
@@ -329,52 +329,52 @@ curl -X POST http://localhost:18080/api/v1/projects \
 }
 ```
 
-### 2. 激活項目
+### 2. 瞈瘣駁???
 
 ```bash
 curl -X PATCH http://localhost:18080/api/v1/projects/payment-system/activate
 ```
 
-### 3. 在項目中執行工作流
+### 3. ?券??桐葉?瑁?撌乩?瘚?
 
 ```bash
-# 方式 A：通過 Header
+# ?孵? A嚗? Header
 curl -X POST http://localhost:18080/api/v1/session \
   -H "X-Project-ID: payment-system" \
   -H "Content-Type: application/json" \
-  -d '{"requirement": "支持多幣種轉換"}'
+  -d '{"requirement": "?舀?憭馳蝔株???}'
 
-# 方式 B：通過 URL 路徑
+# ?孵? B嚗? URL 頝臬?
 curl -X POST http://localhost:18080/api/v1/projects/payment-system/sessions \
   -H "Content-Type: application/json" \
-  -d '{"requirement": "支持多幣種轉換"}'
+  -d '{"requirement": "?舀?憭馳蝔株???}'
 
-# 方式 C：通過 Query 參數
+# ?孵? C嚗? Query ?
 curl -X POST http://localhost:18080/api/v1/session?projectId=payment-system \
   -H "Content-Type: application/json" \
-  -d '{"requirement": "支持多幣種轉換"}'
+  -d '{"requirement": "?舀?憭馳蝔株???}'
 ```
 
-### 4. 在不同項目間切換
+### 4. ?其????桅???
 
 ```bash
-# 查詢 customer-service 項目的會話
+# ?亥岷 customer-service ???閰?
 curl -H "X-Project-ID: customer-service" \
   http://localhost:18080/api/v1/sessions
 
-# 查詢 payment-system 項目的會話
+# ?亥岷 payment-system ???閰?
 curl -H "X-Project-ID: payment-system" \
   http://localhost:18080/api/v1/sessions
 
-# 兩個查詢結果完全隔離，互不影響
+# ?拙閰Ｙ????券??ｇ?鈭?敶梢
 ```
 
-### 5. 列出所有項目
+### 5. ??????
 
 ```bash
 curl http://localhost:18080/api/v1/projects
 
-# 響應
+# ?踵?
 [
   {
     "id": "customer-service",
@@ -393,23 +393,23 @@ curl http://localhost:18080/api/v1/projects
 
 ---
 
-## 🔐 安全隔離檢查清單
+## ?? 摰?瑼Ｘ皜
 
-- ✅ 所有查詢都自動加入 project_id 過濾（ProjectSpecification）
-- ✅ ProjectContextHolder 使用 ThreadLocal（Java）/ contextvars（Python）
-- ✅ 請求結束時自動清理上下文
-- ✅ project_id 驗證：只允許字母、數字、下劃線、連字符
-- ✅ 日誌記錄包含 project_id 和 operation_id
-- ✅ API 級別驗證（未來可集成 RBAC）
-- ✅ 數據庫層有 project_id 索引提升性能
+- ????閰ａ?芸?? project_id ?蕪嚗rojectSpecification嚗?
+- ??ProjectContextHolder 雿輻 ThreadLocal嚗ava嚗? contextvars嚗ython嚗?
+- ??隢?蝯??????銝?
+- ??project_id 撽?嚗?迂摮??摮??????蝚?
+- ???亥?閮?? project_id ??operation_id
+- ??API 蝝撽?嚗靘?? RBAC嚗?
+- ???豢?摨怠惜??project_id 蝝Ｗ????扯
 
 ---
 
-## 📊 性能優化
+## ?? ?扯?芸?
 
-### 數據庫索引
+### ?豢?摨怎揣撘?
 
-已創建以下索引以優化查詢性能：
+撌脣撱箔誑銝揣撘誑?芸??亥岷?扯嚗?
 
 ```sql
 CREATE INDEX idx_session_project_status
@@ -425,9 +425,9 @@ CREATE INDEX idx_knowledge_category
   ON knowledge_items(project_id, category);
 ```
 
-### 數據庫視圖
+### ?豢?摨怨???
 
-提供項目統計信息：
+???蝯梯?靽⊥嚗?
 
 ```sql
 CREATE VIEW v_project_stats AS
@@ -447,71 +447,71 @@ GROUP BY p.id, p.name, p.status;
 
 ---
 
-## 🐛 常見問題排查
+## ?? 撣貉????
 
-### 問題：`projectId not set in context`
+### ??嚗projectId not set in context`
 
-**原因**：ProjectContextInterceptor 沒有成功提取 project_id
+**??**嚗rojectContextInterceptor 瘝????? project_id
 
-**解決**：
-1. 檢查請求是否包含 `X-Project-ID` Header
-2. 或確保 URL 包含 `{projectId}` 參數
-3. 或確保查詢參數包含 `projectId=...`
+**閫?捱**嚗?
+1. 瑼Ｘ隢??臬? `X-Project-ID` Header
+2. ?Ⅱ靽?URL ? `{projectId}` ?
+3. ?Ⅱ靽閰Ｗ??詨???`projectId=...`
 
 ```bash
-# ✅ 正確
+# ??甇?Ⅱ
 curl -H "X-Project-ID: customer-service" http://endpoint
 
-# ✅ 正確
+# ??甇?Ⅱ
 curl http://endpoint/projects/customer-service/sessions
 
-# ✅ 正確
+# ??甇?Ⅱ
 curl "http://endpoint/session?projectId=customer-service"
 
-# ❌ 錯誤
-curl http://endpoint/session  # 缺少 projectId
+# ???航炊
+curl http://endpoint/session  # 蝻箏? projectId
 ```
 
-### 問題：不同項目的數據互相污染
+### ??嚗????桃??豢?鈭瘙⊥?
 
-**原因**：Repository 沒有使用 ProjectSpecification
+**??**嚗epository 瘝?雿輻 ProjectSpecification
 
-**解決**：確保所有 Repository 方法都：
-1. 继承 `JpaSpecificationExecutor<T>`
-2. 使用 `ProjectSpecification` 的子類
-3. 或手動添加 `WHERE project_id = ?` 過濾
+**閫?捱**嚗Ⅱ靽???Repository ?寞??踝?
+1. 蝏扳 `JpaSpecificationExecutor<T>`
+2. 雿輻 `ProjectSpecification` ??憿?
+3. ???溶??`WHERE project_id = ?` ?蕪
 
-### 問題：跨項目搜尋不工作
+### ??嚗楊???銝極雿?
 
-**原因**：ProjectSpecification 默認隱藏其他項目的數據
+**??**嚗rojectSpecification 暺??梯??嗡?????
 
-**解決**：實現單獨的 API 端點，做 cross-project 搜尋時不使用 ProjectContextHolder
+**閫?捱**嚗祕?曉?函? API 蝡舫?嚗? cross-project ????雿輻 ProjectContextHolder
 
 ```java
 @GetMapping("/api/v1/global/search")
 public ResponseEntity<?> globalSearch(@RequestParam String keyword) {
-    // 不使用 ProjectContextHolder，手動查詢所有項目
+    // 銝蝙??ProjectContextHolder嚗??閰Ｘ?????
     return ResponseEntity.ok(searchService.searchAllProjects(keyword));
 }
 ```
 
 ---
 
-## 📈 遷移計劃
+## ?? ?瑞宏閮?
 
-### 從單項目到多項目
+### 敺??啣??
 
-1. **第一步**：部署新的多租戶 Runtime
-2. **第二步**：創建默認 Project（id="default"）
-3. **第三步**：所有現有數據遷移到 default project
-4. **第四步**：更新 CLI/IDE 插件以發送 `X-Project-ID: default`
-5. **第五步**：逐步創建新項目並遷移相應的工作流
+1. **蝚砌?甇?*嚗蝵脫??蝘 Runtime
+2. **蝚砌?甇?*嚗撱粹?隤?Project嚗d="default"嚗?
+3. **蝚砌?甇?*嚗????蝘餃 default project
+4. **蝚砍?甇?*嚗??CLI/IDE ?辣隞亦??`X-Project-ID: default`
+5. **蝚砌?甇?*嚗郊?萄遣?圈??桐蒂?瑞宏?豢??極雿?
 
 ---
 
-## 🎓 開發指南
+## ?? ???
 
-### 添加新的多租戶感知 Service
+### 瘛餃??啁?憭??嗆???Service
 
 ```java
 @Service
@@ -528,14 +528,14 @@ public class MyNewService {
     public List<MyEntity> getAll() {
         String projectId = contextHolder.getProjectId();
 
-        // 使用 Specification
+        // 雿輻 Specification
         Specification<MyEntity> spec = new MyEntitiesSpec(contextHolder);
         return myRepository.findAll(spec);
     }
 }
 ```
 
-### 添加新的 Repository
+### 瘛餃??啁? Repository
 
 ```java
 @Repository
@@ -543,12 +543,12 @@ public interface MyEntityRepository extends
     JpaRepository<MyEntity, String>,
     JpaSpecificationExecutor<MyEntity> {
 
-    // 基本方法
+    // ?箸?寞?
     List<MyEntity> findByProjectId(String projectId);
 }
 ```
 
-### 創建 Specification 子類
+### ?萄遣 Specification 摮?
 
 ```java
 public class MyEntitiesSpec extends ProjectSpecification<MyEntity> {
@@ -572,31 +572,32 @@ public class MyEntitiesSpec extends ProjectSpecification<MyEntity> {
 
 ---
 
-## 📚 相關文件
+## ?? ?賊??辣
 
-| 文件 | 描述 |
+| ?辣 | ?膩 |
 |------|------|
-| `docs/multi-project-architecture.md` | 多專案架構設計文檔 |
-| `docs/domain-model.md` | 領域模型（包含 Project 聚合根） |
-| `runtime/.../context/ProjectContextHolder.java` | Java 上下文管理 |
-| `runtime/.../context/ProjectContextInterceptor.java` | Java 請求攔截器 |
-| `aipa_ai_engine/project_context.py` | Python 上下文管理 |
-| `aipa_ai_engine/project_context_middleware.py` | FastAPI 中間件 |
-| `runtime/.../config/MultiTenantConfig.java` | Spring Boot 配置 |
-| `runtime/src/main/resources/db/migration/V010__multi_tenant_isolation.sql` | 數據庫遷移 |
+| `docs/multi-project-architecture.md` | 憭?獢瑽身閮?瑼?|
+| `docs/domain-model.md` | ??璅∪?嚗???Project ???對? |
+| `runtime/.../context/ProjectContextHolder.java` | 後端 銝??恣??|
+| `runtime/.../context/ProjectContextInterceptor.java` | 後端 隢????|
+| `aipa_ai_engine/project_context.py` | Python 銝??恣??|
+| `aipa_ai_engine/project_context_middleware.py` | FastAPI 銝剝?隞?|
+| `runtime/.../config/MultiTenantConfig.java` | 後端框架 ?蔭 |
+| `runtime/src/main/resources/db/migration/V010__multi_tenant_isolation.sql` | ?豢?摨恍蝘?|
 
 ---
 
-## 總結
+## 蝮賜?
 
-一對多架構通過簡單但強大的組件實現多租戶隔離：
+銝撠??嗆???蝪∪雿撥憭抒?蝯辣撖衣憭??園??ｇ?
 
-1. **ProjectContextHolder** — 存儲當前請求的項目上下文
-2. **ProjectContextInterceptor/Middleware** — 從請求中提取並設置 project_id
-3. **ProjectSpecification** — 自動為所有查詢加入 project_id 過濾
-4. **Project Entity** — 定義項目邊界
-5. **配置** — 註冊必要的組件並建立起來
+1. **ProjectContextHolder** ??摮?嗅?隢????桐?銝?
+2. **ProjectContextInterceptor/Middleware** ??敺?瘙葉??銝西身蝵?project_id
+3. **ProjectSpecification** ???芸??箸??閰Ｗ???project_id ?蕪
+4. **Project Entity** ??摰儔???
+5. **?蔭** ??閮餃?敹???隞嗡蒂撱箇?韏瑚?
 
-開發者無需關心多租戶細節，框架自動在應用層和數據庫層實現隔離。
+?????憭??嗥敦蝭嚗??嗉??撅文??豢?摨怠惜撖衣???
+
 
 

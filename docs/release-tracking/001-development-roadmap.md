@@ -1,622 +1,623 @@
-# AIPA Studio — 開發路線圖（Development Roadmap）
+﻿# AIPA Studio ???頝舐???Development Roadmap嚗?
 
-**版本**：1.0.0-draft
-**狀態**：審核中
-**負責人**：AIPA Studio 架構團隊
-**最後更新**：Phase 1 — 架構鎖定階段
-**依賴文件**：所有 Phase 1 設計文件
+**?**嚗?.0.0-draft
+**???*嚗祟?訾葉
+**鞎痊鈭?*嚗IPA Studio ?嗆???
+**?敺??*嚗hase 1 ???嗆????挾
+**靘陷?辣**嚗???Phase 1 閮剛??辣
 
 ---
 
-## 1. 路線圖總覽
+## 1. 頝舐??蜇閬?
 
-AIPA Studio 採用**分階段、進入/退出標準嚴格控管**的開發方式。每個 Phase 必須滿足退出標準後，才可開始下一個 Phase。
+AIPA Studio ?∠**??畾萸脣/??箸?皞?潭蝞?*???潭撘???Phase 敹?皛輯雲??箸?皞?嚗??舫?憪?銝??Phase??
 
 ```
-Phase 0：架構鎖定          ← 目前所在位置
-    │ 退出條件：所有 Phase 1 設計文件審核通過
-    ▼
-Phase 1：全流程骨架
-    │ 退出條件：所有模組骨架建立、CI 流水線通過、健康檢查正常
-    ▼
-Phase 2：核心流水線
-    │ 退出條件：aipa init 與 aipa ask（基礎版）端對端可運作
-    ▼
-Phase 3：規格引擎 + Human Checkpoint
-    │ 退出條件：完整 Spec 生成、Checkpoint 審核、信心評估可運作
-    ▼
-Phase 4：AI 介面卡 + 完整流水線
-    │ 退出條件：多 AI 供應商支援、完整 aipa ask 週期可運作
-    ▼
-Phase 5：學習引擎 + 記憶引擎
-    │ 退出條件：PR Merge 後自動學習、記憶持久化可運作
-    ▼
-Phase 6：經驗引擎 + 智慧引擎
-    │ 退出條件：相似案例檢索、智慧規則強制執行可運作
-    ▼
-Phase 7：Plugin 套件
-    │ 退出條件：VSCode Extension、IntelliJ Plugin、Web UI 可安裝使用
-    ▼
-Phase 8：Installer
-    │ 退出條件：Windows MSI、Linux Shell、Docker Compose 可安裝驗證
-    ▼
-Phase 9：企業強化
-    │ 退出條件：安全稽核通過、效能基準達標、多專案支援可運作
-    ▼
-  正式發布（v1.0.0 GA）
+Phase 0嚗瑽?摰?         ???桀???其?蝵?
+    ????箸?隞塚????Phase 1 閮剛??辣撖拇??
+    ??
+Phase 1嚗瘚?撉冽
+    ????箸?隞塚???芋蝯爸?嗅遣蝡I 瘚偌蝺??摨瑟炎?交迤撣?
+    ??
+Phase 2嚗敹?瘞渡?
+    ????箸?隞塚?aipa init ??aipa ask嚗蝷?嚗垢撠垢?舫?雿?
+    ??
+Phase 3嚗??澆???+ Human Checkpoint
+    ????箸?隞塚?摰 Spec ???heckpoint 撖拇?縑敹?隡啣??
+    ??
+Phase 4嚗I 隞??+ 摰瘚偌蝺?
+    ????箸?隞塚?憭?AI 靘???氬???aipa ask ?望??舫?雿?
+    ??
+Phase 5嚗飛蝧???+ 閮撘?
+    ????箸?隞塚?PR Merge 敺?飛蝧??嗆?銋??舫?雿?
+    ??
+Phase 6嚗?撽???+ ?箸撘?
+    ????箸?隞塚??訾撮獢?瑼Ｙ揣??扯??撥?嗅銵??
+    ??
+Phase 7嚗lugin 憟辣
+    ????箸?隞塚?VSCode Extension?ntelliJ Plugin?eb UI ?臬?鋆蝙??
+    ??
+Phase 8嚗nstaller
+    ????箸?隞塚?Windows MSI?inux Shell?ocker Compose ?臬?鋆?霅?
+    ??
+Phase 9嚗?璆剖撥??
+    ????箸?隞塚?摰蝔賣?????賢皞?璅?撠??舀?舫?雿?
+    ??
+  甇???澆?嚗1.0.0 GA嚗?
 ```
 
-### MVP 定義
+### MVP 摰儔
 
-**Phase 1 + Phase 2 + Phase 3 = MVP（最小可用版本）**
+**Phase 1 + Phase 2 + Phase 3 = MVP嚗?撠?函??穿?**
 
-MVP 達成後，開發人員可以：
-- 執行 `aipa init` 初始化 Java 專案
-- 執行 `aipa ask` 輸入需求並取得規格文件
-- 透過 CLI 完成 Human Checkpoint 審核
-- 系統根據知識庫評估信心分數
-
----
-
-## 2. Phase 0 — 架構鎖定
-
-**目標**：完成所有設計文件，宣告架構鎖定，確保所有開發人員對系統設計有共同理解。
-
-### 交付物
-
-| 文件 | 路徑 | 狀態 |
-|---|---|---|
-| 產品願景文件 | `docs/vision.md` | ✅ 完成 |
-| 產品需求文件 | `docs/prd.md` | ✅ 完成 |
-| 系統架構文件 | `docs/sad.md` | ✅ 完成 |
-| 領域模型 | `docs/domain-model.md` | ✅ 完成 |
-| 模組設計 | `docs/module-design.md` | ✅ 完成 |
-| 循序圖 | `docs/sequence-diagrams.md` | ✅ 完成 |
-| 類別圖 | `docs/class-diagrams.md` | ✅ 完成 |
-| 部署圖 | `docs/deployment-diagram.md` | ✅ 完成 |
-| Repository 結構 | `docs/repository-structure.md` | ✅ 完成 |
-| 技術選型 | `docs/technology-selection.md` | ✅ 完成 |
-| 開發路線圖 | `docs/roadmap.md` | ✅ 完成 |
-
-### 退出標準
-
-- [ ] 所有 11 份文件審核通過（利害關係人簽核）
-- [ ] 架構鎖定正式宣告（在 `docs/` 目錄建立 `ARCHITECTURE-LOCK.md`）
-- [ ] 所有設計決策已記錄為 ADR（架構決策記錄）
-- [ ] Repository 已建立，`.gitignore`、`README.md`、CI 基礎設定就位
+MVP ??敺??鈭箏?臭誑嚗?
+- ?瑁? `aipa init` ????後端 撠?
+- ?瑁? `aipa ask` 頛詨?瘙蒂??閬?辣
+- ?? CLI 摰? Human Checkpoint 撖拇
+- 蝟餌絞?寞??亥?摨怨?隡唬縑敹???
 
 ---
 
-## 3. Phase 1 — 全流程骨架
+## 2. Phase 0 ???嗆???
 
-**目標**：建立所有模組的程式碼骨架，確保建構系統正常運作、CI 流水線通過、各模組可健康啟動。此階段**不包含任何業務邏輯**，所有方法回傳空值或 `NOT_IMPLEMENTED` 例外。
+**?格?**嚗????身閮?隞塚?摰???嗆???嚗Ⅱ靽????潔犖?∪?蝟餌絞閮剛????閫??
 
-### 交付物
+### 鈭支???
 
-| 模組 | 語言 | 骨架內容 |
+| ?辣 | 頝臬? | ???|
 |---|---|---|
-| `runtime/` | Java | Spring Boot 啟動類、所有 Controller（空方法）、健康檢查端點 |
-| `scanner/` | Java | `ScannerEngine` 介面實作（回傳空 `ScanResult`） |
-| `agent/` | Java | 所有 Adapter 類別（`isAvailable()` 回傳 `false`） |
-| `workflow/` | Java | 所有 Engine 介面實作（拋出 `NotImplementedException`） |
-| `knowledge/` | Python | FastAPI Router、所有端點（回傳空列表） |
-| `memory/` | Python | FastAPI Router、所有端點（回傳空列表） |
-| `learning/` | Python | FastAPI Router、`/engine/learning/analyze`（空實作） |
-| `experience/` | Python | FastAPI Router、所有端點（回傳空列表） |
-| `wisdom/` | Python | FastAPI Router、所有端點（回傳空列表） |
-| `cli/` | TypeScript | 所有命令定義（印出「NOT IMPLEMENTED」） |
-| `web/` | TypeScript | React 應用骨架、所有頁面（空白頁） |
-| `plugin/vscode/` | TypeScript | Extension 骨架、可安裝但無實際功能 |
-| `plugin/intellij/` | Java/Kotlin | Plugin 骨架、可安裝但無實際功能 |
-| `installer/docker/` | YAML | `docker-compose.yml`（所有服務可啟動） |
+| ?Ｗ?憿?辣 | `docs/vision.md` | ??摰? |
+| ?Ｗ??瘙?隞?| `docs/prd.md` | ??摰? |
+| 蝟餌絞?嗆??辣 | `docs/sad.md` | ??摰? |
+| ??璅∪? | `docs/domain-model.md` | ??摰? |
+| 璅∠?閮剛? | `docs/module-design.md` | ??摰? |
+| 敺芸???| `docs/sequence-diagrams.md` | ??摰? |
+| 憿??| `docs/class-diagrams.md` | ??摰? |
+| ?函蔡??| `docs/deployment-diagram.md` | ??摰? |
+| Repository 蝯? | `docs/repository-structure.md` | ??摰? |
+| ?銵??| `docs/technology-selection.md` | ??摰? |
+| ?頝舐???| `docs/roadmap.md` | ??摰? |
 
-### CI/CD 流水線
+### ??箸?皞?
+
+- [ ] ???11 隞賣?隞嗅祟?賊?嚗摰喲?靽犖蝪賣嚗?
+- [ ] ?嗆???甇??摰??嚗 `docs/` ?桅?撱箇? `ARCHITECTURE-LOCK.md`嚗?
+- [ ] ??身閮捱蝑歇閮???ADR嚗瑽捱蝑???
+- [ ] Repository 撌脣遣蝡?`.gitignore`?README.md`?I ?箇?閮剖?撠曹?
+
+---
+
+## 3. Phase 1 ???冽?蝔爸??
+
+**?格?**嚗遣蝡??芋蝯?蝔?蝣潮爸?塚?蝣箔?撱箸?蝟餌絞甇?虜???I 瘚偌蝺???璅∠??臬摨瑕??迨?挾**銝??思遙雿平??頛?*嚗??瘜??喟征?潭? `NOT_IMPLEMENTED` 靘???
+
+### 鈭支???
+
+| 璅∠? | 隤? | 撉冽?批捆 |
+|---|---|---|
+| `runtime/` | 後端 | 後端框架 ??憿???Controller嚗征?寞?嚗摨瑟炎?亦垢暺?|
+| `scanner/` | 後端 | `ScannerEngine` 隞撖虫?嚗??喟征 `ScanResult`嚗?|
+| `agent/` | 後端 | ???Adapter 憿嚗isAvailable()` ? `false`嚗?|
+| `workflow/` | 後端 | ???Engine 隞撖虫?嚗???`NotImplementedException`嚗?|
+| `knowledge/` | Python | FastAPI Router???垢暺??蝛箏?銵剁? |
+| `memory/` | Python | FastAPI Router???垢暺??蝛箏?銵剁? |
+| `learning/` | Python | FastAPI Router?/engine/learning/analyze`嚗征撖虫?嚗?|
+| `experience/` | Python | FastAPI Router???垢暺??蝛箏?銵剁? |
+| `wisdom/` | Python | FastAPI Router???垢暺??蝛箏?銵剁? |
+| `cli/` | TypeScript | ??隞文?蝢抬??啣?OT IMPLEMENTED?? |
+| `web/` | TypeScript | React ?撉冽?????ｇ?蝛箇?? |
+| `plugin/vscode/` | TypeScript | Extension 撉冽?摰?雿撖阡?? |
+| `plugin/intellij/` | 後端/Kotlin | Plugin 撉冽?摰?雿撖阡?? |
+| `installer/docker/` | YAML | `docker-compose.yml`嚗??????嚗?|
+
+### CI/CD 瘚偌蝺?
 
 ```yaml
-CI 任務清單（Phase 1 完成後必須全部通過）：
-├── Java Build：./gradlew build（全部子專案）
-├── Java Test：./gradlew test（骨架測試）
-├── Python Build：poetry install（全部 Python 模組）
-├── Python Lint：ruff check（程式碼風格）
-├── TypeScript Build：npm run build --workspaces
-├── TypeScript Lint：npm run lint --workspaces
-├── Docker Build：docker compose build（所有映像）
-└── Integration：docker compose up → 所有服務健康檢查通過
+CI 隞餃?皜嚗hase 1 摰?敺???券?嚗?
+??? 後端 Build嚗?/gradlew build嚗?典?撠?嚗?
+??? 後端 Test嚗?/gradlew test嚗爸?嗆葫閰佗?
+??? Python Build嚗oetry install嚗??Python 璅∠?嚗?
+??? Python Lint嚗uff check嚗?撘Ⅳ憸冽嚗?
+??? TypeScript Build嚗pm run build --workspaces
+??? TypeScript Lint嚗pm run lint --workspaces
+??? Docker Build嚗ocker compose build嚗?????
+??? Integration嚗ocker compose up ??????摨瑟炎?仿?
 ```
 
-### 退出標準
+### ??箸?皞?
 
-- [ ] 所有模組 `./gradlew build` / `poetry install` / `npm run build` 通過，無編譯錯誤
-- [ ] `docker compose up` 可成功啟動所有服務
-- [ ] `GET /api/v1/health` 回傳 `{ status: "UP" }`
-- [ ] `GET /engine/health` 回傳 `{ status: "UP" }`
-- [ ] CI 流水線在 GitHub Actions 全部綠燈
-- [ ] `aipa version` 可正確顯示版本號
-
----
-
-## 4. Phase 2 — 核心流水線
-
-**目標**：實作 Scanner Engine 與 Knowledge Engine 的核心功能，讓 `aipa init` 可以真正掃描 Java/Spring Boot 專案並建立知識庫；讓 `aipa ask` 可以進行知識查詢（但尚無 AI 呼叫）。
-
-### 交付物
-
-#### Scanner Engine（`scanner/`）
-
-| 功能 | 說明 |
-|---|---|
-| `TechStackDetector` | 自動偵測 Java 版本、Spring Boot 版本、建構工具 |
-| `JavaSourceScanner` | 解析 `.java` 原始碼，建立類別清單、方法清單 |
-| `SpringAnnotationScanner` | 識別 Controller / Service / Repository 分層 |
-| `MyBatisScanner` | 解析 Mapper XML，提取 SQL 語句 |
-| `SqlDdlScanner` | 解析 `.sql` DDL，建立 Table / Column 定義 |
-| `OpenApiScanner` | 解析 `openapi.yml`，建立 API 端點清單 |
-| `MavenScanner` / `GradleScanner` | 解析相依關係樹 |
-| `PropertiesScanner` | 解析 `application.yml` / `.properties` |
-
-#### Knowledge Engine（`knowledge/`）
-
-| 功能 | 說明 |
-|---|---|
-| `EmbeddingService` | 使用 `all-MiniLM-L6-v2` 本地模型進行向量化 |
-| `ScanResultIngestor` | 將 `ScanResult` 轉換為 `KnowledgeItem` 並向量化 |
-| `KnowledgeRepository` | 儲存 / 查詢 Knowledge Items（SQLite） |
-| `ChromaDBVectorStore` | 向量資料存入 ChromaDB |
-| `SemanticSearchService` | 語意搜尋知識庫 |
-| `POST /engine/knowledge/search` | 可正常回傳搜尋結果 |
-| `POST /engine/knowledge/bulk` | 可接收並處理 ScanResult |
-
-#### Runtime Service（`runtime/`）
-
-| 功能 | 說明 |
-|---|---|
-| `POST /api/v1/project/init` | 可啟動初始化 Job |
-| `GET /api/v1/project/init/{jobId}/status` | 可查詢初始化進度 |
-| `GET /api/v1/session/{id}/stream` | SSE 進度推送可運作 |
-| `POST /api/v1/knowledge/search` | 代理至 AI Engine 語意搜尋 |
-| `StorageManager` | SQLite Backend 可正常讀寫 |
-| `ProjectDNABuilder` | 可分析 ScanResult 建立基本 DNA |
-
-#### CLI（`cli/`）
-
-| 命令 | 說明 |
-|---|---|
-| `aipa init` | 可完整執行專案初始化，顯示進度與摘要 |
-| `aipa scan` | 可重新掃描（全量） |
-| `aipa knowledge search` | 可搜尋知識庫並顯示結果 |
-| `aipa knowledge list` | 可列出知識項目 |
-| `aipa server start/stop/status` | Runtime Service 管理 |
-| `aipa health` | 顯示全系統健康狀態 |
-
-### 退出標準
-
-- [ ] 對一個真實 Java/Spring Boot 專案執行 `aipa init`，可在 5 分鐘內完成
-- [ ] 初始化後，`aipa knowledge search "付款流程"` 可回傳相關知識項目
-- [ ] `.ai-project/` 目錄正確建立，含 `dna/`、`knowledge/db/`、`vector/`
-- [ ] Scanner 可正確識別以下技術棧：Java 17、Spring Boot 3.x、MyBatis、PostgreSQL
-- [ ] Phase 2 新增的所有功能有對應的單元測試，覆蓋率 ≥ 70%
+- [ ] ??芋蝯?`./gradlew build` / `poetry install` / `npm run build` ??嚗蝺刻陌?航炊
+- [ ] `docker compose up` ?舀?????????
+- [ ] `GET /api/v1/health` ? `{ status: "UP" }`
+- [ ] `GET /engine/health` ? `{ status: "UP" }`
+- [ ] CI 瘚偌蝺 GitHub Actions ?券蝬?
+- [ ] `aipa version` ?舀迤蝣粹＊蝷箇??祈?
 
 ---
 
-## 5. Phase 3 — 規格引擎 + Human Checkpoint（MVP 完成）
+## 4. Phase 2 ???詨?瘚偌蝺?
 
-**目標**：實作 Specification Engine、Planning Engine、Confidence Engine 的核心功能，以及完整的 CLI Human Checkpoint 流程。**Phase 3 完成後即達到 MVP 標準。**
+**?格?**嚗祕雿?Scanner Engine ??Knowledge Engine ?敹??踝?霈?`aipa init` ?臭誑?迤?? 後端/後端框架 撠?銝血遣蝡霅澈嚗? `aipa ask` ?臭誑?脰??亥??亥岷嚗?撠 AI ?澆嚗?
 
-### 交付物
+### 鈭支???
 
-#### Memory Engine（`memory/`）
+#### Scanner Engine嚗scanner/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| `MemoryRepository` | 所有記憶類型的持久化（SQLite） |
-| `MemoryEngine` | 基本記憶儲存 / 查詢 / 強化 |
-| `GET /engine/memory/context` | 取得完整記憶上下文 |
+| `TechStackDetector` | ?芸??菜葫 後端 ??pring Boot ??遣瑽極??|
+| `JavaSourceScanner` | 閫?? `.java` ??蝣潘?撱箇?憿皜?瘜???|
+| `SpringAnnotationScanner` | 霅 Controller / Service / Repository ?惜 |
+| `MyBatisScanner` | 閫?? Mapper XML嚗???SQL 隤 |
+| `SqlDdlScanner` | 閫?? `.sql` DDL嚗遣蝡?Table / Column 摰儔 |
+| `OpenApiScanner` | 閫?? `openapi.yml`嚗遣蝡?API 蝡舫?皜 |
+| `MavenScanner` / `GradleScanner` | 閫???訾???璅?|
+| `PropertiesScanner` | 閫?? `application.yml` / `.properties` |
 
-#### Specification Engine（`workflow/spec/`）
+#### Knowledge Engine嚗knowledge/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| `SpecFactory` | 使用 Freemarker 模板生成 FeatureSpec / BugSpec |
-| `ImpactAnalyzer` | 基於 Knowledge Context 進行影響分析 |
-| `TestPlanGenerator` | 自動生成測試計劃 |
-| `SpecRepository` | 規格持久化（SQLite） |
-| `SpecValidator` | 規格驗證（必填欄位、格式）|
-| 模板檔案 | `templates/specs/feature-spec.ftl`、`bug-spec.ftl` |
+| `EmbeddingService` | 雿輻 `all-MiniLM-L6-v2` ?砍璅∪??脰?????|
+| `ScanResultIngestor` | 撠?`ScanResult` 頧???`KnowledgeItem` 銝血??? |
+| `KnowledgeRepository` | ?脣? / ?亥岷 Knowledge Items嚗QLite嚗?|
+| `ChromaDBVectorStore` | ??鞈?摮 ChromaDB |
+| `SemanticSearchService` | 隤????亥?摨?|
+| `POST /engine/knowledge/search` | ?舀迤撣詨??單?撠???|
+| `POST /engine/knowledge/bulk` | ?舀?嗡蒂?? ScanResult |
 
-#### Confidence Engine（`workflow/confidence/`）
+#### Runtime Service嚗runtime/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| `KnowledgeCoverageEvaluator` | 評估知識涵蓋率 |
-| `MemoryCompletenessEvaluator` | 評估記憶完整性 |
-| `ExperienceSimilarityEvaluator` | 評估相似度（Phase 3 回傳 0，Phase 6 補完） |
-| `ArchitectureComplexityEvaluator` | 評估架構複雜度 |
-| `BusinessRiskEvaluator` | 評估業務風險 |
-| `NMIReport` 生成 | 信心 < 70 時產生具體 NMI 說明 |
+| `POST /api/v1/project/init` | ?臬???憪? Job |
+| `GET /api/v1/project/init/{jobId}/status` | ?舀閰Ｗ?憪??脣漲 |
+| `GET /api/v1/session/{id}/stream` | SSE ?脣漲?券?? |
+| `POST /api/v1/knowledge/search` | 隞????AI Engine 隤??? |
+| `StorageManager` | SQLite Backend ?舀迤撣貉?撖?|
+| `ProjectDNABuilder` | ?臬???ScanResult 撱箇??箸 DNA |
 
-#### Planning Engine（`workflow/planning/`）
+#### CLI嚗cli/`嚗?
 
-| 功能 | 說明 |
+| ?賭誘 | 隤芣? |
 |---|---|
-| `TaskDecomposer` | 將 Spec 分解為小任務（DAG） |
-| `DAGValidator` | 驗證無循環相依 |
-| `TaskRepository` | 任務持久化 |
+| `aipa init` | ?臬??游銵?獢?憪?嚗＊蝷粹脣漲??閬?|
+| `aipa scan` | ?舫??唳????券?嚗?|
+| `aipa knowledge search` | ?舀?撠霅澈銝阡＊蝷箇???|
+| `aipa knowledge list` | ?臬??箇霅???|
+| `aipa server start/stop/status` | Runtime Service 蝞∠? |
+| `aipa health` | 憿舐內?函頂蝯勗摨瑞???|
 
-#### Checkpoint Gate（`runtime/checkpoint/`）
+### ??箸?皞?
 
-| 功能 | 說明 |
+- [ ] 撠???撖?後端/後端框架 撠??瑁? `aipa init`嚗??5 ???批???
+- [ ] ????嚗aipa knowledge search "隞狡瘚?"` ?臬??喟?霅???
+- [ ] `.ai-project/` ?桅?甇?Ⅱ撱箇?嚗 `dna/`?knowledge/db/`?vector/`
+- [ ] Scanner ?舀迤蝣箄??乩誑銝?銵ㄖ嚗ava 17?pring Boot 3.x?yBatis?ostgreSQL
+- [ ] Phase 2 ?啣??????賣?撠???葫閰佗?閬?????70%
+
+---
+
+## 5. Phase 3 ??閬撘? + Human Checkpoint嚗VP 摰?嚗?
+
+**?格?**嚗祕雿?Specification Engine?lanning Engine?onfidence Engine ?敹??踝?隞亙?摰??CLI Human Checkpoint 瘚???*Phase 3 摰?敺? MVP 璅???*
+
+### 鈭支???
+
+#### Memory Engine嚗memory/`嚗?
+
+| ? | 隤芣? |
 |---|---|
-| CLI Checkpoint 互動介面 | `CheckpointUI.ts`：顯示規格摘要，等待 approve/reject |
-| `AuditLogger` | 所有 Checkpoint 操作寫入稽核日誌 |
-| `POST /api/v1/checkpoint/{id}/approve` | 可正常核准 Checkpoint |
-| `POST /api/v1/checkpoint/{id}/reject` | 可正常拒絕 Checkpoint |
-| SSE Checkpoint 通知 | 建立 Checkpoint 後即時推送至 CLI |
+| `MemoryRepository` | ????園???????SQLite嚗?|
+| `MemoryEngine` | ?箸閮?脣? / ?亥岷 / 撘瑕? |
+| `GET /engine/memory/context` | ??摰閮銝???|
 
-#### Workflow Engine（`runtime/workflow/`）
+#### Specification Engine嚗workflow/spec/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| Session 狀態機 | `CREATED` → `SPEC_PENDING` → `CONFIDENCE_CHECKING` → `PLANNING` → `TASK_PENDING` 完整流程 |
-| NMI 處理 | 信心不足時進入 `NMI_WAIT` 狀態，等待補充 |
-| Session 持久化 | 崩潰後可恢復 |
+| `SpecFactory` | 雿輻 Freemarker 璅⊥?? FeatureSpec / BugSpec |
+| `ImpactAnalyzer` | ?箸 Knowledge Context ?脰?敶梢?? |
+| `TestPlanGenerator` | ?芸???皜祈岫閮? |
+| `SpecRepository` | 閬????SQLite嚗?|
+| `SpecValidator` | 閬撽?嚗?憛急?雿撘?|
+| 璅⊥瑼? | `templates/specs/feature-spec.ftl`?bug-spec.ftl` |
 
-#### CLI 更新（`cli/`）
+#### Confidence Engine嚗workflow/confidence/`嚗?
 
-| 命令 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| `aipa ask "<需求>"` | 可完整走完至 Task Approval（AI 呼叫以空實作代替） |
-| `aipa checkpoint list` | 顯示待審核項目 |
-| `aipa checkpoint approve/reject` | 可審核 Checkpoint |
-| `aipa status` | 顯示目前 Session 狀態 |
+| `KnowledgeCoverageEvaluator` | 閰摯?亥?瘨菔???|
+| `MemoryCompletenessEvaluator` | 閰摯閮摰??|
+| `ExperienceSimilarityEvaluator` | 閰摯?訾撮摨佗?Phase 3 ? 0嚗hase 6 鋆?嚗?|
+| `ArchitectureComplexityEvaluator` | 閰摯?嗆?銴?摨?|
+| `BusinessRiskEvaluator` | 閰摯璆剖?憸券 |
+| `NMIReport` ?? | 靽∪? < 70 ??擃?NMI 隤芣? |
 
-### MVP 驗收情境
+#### Planning Engine嚗workflow/planning/`嚗?
+
+| ? | 隤芣? |
+|---|---|
+| `TaskDecomposer` | 撠?Spec ?圾?箏?隞餃?嚗AG嚗?|
+| `DAGValidator` | 撽??∪儐?啁靘?|
+| `TaskRepository` | 隞餃?????|
+
+#### Checkpoint Gate嚗runtime/checkpoint/`嚗?
+
+| ? | 隤芣? |
+|---|---|
+| CLI Checkpoint 鈭?隞 | `CheckpointUI.ts`嚗＊蝷箄??潭?閬?蝑? approve/reject |
+| `AuditLogger` | ???Checkpoint ??撖怠蝔賣?亥? |
+| `POST /api/v1/checkpoint/{id}/approve` | ?舀迤撣豢??Checkpoint |
+| `POST /api/v1/checkpoint/{id}/reject` | ?舀迤撣豢?蝯?Checkpoint |
+| SSE Checkpoint ? | 撱箇? Checkpoint 敺?? CLI |
+
+#### Workflow Engine嚗runtime/workflow/`嚗?
+
+| ? | 隤芣? |
+|---|---|
+| Session ??? | `CREATED` ??`SPEC_PENDING` ??`CONFIDENCE_CHECKING` ??`PLANNING` ??`TASK_PENDING` 摰瘚? |
+| NMI ?? | 靽∪?銝雲?脣 `NMI_WAIT` ???蝑?鋆? |
+| Session ????| 撏拇蔑敺?Ｗ儔 |
+
+#### CLI ?湔嚗cli/`嚗?
+
+| ?賭誘 | 隤芣? |
+|---|---|
+| `aipa ask "<?瘙?"` | ?臬??渲粥摰 Task Approval嚗I ?澆隞亦征撖虫?隞?嚗?|
+| `aipa checkpoint list` | 憿舐內敺祟?賊???|
+| `aipa checkpoint approve/reject` | ?臬祟??Checkpoint |
+| `aipa status` | 憿舐內?桀? Session ???|
+
+### MVP 撽??
 
 ```
-1. aipa init（5 分鐘內完成，建立知識庫）
-2. aipa ask "新增案件提醒功能"
-3. 系統顯示生成中...
-4. 終端出現 Checkpoint：Spec Approval
-5. 使用者輸入 a 核准
-6. 系統評估信心：78 分（通過）
-7. 系統顯示任務分解清單（7 個任務）
-8. 終端出現 Checkpoint：Task Approval
-9. 使用者輸入 a 核准
-10. 系統顯示「AI 呼叫功能尚未實作（Phase 4）」
+1. aipa init嚗? ???批???撱箇??亥?摨恬?
+2. aipa ask "?啣?獢辣???"
+3. 蝟餌絞憿舐內??銝?..
+4. 蝯垢?箇 Checkpoint嚗pec Approval
+5. 雿輻?撓??a ?詨?
+6. 蝟餌絞閰摯靽∪?嚗?8 ????嚗?
+7. 蝟餌絞憿舐內隞餃??圾皜嚗? ?遙??
+8. 蝯垢?箇 Checkpoint嚗ask Approval
+9. 雿輻?撓??a ?詨?
+10. 蝟餌絞憿舐內?I ?澆?撠撖虫?嚗hase 4嚗?
 ```
 
-### 退出標準
+### ??箸?皞?
 
-- [ ] MVP 驗收情境全程可執行，無錯誤中斷
-- [ ] `aipa ask` 生成的 Spec 包含：需求摘要、影響分析、風險等級、測試計劃、信心分數
-- [ ] Spec 以 Markdown 格式儲存於 `.ai-project/specs/`
-- [ ] 信心 < 70 時，NMI 報告列出具體缺少的知識項目
-- [ ] 所有 Checkpoint 操作記錄於 `audit/checkpoint-audit.jsonl`
-- [ ] Phase 3 新增功能覆蓋率 ≥ 70%
-
----
-
-## 6. Phase 4 — AI 介面卡 + 完整流水線
-
-**目標**：實作所有 AI Adapter、Testing Engine、Review Engine，讓 `aipa ask` 可以完整執行至 PR 建立。
-
-### 交付物
-
-#### AI Adapter（`agent/`）
-
-| 功能 | 說明 |
-|---|---|
-| `ClaudeAdapter` | Anthropic API 完整實作（含 Fallback 邏輯） |
-| `OpenAIAdapter` | OpenAI API 完整實作 |
-| `GeminiAdapter` | Google AI API 完整實作 |
-| `OllamaAdapter` | Ollama 本地 API 完整實作 |
-| `CopilotAdapter` | GitHub Copilot CLI 橋接實作 |
-| `ContextBuilder` | Token 預算分配（5 個維度） |
-| `AIAdapterRegistry` | 主要 / 備援 Adapter 自動切換 |
-| `AISession` 記錄 | 每次呼叫寫入稽核記錄 |
-
-#### Testing Engine（`workflow/testing/`）
-
-| 功能 | 說明 |
-|---|---|
-| `UnitTestGenerator` | 生成 JUnit 5 單元測試 |
-| `IntegrationTestGenerator` | 生成 Spring Boot 整合測試 |
-| `ApiTestGenerator` | 依據 OpenAPI 規格生成 API 測試 |
-| 測試執行 | 在隔離環境執行生成的測試 |
-| 覆蓋率報告 | 計算新增程式碼的測試覆蓋率 |
-
-#### Review Engine（`workflow/review/`）
-
-| 功能 | 說明 |
-|---|---|
-| `ArchitectureReviewer` | 層次違規、模組邊界、循環依賴偵測 |
-| `SecurityReviewer` | SQL Injection、硬編碼密碼、敏感資料 Log |
-| `SqlReviewer` | 缺少 WHERE 條件、缺少 Transaction |
-| `CodingRuleReviewer` | Coding Style Memory 規則套用 |
-| `RegressionReviewer` | 破壞性變更偵測 |
-| `WisdomRuleReviewer` | 智慧規則套用（Phase 6 完善） |
-
-#### Workflow Engine 更新（`runtime/workflow/`）
-
-| 功能 | 說明 |
-|---|---|
-| `ExecuteTaskStep` | 呼叫 AI Adapter → Testing Engine → Review Engine 完整迴圈 |
-| 自動重試（最多 3 次） | Test 或 Review 失敗時自動重試 |
-| `CreatePRStep` | 呼叫 Git Service 建立 PR |
-| PR Approval Checkpoint | 顯示 Code Diff 摘要、測試結果、審查結果 |
-
-#### Git Service（`runtime/git/`）
-
-| 功能 | 說明 |
-|---|---|
-| `GitService` | 建立 Branch、Commit、PR（支援 GitHub / GitLab） |
-| PR 描述自動生成 | 基於 Spec 生成 PR 標題與描述 |
-
-### 退出標準
-
-- [ ] `aipa ask "新增案件提醒功能"` 可完整執行至建立 Git PR
-- [ ] 支援至少 2 個 AI 供應商（Claude + Ollama 本地模式）
-- [ ] AI Adapter Fallback 機制可運作（主要供應商關閉後自動切換備援）
-- [ ] Review Engine 可偵測至少以下問題：SQL Injection、缺少 Transaction、循環依賴
-- [ ] 所有 AI 呼叫有對應 AISession 稽核記錄
+- [ ] MVP 撽???函??臬銵??⊿隤支葉??
+- [ ] `aipa ask` ????Spec ?嚗?瘙?閬蔣?踹??◢?芰?蝝葫閰西??縑敹???
+- [ ] Spec 隞?Markdown ?澆??脣???`.ai-project/specs/`
+- [ ] 靽∪? < 70 ??NMI ?勗???琿?蝻箏??霅???
+- [ ] ???Checkpoint ??閮???`audit/checkpoint-audit.jsonl`
+- [ ] Phase 3 ?啣??閬?????70%
 
 ---
 
-## 7. Phase 5 — 學習引擎 + 記憶引擎
+## 6. Phase 4 ??AI 隞??+ 摰瘚偌蝺?
 
-**目標**：實作 Learning Engine，讓系統在每次 PR Merge 後自動學習；完善 Memory Engine 的記憶強化機制。
+**?格?**嚗祕雿???AI Adapter?esting Engine?eview Engine嚗? `aipa ask` ?臭誑摰?瑁???PR 撱箇???
 
-### 交付物
+### 鈭支???
 
-#### Learning Engine（`learning/`）
+#### AI Adapter嚗agent/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| `GitDiffAnalyzer` | 解析 Git Diff，識別類別 / 方法 / SQL 變更 |
-| `CommitMessageAnalyzer` | 提取功能描述、Bug 原因 |
-| `ReviewCommentAnalyzer` | 提取 Reviewer 的規則與建議 |
-| `PatternExtractor` | 使用 LLM 提取 Coding Pattern、架構決策 |
-| `KnowledgeUpdater` | 更新知識庫（新增 / 修改 KnowledgeItems） |
-| `MemoryUpdater` | 更新 Pattern / Decision / Style Memory |
-| `ExperienceUpdater` | 建立 ExperienceCase |
-| 學習摘要報告 | 每次 PR Merge 後生成可讀報告 |
-| `POST /api/v1/learn` | 手動觸發學習端點 |
-| PR Merge Webhook | 接收 Git 系統的 Merge 事件 |
-| 學習回滾 | 學習結果有誤時可回滾（`learning rollback`） |
+| `ClaudeAdapter` | Anthropic API 摰撖虫?嚗 Fallback ?摩嚗?|
+| `OpenAIAdapter` | OpenAI API 摰撖虫? |
+| `GeminiAdapter` | Google AI API 摰撖虫? |
+| `OllamaAdapter` | Ollama ?砍 API 摰撖虫? |
+| `CopilotAdapter` | GitHub Copilot CLI 璈撖虫? |
+| `ContextBuilder` | Token ????嚗? ?雁摨佗? |
+| `AIAdapterRegistry` | 銝餉? / ? Adapter ?芸??? |
+| `AISession` 閮? | 瘥活?澆撖怠蝔賣閮? |
 
-#### Memory Engine 完善（`memory/`）
+#### Testing Engine嚗workflow/testing/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| 記憶強化（Reinforce） | 每次 Learning 確認的記憶 `strength +1` |
-| 記憶衰退（Decay） | 長期未引用的記憶強度降低（可設定） |
-| SESSION Memory 歸檔 | Session 結束後自動歸檔有用記憶 |
+| `UnitTestGenerator` | ?? JUnit 5 ?桀?皜祈岫 |
+| `IntegrationTestGenerator` | ?? 後端框架 ?游?皜祈岫 |
+| `ApiTestGenerator` | 靘? OpenAPI 閬?? API 皜祈岫 |
+| 皜祈岫?瑁? | ?券??Ｙ憓銵???皜祈岫 |
+| 閬????| 閮??啣?蝔?蝣潛?皜祈岫閬???|
 
-#### CLI 更新（`cli/`）
+#### Review Engine嚗workflow/review/`嚗?
 
-| 命令 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| `aipa learn` | 手動觸發學習（自動從最新 PR） |
-| `aipa learn --pr=42` | 對指定 PR 觸發學習 |
-| `aipa memory list` | 列出記憶條目 |
+| `ArchitectureReviewer` | 撅斗活???芋蝯??儐?唬?鞈游皜?|
+| `SecurityReviewer` | SQL Injection?′蝺函Ⅳ撖Ⅳ??????Log |
+| `SqlReviewer` | 蝻箏? WHERE 璇辣?撩撠?Transaction |
+| `CodingRuleReviewer` | Coding Style Memory 閬?憟 |
+| `RegressionReviewer` | ?游??扯??游皜?|
+| `WisdomRuleReviewer` | ?箸閬?憟嚗hase 6 摰?嚗?|
 
-### 退出標準
+#### Workflow Engine ?湔嚗runtime/workflow/`嚗?
 
-- [ ] Merge 一個 PR 後，執行 `aipa learn` 可更新知識庫（可驗證新增的知識項目）
-- [ ] 學習後執行 `aipa ask` 同類需求，信心分數高於學習前
-- [ ] 學習結果摘要報告清晰列出：新增 N 筆知識、更新 N 筆記憶、建立 N 個經驗
+| ? | 隤芣? |
+|---|---|
+| `ExecuteTaskStep` | ?澆 AI Adapter ??Testing Engine ??Review Engine 摰餈游? |
+| ?芸??岫嚗?憭?3 甈∴? | Test ??Review 憭望????閰?|
+| `CreatePRStep` | ?澆 Git Service 撱箇? PR |
+| PR Approval Checkpoint | 憿舐內 Code Diff ???葫閰衣??祟?亦???|
+
+#### Git Service嚗runtime/git/`嚗?
+
+| ? | 隤芣? |
+|---|---|
+| `GitService` | 撱箇? Branch?ommit?R嚗??GitHub / GitLab嚗?|
+| PR ?膩?芸??? | ?箸 Spec ?? PR 璅???餈?|
+
+### ??箸?皞?
+
+- [ ] `aipa ask "?啣?獢辣???"` ?臬??游銵撱箇? Git PR
+- [ ] ?舀?喳? 2 ??AI 靘???Copilot + Claude嚗?
+- [ ] AI Adapter Fallback 璈?舫?雿?銝餉?靘??????芸????嚗?
+- [ ] Review Engine ?臬皜祈撠誑銝?憿?SQL Injection?撩撠?Transaction?儐?唬?鞈?
+- [ ] ???AI ?澆????AISession 蝔賣閮?
 
 ---
 
-## 8. Phase 6 — 經驗引擎 + 智慧引擎
+## 7. Phase 5 ??摮貊?撘? + 閮撘?
 
-**目標**：實作 Experience Engine 的相似案例檢索功能，以及 Wisdom Engine 的規則強制執行機制。
+**?格?**嚗祕雿?Learning Engine嚗?蝟餌絞?冽?甈?PR Merge 敺?飛蝧?摰? Memory Engine ???嗅撥???嗚?
 
-### 交付物
+### 鈭支???
 
-#### Experience Engine（`experience/`）
+#### Learning Engine嚗learning/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| `ExperienceEngine` | 建立 / 查詢 ExperienceCase |
-| 向量化 ExperienceCase | 使用 Embedding 向量化，存入 ChromaDB |
-| 相似案例搜尋 | `POST /engine/experience/search`，相似度 > 0.6 才回傳 |
-| 引用整合 | Spec 生成時自動引用相似案例 |
-| Confidence 整合 | ExperienceSimilarityEvaluator 正式啟用 |
+| `GitDiffAnalyzer` | 閫?? Git Diff嚗??仿???/ ?寞? / SQL 霈 |
+| `CommitMessageAnalyzer` | ????膩?ug ?? |
+| `ReviewCommentAnalyzer` | ?? Reviewer ????撱箄降 |
+| `PatternExtractor` | 雿輻 LLM ?? Coding Pattern?瑽捱蝑?|
+| `KnowledgeUpdater` | ?湔?亥?摨恬??啣? / 靽格 KnowledgeItems嚗?|
+| `MemoryUpdater` | ?湔 Pattern / Decision / Style Memory |
+| `ExperienceUpdater` | 撱箇? ExperienceCase |
+| 摮貊????勗? | 瘥活 PR Merge 敺??霈?勗? |
+| `POST /api/v1/learn` | ??閫貊摮貊?蝡舫? |
+| PR Merge Webhook | ?交 Git 蝟餌絞??Merge 鈭辣 |
+| 摮貊??遝 | 摮貊?蝯??炊??遝嚗learning rollback`嚗?|
 
-#### Wisdom Engine（`wisdom/`）
+#### Memory Engine 摰?嚗memory/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| `WisdomEngine` | 規則 CRUD、規則匹配 |
-| `WisdomRuleReviewer` | Review Engine 中套用 WARN / BLOCK 規則 |
-| BLOCK 規則強制關卡 | 觸發 BLOCK 規則時建立 IMPACT_APPROVAL Checkpoint |
-| 預設規則集 | 載入 `templates/wisdom/` 中的預設規則 |
-| `aipa wisdom add/list/edit` | CLI 智慧規則管理 |
+| 閮撘瑕?嚗einforce嚗?| 瘥活 Learning 蝣箄?????`strength +1` |
+| 閮銵圈嚗ecay嚗?| ?瑟??芸??函?閮撘瑕漲??嚗閮剖?嚗?|
+| SESSION Memory 甇豢? | Session 蝯?敺?飛瑼??刻???|
 
-### 退出標準
+#### CLI ?湔嚗cli/`嚗?
 
-- [ ] `aipa ask` 生成 Spec 時，自動引用相似歷史案例（Experience Engine 生效）
-- [ ] 新增一條 BLOCK 級智慧規則後，違反此規則的 AI 程式碼觸發 IMPACT_APPROVAL
-- [ ] 預設智慧規則集正確載入（至少 10 條 Java 企業開發規則）
+| ?賭誘 | 隤芣? |
+|---|---|
+| `aipa learn` | ??閫貊摮貊?嚗?????PR嚗?|
+| `aipa learn --pr=42` | 撠?摰?PR 閫貊摮貊? |
+| `aipa memory list` | ?閮璇 |
+
+### ??箸?皞?
+
+- [ ] Merge 銝??PR 敺??瑁? `aipa learn` ?舀?啁霅澈嚗撽??啣??霅??殷?
+- [ ] 摮貊?敺銵?`aipa ask` ???瘙?靽∪??擃摮貊???
+- [ ] 摮貊?蝯????勗?皜?嚗憓?N 蝑霅??N 蝑??嗚遣蝡?N ??撽?
 
 ---
 
-## 9. Phase 7 — Plugin 套件
+## 8. Phase 6 ??蝬?撘? + ?箸撘?
 
-**目標**：實作 VSCode Extension、IntelliJ Plugin 的核心功能，完善 Web UI Dashboard。
+**?格?**嚗祕雿?Experience Engine ?隡潭?靘炎蝝Ｗ??踝?隞亙? Wisdom Engine ???撥?嗅銵??嗚?
 
-### 交付物
+### 鈭支???
 
-#### VSCode Extension（`plugin/vscode/`）
+#### Experience Engine嚗experience/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| 側欄面板 | 顯示目前 Session 狀態、Checkpoint 清單 |
-| Checkpoint 通知 | 彈出通知，可直接核准 / 拒絕 |
-| 「Ask AIPA」右鍵選單 | 以選取的程式碼為上下文 |
-| 狀態列 | 顯示目前 Session 狀態 |
-| `.vsix` 打包 | 可透過 VSCode 安裝 |
+| `ExperienceEngine` | 撱箇? / ?亥岷 ExperienceCase |
+| ????ExperienceCase | 雿輻 Embedding ????摮 ChromaDB |
+| ?訾撮獢??? | `POST /engine/experience/search`嚗隡澆漲 > 0.6 ????|
+| 撘?游? | Spec ??????函隡潭?靘?|
+| Confidence ?游? | ExperienceSimilarityEvaluator 甇??? |
 
-#### IntelliJ Plugin（`plugin/intellij/`）
+#### Wisdom Engine嚗wisdom/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| 工具視窗 | 嵌入 JCEF WebView 顯示精簡版 Web UI |
-| Checkpoint 通知 | IntelliJ 氣泡通知 |
-| 「Ask AIPA」右鍵選單 | |
-| `.zip` 打包 | 可透過 IntelliJ 安裝 |
+| `WisdomEngine` | 閬? CRUD?????|
+| `WisdomRuleReviewer` | Review Engine 銝剖???WARN / BLOCK 閬? |
+| BLOCK 閬?撘瑕? | 閫貊 BLOCK 閬??遣蝡?IMPACT_APPROVAL Checkpoint |
+| ?身閬???| 頛 `templates/wisdom/` 銝剔??身閬? |
+| `aipa wisdom add/list/edit` | CLI ?箸閬?蝞∠? |
 
-#### Web UI Dashboard（`web/`）
+### ??箸?皞?
 
-| 功能 | 說明 |
-|---|---|
-| Session 管理 | 列出歷史 Session、查看工作流程時間軸 |
-| Checkpoint 審核 | 完整 Spec / Diff 檢視、可行內評論 |
-| 知識庫瀏覽器 | 樹狀結構、語意搜尋 |
-| 記憶管理 | 按類型瀏覽、強度視覺化 |
-| 智慧規則管理 | CRUD、啟用 / 停用 |
-| 系統監控 | 服務狀態、Token 用量統計 |
-| SSE 即時更新 | Session 進度即時反映 |
-
-### 退出標準
-
-- [ ] VSCode Extension 可從 `.vsix` 安裝，Checkpoint 通知可正常觸發
-- [ ] IntelliJ Plugin 可從 `.zip` 安裝，工具視窗可正常顯示
-- [ ] Web UI 可完整執行 PR Approval（查看 Diff → 行內評論 → 核准）
+- [ ] `aipa ask` ?? Spec ???芸?撘?訾撮甇瑕獢?嚗xperience Engine ??嚗?
+- [ ] ?啣?銝璇?BLOCK 蝝?扯???嚗??迨閬???AI 蝔?蝣潸孛??IMPACT_APPROVAL
+- [ ] ?身?箸閬??迤蝣箄??伐??喳? 10 璇?後端 隡平?閬?嚗?
 
 ---
 
-## 10. Phase 8 — Installer
+## 9. Phase 7 ??Plugin 憟辣
 
-**目標**：將所有模組打包為三種部署模式的安裝包，確保一般使用者可以在無技術背景的情況下完成安裝。
+**?格?**嚗祕雿?VSCode Extension?ntelliJ Plugin ?敹??踝?摰? Web UI Dashboard??
 
-### 交付物
+### 鈭支???
 
-#### Windows MSI（`installer/windows/`）
+#### VSCode Extension嚗plugin/vscode/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| GUI 安裝精靈 | NSIS 腳本，含授權同意、安裝路徑選擇 |
-| JRE 17 捆綁 | 使用者無需預先安裝 Java |
-| Node.js 20 捆綁 | CLI 依賴 |
-| Python 3.11 捆綁 | AI Engine 依賴 |
-| Windows Service 註冊 | 安裝完成後自動啟動 Runtime Service |
-| PATH 設定 | 自動將 `aipa` 加入系統 PATH |
-| 靜默安裝模式 | `setup.exe /quiet /NORESTART` |
+| ?湔??Ｘ | 憿舐內?桀? Session ??heckpoint 皜 |
+| Checkpoint ? | 敶?嚗?湔?詨? / ?? |
+| ?sk AIPA??菟??| 隞仿??蝔?蝣潛銝???|
+| ??? | 憿舐內?桀? Session ???|
+| `.vsix` ?? | ?舫? VSCode 摰? |
 
-#### Linux Shell（`installer/linux/`）
+#### IntelliJ Plugin嚗plugin/intellij/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| 一鍵安裝腳本 | `curl -sSL https://get.aipa.studio | bash` |
-| 系統依賴自動安裝 | 自動偵測並安裝 Java / Node.js / Python |
-| systemd 服務自動註冊 | 安裝後自動啟動 |
-| 支援發行版 | Ubuntu 22.04、RHEL 8+、CentOS Stream 9 |
-| 離線安裝包 | `aipa-offline-{version}.tar.gz` |
+| 撌亙閬? | 撋 JCEF WebView 憿舐內蝎曄陛??Web UI |
+| Checkpoint ? | IntelliJ 瘞?部? |
+| ?sk AIPA??菟??| |
+| `.zip` ?? | ?舫? IntelliJ 摰? |
 
-#### Docker Compose（`installer/docker/`）
+#### Web UI Dashboard嚗web/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| 完整 `docker-compose.yml` | 含健康檢查、啟動順序、Volume 設定 |
-| `.env.example` | 含所有必要環境變數說明 |
-| 官方 Docker Image | 發布至 Docker Hub（`aipaстudio/runtime`、`aipaстudio/ai-engine`） |
-| `docker compose pull && up` | 一行命令更新並重啟 |
+| Session 蝞∠? | ?甇瑕 Session??極雿?蝔??遘 |
+| Checkpoint 撖拇 | 摰 Spec / Diff 瑼Ｚ??銵閰? |
+| ?亥?摨怎汗??| 璅寧?蝯?????撠?|
+| 閮蝞∠? | ???汗?撥摨西?閬箏? |
+| ?箸閬?蝞∠? | CRUD????/ ? |
+| 蝟餌絞?? | ????oken ?券?蝯梯? |
+| SSE ?單??湔 | Session ?脣漲?單??? |
 
-### 退出標準
+### ??箸?皞?
 
-- [ ] Windows MSI：在全新 Windows 11 主機安裝，`aipa init` 可成功執行
-- [ ] Linux Shell：在全新 Ubuntu 22.04 主機安裝，`aipa init` 可成功執行
-- [ ] Docker Compose：`docker compose up -d` 後所有服務健康，`aipa init` 可成功執行
-- [ ] 三種模式均通過安全掃描（無已知高危漏洞）
+- [ ] VSCode Extension ?臬? `.vsix` 摰?嚗heckpoint ??舀迤撣貉孛??
+- [ ] IntelliJ Plugin ?臬? `.zip` 摰?嚗極?瑁?蝒甇?虜憿舐內
+- [ ] Web UI ?臬??游銵?PR Approval嚗??Diff ??銵閰? ???詨?嚗?
 
 ---
 
-## 11. Phase 9 — 企業強化
+## 10. Phase 8 ??Installer
 
-**目標**：強化系統的安全性、效能、可維護性，使其達到企業正式環境部署標準。
+**?格?**嚗???芋蝯??銝車?函蔡璅∪???鋆?嚗Ⅱ靽??砌蝙?刻隞亙?⊥?銵??舐???銝???鋆?
 
-### 交付物
+### 鈭支???
 
-#### 安全性
+#### Windows MSI嚗installer/windows/`嚗?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| API 存取控制 | Runtime API IP 白名單設定 |
-| API Key 加密儲存 | 作業系統 Keychain 整合（Windows Credential Manager / Linux Secret Service） |
-| 稽核日誌完整化 | 所有操作均有稽核記錄，支援匯出 |
-| Context 排除清單 | `contextExcludePatterns` 防止敏感資料傳送至 AI |
-| 無遙測確認 | 驗證系統不傳送任何資料至 AIPA Studio 伺服器 |
+| GUI 摰?蝎暸? | NSIS ?單嚗??????鋆楝敺??|
+| JRE 17 ?? | 雿輻????摰? 後端 |
+| Node.js 20 ?? | CLI 靘陷 |
+| Python 3.11 ?? | AI Engine 靘陷 |
+| Windows Service 閮餃? | 摰?摰?敺????Runtime Service |
+| PATH 閮剖? | ?芸?撠?`aipa` ?蝟餌絞 PATH |
+| ??摰?璅∪? | `setup.exe /quiet /NORESTART` |
 
-#### 效能
+#### Linux Shell嚗installer/linux/`嚗?
 
-| 指標 | 目標 | 驗證方式 |
+| ? | 隤芣? |
+|---|---|
+| 銝?萄?鋆??| `curl -sSL https://get.aipa.studio | bash` |
+| 蝟餌絞靘陷?芸?摰? | ?芸??菜葫銝血?鋆?後端 / Node.js / Python |
+| systemd ???芸?閮餃? | 摰?敺????|
+| ?舀?潸???| Ubuntu 22.04?HEL 8+?entOS Stream 9 |
+| ?Ｙ?摰???| `aipa-offline-{version}.tar.gz` |
+
+#### Docker Compose嚗installer/docker/`嚗?
+
+| ? | 隤芣? |
+|---|---|
+| 摰 `docker-compose.yml` | ?怠摨瑟炎?乓???摨olume 閮剖? |
+| `.env.example` | ?急???閬憓??貉牧??|
+| 摰 Docker Image | ?澆???Docker Hub嚗aipa??udio/runtime`?aipa??udio/ai-engine`嚗?|
+| `docker compose pull && up` | 銝銵隞斗?唬蒂?? |
+
+### ??箸?皞?
+
+- [ ] Windows MSI嚗?冽 Windows 11 銝餅?摰?嚗aipa init` ?舀??銵?
+- [ ] Linux Shell嚗?冽 Ubuntu 22.04 銝餅?摰?嚗aipa init` ?舀??銵?
+- [ ] Docker Compose嚗docker compose up -d` 敺????摨瘀?`aipa init` ?舀??銵?
+- [ ] 銝車璅∪???摰??嚗撌脩擃瞍?嚗?
+
+---
+
+## 11. Phase 9 ??隡平撘瑕?
+
+**?格?**嚗撥?頂蝯梁?摰?扼??賬蝬剛風?改?雿踹?隡平甇???啣??函蔡璅???
+
+### 鈭支???
+
+#### 摰??
+
+| ? | 隤芣? |
+|---|---|
+| API 摮??批 | Runtime API IP ?賢??株身摰?|
+| API Key ???脣? | 雿平蝟餌絞 Keychain ?游?嚗indows Credential Manager / Linux Secret Service嚗?|
+| 蝔賣?亥?摰??| ???雿??里?貉????舀?臬 |
+| Context ?皜 | `contextExcludePatterns` ?脫迫??鞈??喲 AI |
+| ?⊿?皜祉Ⅱ隤?| 撽?蝟餌絞銝?遙雿?? AIPA Studio 隡箸???|
+
+#### ?
+
+| ?? | ?格? | 撽??孵? |
 |---|---|---|
-| `aipa init`（10 萬行 Java 專案） | < 5 分鐘 | 自動化效能測試 |
-| 知識查詢回應時間 | < 3 秒 | 自動化效能測試 |
-| Spec 生成時間 | < 30 秒 | 自動化效能測試 |
-| Runtime 閒置記憶體 | < 512 MB | 監控指標 |
+| `aipa init`嚗?0 ?祈? 後端 撠?嚗?| < 5 ?? | ?芸????賣葫閰?|
+| ?亥??亥岷???? | < 3 蝘?| ?芸????賣葫閰?|
+| Spec ???? | < 30 蝘?| ?芸????賣葫閰?|
+| Runtime ?蔭閮擃?| < 512 MB | ???? |
 
-#### 可維護性
+#### ?舐雁霅瑟?
 
-| 功能 | 說明 |
+| ? | 隤芣? |
 |---|---|
-| `aipa doctor` | 診斷並自動修復 10 種常見問題 |
-| 結構化日誌 | JSON 格式日誌，支援 ELK Stack 整合 |
-| 版本升級遷移工具 | `aipa upgrade` 命令處理 Schema 遷移與設定更新 |
-| 多專案支援 | 同一 AIPA 實例管理多個專案 |
+| `aipa doctor` | 閮箸銝西?耨敺?10 蝔桀虜閬?憿?|
+| 蝯??隤?| JSON ?澆??亥?嚗??ELK Stack ?游? |
+| ????瑞宏撌亙 | `aipa upgrade` ?賭誘?? Schema ?瑞宏?身摰??|
+| 憭?獢??| ?? AIPA 撖虫?蝞∠?憭?獢?|
 
-#### RBAC（Role-Based Access Control，選用）
+#### RBAC嚗ole-Based Access Control嚗?剁?
 
-| 角色 | 權限 |
+| 閫 | 甈? |
 |---|---|
-| `developer` | 建立 Session、核准 PR Approval |
-| `tech-lead` | 所有 developer 權限 + 核准 Impact Approval |
-| `architect` | 所有 tech-lead 權限 + 管理知識庫 / 智慧規則 |
-| `admin` | 所有權限 + 系統設定 |
+| `developer` | 撱箇? Session???PR Approval |
+| `tech-lead` | ???developer 甈? + ?詨? Impact Approval |
+| `architect` | ???tech-lead 甈? + 蝞∠??亥?摨?/ ?箸閬? |
+| `admin` | ?????+ 蝟餌絞閮剖? |
 
-### 退出標準
+### ??箸?皞?
 
-- [ ] 效能基準全部達標（使用真實 10 萬行 Java 專案驗證）
-- [ ] 安全掃描無高危漏洞（Trivy、SonarCloud）
-- [ ] `aipa doctor` 可診斷並修復至少 5 種常見問題
-- [ ] 多專案切換可正常運作
-- [ ] 正式發布準備就緒（CHANGELOG、版本標籤、Release Notes）
-
----
-
-## 12. 正式發布 v1.0.0 GA
-
-**退出標準（所有 Phase 9 退出標準 + 以下）**：
-
-- [ ] 所有 Phase 1–9 退出標準滿足
-- [ ] 端對端測試套件通過率 ≥ 95%
-- [ ] 使用者驗收測試（UAT）通過（至少 3 個真實企業專案驗證）
-- [ ] 使用者文件（User Guide）完成
-- [ ] 部署文件（Operations Guide）完成
-- [ ] `CHANGELOG.md` 完整記錄所有變更
+- [ ] ??箸??券??嚗蝙?函?撖?10 ?祈? 後端 撠?撽?嚗?
+- [ ] 摰???⊿??望?瘣?Trivy?onarCloud嚗?
+- [ ] `aipa doctor` ?航那?瑚蒂靽桀儔?喳? 5 蝔桀虜閬?憿?
+- [ ] 憭?獢??甇?虜??
+- [ ] 甇???澆?皞?撠梁?嚗HANGELOG???祆?蝐扎elease Notes嚗?
 
 ---
 
-## 13. 架構鎖定規則
+## 12. 甇???澆? v1.0.0 GA
 
-以下規則在所有 Phase 執行期間強制適用：
+**??箸?皞????Phase 9 ??箸?皞?+ 隞乩?嚗?*嚗?
 
-1. **Phase 順序不可跳躍**：每個 Phase 的退出標準必須全部滿足，才可開始下一個 Phase
-2. **架構變更需審查**：任何不在 Phase 0 設計文件範圍內的架構決策，必須先建立 ADR 並通過審查
-3. **技術不可擅自引入**：新增任何不在 `technology-selection.md` 中的技術，必須先更新技術選型文件並審查
-4. **介面契約不可破壞**：模組公開 API（REST 端點、Java 介面、Python 端點）一旦在 Phase 1 定義，不得在後續 Phase 進行破壞性變更（需向下相容）
-5. **Human Checkpoint 不可移除**：四個 Checkpoint 關卡永遠強制執行，不得因任何理由繞過
+- [ ] ???Phase 1?? ??箸?皞遛頞?
+- [ ] 蝡臬?蝡舀葫閰血?隞園?????95%
+- [ ] 雿輻???嗆葫閰佗?UAT嚗?嚗撠?3 ??撖虫?璆剖?獢?霅?
+- [ ] 雿輻??隞塚?User Guide嚗???
+- [ ] ?函蔡?辣嚗perations Guide嚗???
+- [ ] `CHANGELOG.md` 摰閮??????
 
 ---
 
-## 14. 版本歷史
+## 13. ?嗆???閬?
 
-| 版本 | 日期 | 變更說明 |
+隞乩?閬??冽???Phase ?瑁???撘瑕?拍嚗?
+
+1. **Phase ??銝頝唾?**嚗???Phase ??箸?皞???冽遛頞喉????銝???Phase
+2. **?嗆?霈?撖拇**嚗遙雿???Phase 0 閮剛??辣蝭??抒??嗆?瘙箇?嚗???撱箇? ADR 銝阡?撖拇
+3. **?銵??舀??芸???*嚗憓遙雿???`technology-selection.md` 銝剔??銵?敹???唳?銵??隞嗡蒂撖拇
+4. **隞憟?銝?游?**嚗芋蝯??API嚗EST 蝡舫??ava 隞?ython 蝡舫?嚗??血 Phase 1 摰儔嚗?敺敺? Phase ?脰??游??扯??湛?????詨捆嚗?
+5. **Human Checkpoint 銝蝘駁**嚗???Checkpoint ?瘞賊?撘瑕?瑁?嚗?敺?隞颱??蝜?
+
+---
+
+## 14. ?甇瑕
+
+| ? | ?交? | 霈隤芣? |
 |---|---|---|
-| 1.0.0-draft | Phase 1 | 初始開發路線圖 |
+| 1.0.0-draft | Phase 1 | ???頝舐???|
 
 ---
 
-*本文件為 AIPA Studio Phase 1 架構鎖定的一部分。所有 Phase 1 文件審核確認後，才可開始任何實作工作。*
+*?祆?隞嗥 AIPA Studio Phase 1 ?嗆??????典?????Phase 1 ?辣撖拇蝣箄?敺????隞颱?撖虫?撌乩???
+
 

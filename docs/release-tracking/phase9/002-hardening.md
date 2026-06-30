@@ -8,7 +8,7 @@
 
 - 檢查 Runtime 連線狀態
 - 檢查 Node.js 版本（建議 `>=20`）
-- 檢查 AI 供應商設定（API Key / Ollama）
+- 檢查 AI 供應商設定（GitHub Token 或其他 API Key）
 - 檢查工作目錄可寫入權限
 - 檢查 `AIPA_CONTEXT_EXCLUDE_PATTERNS` 是否設定
 - 支援 `--json` 結構化輸出，便於 CI 解析

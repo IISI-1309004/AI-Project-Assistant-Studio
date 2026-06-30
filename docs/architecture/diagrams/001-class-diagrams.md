@@ -83,16 +83,6 @@ class OpenAIAdapter {
   + generate(request: AIRequest) : AIResponse
 }
 
-class OllamaAdapter {
-  - ollamaUrl : String
-  - model : String
-  - httpClient : HttpClient
-  + name() : String
-  + type() : AdapterType
-  + isAvailable() : boolean
-  + generate(request: AIRequest) : AIResponse
-  - listAvailableModels() : List<String>
-}
 
 class MCPAdapter {
   - mcpEndpoint : String
@@ -155,7 +145,6 @@ AIAdapter <|.. CopilotAdapter
 AIAdapter <|.. ClaudeAdapter
 AIAdapter <|.. GeminiAdapter
 AIAdapter <|.. OpenAIAdapter
-AIAdapter <|.. OllamaAdapter
 AIAdapter <|.. MCPAdapter
 
 AIAdapterRegistry o-- AIAdapter

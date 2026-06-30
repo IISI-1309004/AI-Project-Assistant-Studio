@@ -1,702 +1,700 @@
-# AIPA Studio — Repository 結構（Repository Structure）
+﻿# AIPA Studio ??Repository 蝯?嚗epository Structure嚗?
 
-**版本**：1.0.0-draft
-**狀態**：審核中
-**負責人**：AIPA Studio 架構團隊
-**最後更新**：Phase 1 — 架構鎖定階段
-**依賴文件**：[模組設計](../design/005-module-design.md)
+**?**嚗?.0.0-draft
+**???*嚗祟?訾葉
+**鞎痊鈭?*嚗IPA Studio ?嗆???
+**?敺??*嚗hase 1 ???嗆????挾
+**靘陷?辣**嚗璅∠?閮剛?](../design/005-module-design.md)
 
 ---
 
-## 1. Monorepo 策略
+## 1. Monorepo 蝑
 
-AIPA Studio 採用 **Monorepo** 結構，所有模組集中於單一 Repository，優點如下：
+AIPA Studio ?∠ **Monorepo** 蝯?嚗??芋蝯?銝剜?桐? Repository嚗暺?銝?
 
-| 優點 | 說明 |
+| ?芷? | 隤芣? |
 |---|---|
-| **跨語言一致性** | Java / Python / TypeScript 共用同一套 CI/CD 流水線 |
-| **原子提交** | 跨模組的變更可在同一個 Commit 完成 |
-| **統一版本管理** | 所有模組使用同一個版本號（同步發布） |
-| **簡化相依管理** | 模組間相依透過本地路徑引用，不需發布至套件庫 |
+| **頝刻?閮銝?湔?* | 後端 / Python / TypeScript ?梁??憟?CI/CD 瘚偌蝺?|
+| **???漱** | 頝冽芋蝯?霈?臬????Commit 摰? |
+| **蝯曹??蝞∠?** | ??芋蝯蝙?典?銝???祈?嚗?甇亦撣? |
+| **蝪∪??訾?蝞∠?** | 璅∠??靘??砍頝臬?撘嚗???澆??喳?隞嗅澈 |
 
-### 建構工具分工
+### 撱箸?撌亙?極
 
-| 技術層 | 建構工具 | 設定檔 |
+| ?銵惜 | 撱箸?撌亙 | 閮剖?瑼?|
 |---|---|---|
-| Java 模組（Runtime / Scanner） | Gradle 8.x（Multi-project） | `build.gradle.kts` |
-| Python 模組（AI Engine） | Poetry | `pyproject.toml` |
-| Node.js 模組（CLI / Web / Plugin） | npm workspaces | `package.json` |
-| 根目錄協調 | Makefile | `Makefile` |
+| 後端 璅∠?嚗untime / Scanner嚗?| Gradle 8.x嚗ulti-project嚗?| `build.gradle.kts` |
+| Python 璅∠?嚗I Engine嚗?| Poetry | `pyproject.toml` |
+| Node.js 璅∠?嚗LI / Web / Plugin嚗?| npm workspaces | `package.json` |
+| ?寧??隤?| Makefile | `Makefile` |
 
 ---
 
-## 2. 頂層目錄結構
+## 2. ?惜?桅?蝯?
 
 ```
-aipa-studio/                          # Repository 根目錄
-│
-├── .github/                          # GitHub Actions CI/CD
-│   ├── workflows/
-│   │   ├── ci.yml                    # 主 CI 流水線（所有模組）
-│   │   ├── release.yml               # 發布流水線
-│   │   └── security-scan.yml         # 安全掃描
-│   └── PULL_REQUEST_TEMPLATE.md
-│
-├── docs/                             # 設計文件（Phase 1 產出）
-│   ├── vision.md
-│   ├── prd.md
-│   ├── sad.md
-│   ├── domain-model.md
-│   ├── module-design.md
-│   ├── sequence-diagrams.md
-│   ├── class-diagrams.md
-│   ├── deployment-diagram.md
-│   ├── repository-structure.md
-│   ├── technology-selection.md
-│   └── roadmap.md
-│
-├── runtime/                          # Java — AIPA Runtime Service（核心）
-├── scanner/                          # Java — Scanner Engine
-├── cli/                              # Node.js/TypeScript — CLI
-├── web/                              # React/TypeScript — Web UI
-├── knowledge/                        # Python — Knowledge Engine
-├── memory/                           # Python — Memory Engine
-├── learning/                         # Python — Learning Engine
-├── experience/                       # Python — Experience Engine
-├── wisdom/                           # Python — Wisdom Engine
-├── agent/                            # Java — AI Adapter Layer
-├── workflow/                         # Java — Workflow Engine（Runtime 子模組）
-├── plugin/                           # IDE Plugins
-│   ├── vscode/                       # TypeScript — VSCode Extension
-│   └── intellij/                     # Java/Kotlin — IntelliJ Plugin
-├── installer/                        # 各平台安裝程式
-│   ├── windows/
-│   ├── linux/
-│   └── docker/
-├── templates/                        # 規格模板、DNA 模板、審查清單
-├── specs/                            # 生成的規格文件（由 aipa ask 產生）
-├── .ai-project/                      # AIPA Studio 自身的 AI 工作空間
-│
-├── build.gradle.kts                  # Gradle 根設定（Java Multi-project）
-├── settings.gradle.kts               # Gradle 子專案宣告
-├── package.json                      # npm workspaces 根設定
-├── pyproject.toml                    # Poetry 根設定（Python 工作空間）
-├── Makefile                          # 跨語言建構指令
-├── docker-compose.yml                # 開發環境 Docker Compose
-├── .env.example                      # 環境變數範本
-├── .gitignore
-├── .editorconfig                     # 跨語言編輯器設定
-└── README.md
+aipa-studio/                          # Repository ?寧??
+??
+??? .github/                          # GitHub Actions CI/CD
+??  ??? workflows/
+??  ??  ??? ci.yml                    # 銝?CI 瘚偌蝺???芋蝯?
+??  ??  ??? release.yml               # ?澆?瘚偌蝺?
+??  ??  ??? security-scan.yml         # 摰??
+??  ??? PULL_REQUEST_TEMPLATE.md
+??
+??? docs/                             # 閮剛??辣嚗hase 1 ?Ｗ嚗?
+??  ??? vision.md
+??  ??? prd.md
+??  ??? sad.md
+??  ??? domain-model.md
+??  ??? module-design.md
+??  ??? sequence-diagrams.md
+??  ??? class-diagrams.md
+??  ??? deployment-diagram.md
+??  ??? repository-structure.md
+??  ??? technology-selection.md
+??  ??? roadmap.md
+??
+??? runtime/                          # 後端 ??AIPA Runtime Service嚗敹?
+??? scanner/                          # 後端 ??Scanner Engine
+??? cli/                              # Node.js/TypeScript ??CLI
+??? web/                              # React/TypeScript ??Web UI
+??? knowledge/                        # Python ??Knowledge Engine
+??? memory/                           # Python ??Memory Engine
+??? learning/                         # Python ??Learning Engine
+??? experience/                       # Python ??Experience Engine
+??? wisdom/                           # Python ??Wisdom Engine
+??? agent/                            # 後端 ??AI Adapter Layer
+??? workflow/                         # 後端 ??Workflow Engine嚗untime 摮芋蝯?
+??? plugin/                           # IDE Plugins
+??  ??? vscode/                       # TypeScript ??VSCode Extension
+??  ??? intellij/                     # 後端/Kotlin ??IntelliJ Plugin
+??? installer/                        # ?像?啣?鋆?撘?
+??  ??? windows/
+??  ??? linux/
+??  ??? docker/
+??? templates/                        # 閬璅⊥?NA 璅⊥?祟?交???
+??? specs/                            # ?????潭?隞塚???aipa ask ?Ｙ?嚗?
+??? .ai-project/                      # AIPA Studio ?芾澈??AI 撌乩?蝛粹?
+??
+??? build.gradle.kts                  # Gradle ?寡身摰?後端 Multi-project嚗?
+??? settings.gradle.kts               # Gradle 摮?獢恐??
+??? package.json                      # npm workspaces ?寡身摰?
+??? pyproject.toml                    # Poetry ?寡身摰?Python 撌乩?蝛粹?嚗?
+??? Makefile                          # 頝刻?閮撱箸??誘
+??? docker-compose.yml                # ??啣? Docker Compose
+??? .env.example                      # ?啣?霈蝭
+??? .gitignore
+??? .editorconfig                     # 頝刻?閮蝺刻摩?刻身摰?
+??? README.md
 ```
 
 ---
 
-## 3. Java 模組結構
+## 3. 後端 璅∠?蝯?
 
-### 3.1 `runtime/` — AIPA Runtime Service
+### 3.1 `runtime/` ??AIPA Runtime Service
 
 ```
 runtime/
-├── build.gradle.kts
-└── src/
-    ├── main/
-    │   ├── java/com/aipa/runtime/
-    │   │   ├── AipaRuntimeApplication.java      # Spring Boot 啟動類
-    │   │   ├── api/                             # REST API 層
-    │   │   │   ├── controller/
-    │   │   │   │   ├── ProjectController.java
-    │   │   │   │   ├── SessionController.java
-    │   │   │   │   ├── CheckpointController.java
-    │   │   │   │   ├── KnowledgeController.java
-    │   │   │   │   ├── MemoryController.java
-    │   │   │   │   ├── WisdomController.java
-    │   │   │   │   └── SystemController.java
-    │   │   │   ├── dto/                         # Request / Response DTO
-    │   │   │   └── sse/
-    │   │   │       └── SSEPublisher.java
-    │   │   ├── workflow/                        # Workflow Engine
-    │   │   │   ├── WorkflowEngine.java
-    │   │   │   ├── WorkflowStep.java            # 介面
-    │   │   │   └── steps/
-    │   │   │       ├── BuildContextStep.java
-    │   │   │       ├── GenerateSpecStep.java
-    │   │   │       ├── EvaluateConfidenceStep.java
-    │   │   │       ├── PlanTasksStep.java
-    │   │   │       ├── ExecuteTaskStep.java
-    │   │   │       ├── CreatePRStep.java
-    │   │   │       └── TriggerLearningStep.java
-    │   │   ├── checkpoint/                      # Checkpoint Gate
-    │   │   │   ├── CheckpointGate.java          # 介面
-    │   │   │   ├── CheckpointGateImpl.java
-    │   │   │   ├── CheckpointNotifier.java
-    │   │   │   └── AuditLogger.java
-    │   │   ├── project/                         # Project 管理
-    │   │   │   ├── ProjectManager.java
-    │   │   │   ├── ProjectDNABuilder.java
-    │   │   │   └── ConfigManager.java
-    │   │   ├── storage/                         # Storage 抽象層
-    │   │   │   ├── StorageProvider.java         # 介面
-    │   │   │   ├── SQLiteStorageProvider.java
-    │   │   │   ├── PostgreSQLStorageProvider.java
-    │   │   │   └── StorageManager.java
-    │   │   ├── client/                          # AI Engine REST Client
-    │   │   │   └── AIEngineClient.java
-    │   │   ├── git/                             # Git 整合
-    │   │   │   └── GitService.java
-    │   │   ├── domain/                          # 領域模型（共用）
-    │   │   │   ├── model/
-    │   │   │   └── event/
-    │   │   └── config/                          # Spring 設定
-    │   │       ├── AppConfig.java
-    │   │       └── SecurityConfig.java
-    │   └── resources/
-    │       ├── application.yml
-    │       ├── application-docker.yml
-    │       ├── application-linux.yml
-    │       └── db/migration/                    # Flyway Migration
-    │           ├── V001__create_projects.sql
-    │           ├── V002__create_sessions.sql
-    │           ├── V003__create_checkpoints.sql
-    │           ├── V004__create_knowledge.sql
-    │           └── V005__create_memory.sql
-    └── test/
-        └── java/com/aipa/runtime/
-            ├── api/
-            ├── workflow/
-            └── checkpoint/
+??? build.gradle.kts
+??? src/
+    ??? main/
+    ??  ??? java/com/aipa/runtime/
+    ??  ??  ??? AipaRuntimeApplication.java      # 後端框架 ??憿?
+    ??  ??  ??? api/                             # REST API 撅?
+    ??  ??  ??  ??? controller/
+    ??  ??  ??  ??  ??? ProjectController.java
+    ??  ??  ??  ??  ??? SessionController.java
+    ??  ??  ??  ??  ??? CheckpointController.java
+    ??  ??  ??  ??  ??? KnowledgeController.java
+    ??  ??  ??  ??  ??? MemoryController.java
+    ??  ??  ??  ??  ??? WisdomController.java
+    ??  ??  ??  ??  ??? SystemController.java
+    ??  ??  ??  ??? dto/                         # Request / Response DTO
+    ??  ??  ??  ??? sse/
+    ??  ??  ??      ??? SSEPublisher.java
+    ??  ??  ??? workflow/                        # Workflow Engine
+    ??  ??  ??  ??? WorkflowEngine.java
+    ??  ??  ??  ??? WorkflowStep.java            # 隞
+    ??  ??  ??  ??? steps/
+    ??  ??  ??      ??? BuildContextStep.java
+    ??  ??  ??      ??? GenerateSpecStep.java
+    ??  ??  ??      ??? EvaluateConfidenceStep.java
+    ??  ??  ??      ??? PlanTasksStep.java
+    ??  ??  ??      ??? ExecuteTaskStep.java
+    ??  ??  ??      ??? CreatePRStep.java
+    ??  ??  ??      ??? TriggerLearningStep.java
+    ??  ??  ??? checkpoint/                      # Checkpoint Gate
+    ??  ??  ??  ??? CheckpointGate.java          # 隞
+    ??  ??  ??  ??? CheckpointGateImpl.java
+    ??  ??  ??  ??? CheckpointNotifier.java
+    ??  ??  ??  ??? AuditLogger.java
+    ??  ??  ??? project/                         # Project 蝞∠?
+    ??  ??  ??  ??? ProjectManager.java
+    ??  ??  ??  ??? ProjectDNABuilder.java
+    ??  ??  ??  ??? ConfigManager.java
+    ??  ??  ??? storage/                         # Storage ?質情撅?
+    ??  ??  ??  ??? StorageProvider.java         # 隞
+    ??  ??  ??  ??? SQLiteStorageProvider.java
+    ??  ??  ??  ??? PostgreSQLStorageProvider.java
+    ??  ??  ??  ??? StorageManager.java
+    ??  ??  ??? client/                          # AI Engine REST Client
+    ??  ??  ??  ??? AIEngineClient.java
+    ??  ??  ??? git/                             # Git ?游?
+    ??  ??  ??  ??? GitService.java
+    ??  ??  ??? domain/                          # ??璅∪?嚗?剁?
+    ??  ??  ??  ??? model/
+    ??  ??  ??  ??? event/
+    ??  ??  ??? config/                          # Spring 閮剖?
+    ??  ??      ??? AppConfig.java
+    ??  ??      ??? SecurityConfig.java
+    ??  ??? resources/
+    ??      ??? application.yml
+    ??      ??? application-docker.yml
+    ??      ??? application-linux.yml
+    ??      ??? db/migration/                    # Flyway Migration
+    ??          ??? V001__create_projects.sql
+    ??          ??? V002__create_sessions.sql
+    ??          ??? V003__create_checkpoints.sql
+    ??          ??? V004__create_knowledge.sql
+    ??          ??? V005__create_memory.sql
+    ??? test/
+        ??? java/com/aipa/runtime/
+            ??? api/
+            ??? workflow/
+            ??? checkpoint/
 ```
 
-### 3.2 `scanner/` — Scanner Engine
+### 3.2 `scanner/` ??Scanner Engine
 
 ```
 scanner/
-├── build.gradle.kts
-└── src/
-    ├── main/
-    │   └── java/com/aipa/scanner/
-    │       ├── ScannerEngine.java               # 介面
-    │       ├── ScannerEngineImpl.java
-    │       ├── model/                           # ScanResult 資料模型
-    │       │   ├── ScanResult.java
-    │       │   ├── ScanRequest.java
-    │       │   ├── TechStack.java
-    │       │   ├── ApiInventory.java
-    │       │   ├── DatabaseSchema.java
-    │       │   ├── ArchitectureGraph.java
-    │       │   └── CallGraph.java
-    │       ├── detector/
-    │       │   └── TechStackDetector.java
-    │       └── subscanner/                      # 各子掃描器
-    │           ├── SubScanner.java              # 介面
-    │           ├── JavaSourceScanner.java
-    │           ├── SpringAnnotationScanner.java
-    │           ├── MyBatisScanner.java
-    │           ├── JpaEntityScanner.java
-    │           ├── SqlDdlScanner.java
-    │           ├── OpenApiScanner.java
-    │           ├── MavenScanner.java
-    │           ├── GradleScanner.java
-    │           ├── PropertiesScanner.java
-    │           ├── FrontendScanner.java
-    │           └── DockerScanner.java
-    └── test/
-        └── java/com/aipa/scanner/
+??? build.gradle.kts
+??? src/
+    ??? main/
+    ??  ??? java/com/aipa/scanner/
+    ??      ??? ScannerEngine.java               # 隞
+    ??      ??? ScannerEngineImpl.java
+    ??      ??? model/                           # ScanResult 鞈?璅∪?
+    ??      ??  ??? ScanResult.java
+    ??      ??  ??? ScanRequest.java
+    ??      ??  ??? TechStack.java
+    ??      ??  ??? ApiInventory.java
+    ??      ??  ??? DatabaseSchema.java
+    ??      ??  ??? ArchitectureGraph.java
+    ??      ??  ??? CallGraph.java
+    ??      ??? detector/
+    ??      ??  ??? TechStackDetector.java
+    ??      ??? subscanner/                      # ??????
+    ??          ??? SubScanner.java              # 隞
+    ??          ??? JavaSourceScanner.java
+    ??          ??? SpringAnnotationScanner.java
+    ??          ??? MyBatisScanner.java
+    ??          ??? JpaEntityScanner.java
+    ??          ??? SqlDdlScanner.java
+    ??          ??? OpenApiScanner.java
+    ??          ??? MavenScanner.java
+    ??          ??? GradleScanner.java
+    ??          ??? PropertiesScanner.java
+    ??          ??? FrontendScanner.java
+    ??          ??? DockerScanner.java
+    ??? test/
+        ??? java/com/aipa/scanner/
 ```
 
-### 3.3 `agent/` — AI Adapter Layer
+### 3.3 `agent/` ??AI Adapter Layer
 
 ```
 agent/
-├── build.gradle.kts
-└── src/
-    ├── main/
-    │   └── java/com/aipa/agent/
-    │       ├── AIAdapter.java                   # 介面
-    │       ├── AIAdapterRegistry.java           # 介面
-    │       ├── AIAdapterRegistryImpl.java
-    │       ├── ContextBuilder.java
-    │       ├── model/
-    │       │   ├── AIRequest.java
-    │       │   ├── AIResponse.java
-    │       │   └── AdapterCapabilities.java
-    │       └── adapter/                         # 各供應商 Adapter
-    │           ├── CopilotAdapter.java
-    │           ├── ClaudeAdapter.java
-    │           ├── GeminiAdapter.java
-    │           ├── OpenAIAdapter.java
-    │           ├── OllamaAdapter.java
-    │           └── MCPAdapter.java
-    └── test/
-        └── java/com/aipa/agent/
+??? build.gradle.kts
+??? src/
+    ??? main/
+    ??  ??? java/com/aipa/agent/
+    ??      ??? AIAdapter.java                   # 隞
+    ??      ??? AIAdapterRegistry.java           # 隞
+    ??      ??? AIAdapterRegistryImpl.java
+    ??      ??? ContextBuilder.java
+    ??      ??? model/
+    ??      ??  ??? AIRequest.java
+    ??      ??  ??? AIResponse.java
+    ??      ??  ??? AdapterCapabilities.java
+    ??      ??? adapter/                         # ???? Adapter
+    ??          ??? CopilotAdapter.java
+    ??          ??? ClaudeAdapter.java
+    ??          ??? GeminiAdapter.java
+    ??          ??? OpenAIAdapter.java
+    ??? test/
+        ??? java/com/aipa/agent/
 ```
 
-### 3.4 `workflow/` — Spec / Planning / Confidence / Review / Testing Engines
+### 3.4 `workflow/` ??Spec / Planning / Confidence / Review / Testing Engines
 
 ```
 workflow/
-├── build.gradle.kts
-└── src/
-    ├── main/
-    │   └── java/com/aipa/workflow/
-    │       ├── spec/
-    │       │   ├── SpecEngine.java
-    │       │   ├── SpecEngineImpl.java
-    │       │   ├── SpecFactory.java
-    │       │   ├── ImpactAnalyzer.java
-    │       │   ├── TestPlanGenerator.java
-    │       │   ├── SpecValidator.java
-    │       │   └── SpecRepository.java
-    │       ├── planning/
-    │       │   ├── PlanningEngine.java
-    │       │   ├── PlanningEngineImpl.java
-    │       │   ├── TaskDecomposer.java
-    │       │   ├── DAGValidator.java
-    │       │   └── TaskRepository.java
-    │       ├── confidence/
-    │       │   ├── ConfidenceEngine.java
-    │       │   ├── ConfidenceEngineImpl.java
-    │       │   ├── DimensionEvaluator.java
-    │       │   ├── evaluator/
-    │       │   │   ├── KnowledgeCoverageEvaluator.java
-    │       │   │   ├── MemoryCompletenessEvaluator.java
-    │       │   │   ├── ExperienceSimilarityEvaluator.java
-    │       │   │   ├── ArchitectureComplexityEvaluator.java
-    │       │   │   └── BusinessRiskEvaluator.java
-    │       │   └── model/
-    │       │       ├── ConfidenceScore.java
-    │       │       └── NMIReport.java
-    │       ├── review/
-    │       │   ├── ReviewEngine.java
-    │       │   ├── ReviewEngineImpl.java
-    │       │   ├── Reviewer.java
-    │       │   ├── reviewer/
-    │       │   │   ├── ArchitectureReviewer.java
-    │       │   │   ├── CodingRuleReviewer.java
-    │       │   │   ├── BusinessRuleReviewer.java
-    │       │   │   ├── SecurityReviewer.java
-    │       │   │   ├── PerformanceReviewer.java
-    │       │   │   ├── SqlReviewer.java
-    │       │   │   ├── ApiReviewer.java
-    │       │   │   ├── RegressionReviewer.java
-    │       │   │   └── WisdomRuleReviewer.java
-    │       │   └── model/
-    │       │       ├── ReviewResult.java
-    │       │       └── ReviewFinding.java
-    │       └── testing/
-    │           ├── TestingEngine.java
-    │           ├── TestingEngineImpl.java
-    │           ├── generator/
-    │           │   ├── UnitTestGenerator.java
-    │           │   ├── IntegrationTestGenerator.java
-    │           │   └── ApiTestGenerator.java
-    │           └── model/
-    │               ├── GeneratedTest.java
-    │               └── TestExecutionResult.java
-    └── test/
-        └── java/com/aipa/workflow/
+??? build.gradle.kts
+??? src/
+    ??? main/
+    ??  ??? java/com/aipa/workflow/
+    ??      ??? spec/
+    ??      ??  ??? SpecEngine.java
+    ??      ??  ??? SpecEngineImpl.java
+    ??      ??  ??? SpecFactory.java
+    ??      ??  ??? ImpactAnalyzer.java
+    ??      ??  ??? TestPlanGenerator.java
+    ??      ??  ??? SpecValidator.java
+    ??      ??  ??? SpecRepository.java
+    ??      ??? planning/
+    ??      ??  ??? PlanningEngine.java
+    ??      ??  ??? PlanningEngineImpl.java
+    ??      ??  ??? TaskDecomposer.java
+    ??      ??  ??? DAGValidator.java
+    ??      ??  ??? TaskRepository.java
+    ??      ??? confidence/
+    ??      ??  ??? ConfidenceEngine.java
+    ??      ??  ??? ConfidenceEngineImpl.java
+    ??      ??  ??? DimensionEvaluator.java
+    ??      ??  ??? evaluator/
+    ??      ??  ??  ??? KnowledgeCoverageEvaluator.java
+    ??      ??  ??  ??? MemoryCompletenessEvaluator.java
+    ??      ??  ??  ??? ExperienceSimilarityEvaluator.java
+    ??      ??  ??  ??? ArchitectureComplexityEvaluator.java
+    ??      ??  ??  ??? BusinessRiskEvaluator.java
+    ??      ??  ??? model/
+    ??      ??      ??? ConfidenceScore.java
+    ??      ??      ??? NMIReport.java
+    ??      ??? review/
+    ??      ??  ??? ReviewEngine.java
+    ??      ??  ??? ReviewEngineImpl.java
+    ??      ??  ??? Reviewer.java
+    ??      ??  ??? reviewer/
+    ??      ??  ??  ??? ArchitectureReviewer.java
+    ??      ??  ??  ??? CodingRuleReviewer.java
+    ??      ??  ??  ??? BusinessRuleReviewer.java
+    ??      ??  ??  ??? SecurityReviewer.java
+    ??      ??  ??  ??? PerformanceReviewer.java
+    ??      ??  ??  ??? SqlReviewer.java
+    ??      ??  ??  ??? ApiReviewer.java
+    ??      ??  ??  ??? RegressionReviewer.java
+    ??      ??  ??  ??? WisdomRuleReviewer.java
+    ??      ??  ??? model/
+    ??      ??      ??? ReviewResult.java
+    ??      ??      ??? ReviewFinding.java
+    ??      ??? testing/
+    ??          ??? TestingEngine.java
+    ??          ??? TestingEngineImpl.java
+    ??          ??? generator/
+    ??          ??  ??? UnitTestGenerator.java
+    ??          ??  ??? IntegrationTestGenerator.java
+    ??          ??  ??? ApiTestGenerator.java
+    ??          ??? model/
+    ??              ??? GeneratedTest.java
+    ??              ??? TestExecutionResult.java
+    ??? test/
+        ??? java/com/aipa/workflow/
 ```
 
 ---
 
-## 4. Python 模組結構
+## 4. Python 璅∠?蝯?
 
-所有 Python 模組共享同一個 FastAPI 進程（Port 18082），透過獨立的 Router 掛載。
+???Python 璅∠??曹澈????FastAPI ?脩?嚗ort 18082嚗????函???Router ????
 
-### 4.1 整體 Python 進程結構
+### 4.1 ?湧? Python ?脩?蝯?
 
 ```
-aipa-ai-engine/                       # Python 進程根目錄（由各模組組合）
-├── pyproject.toml                    # Poetry 根設定
-├── main.py                           # FastAPI 進程入口
-└── aipa_ai_engine/
-    ├── __init__.py
-    ├── app.py                        # FastAPI App 實例，掛載所有 Router
-    ├── config.py                     # 全域設定
-    └── deps.py                       # 依賴注入（DB session 等）
+aipa-ai-engine/                       # Python ?脩??寧???勗?璅∠?蝯?嚗?
+??? pyproject.toml                    # Poetry ?寡身摰?
+??? main.py                           # FastAPI ?脩??亙
+??? aipa_ai_engine/
+    ??? __init__.py
+    ??? app.py                        # FastAPI App 撖虫?嚗?頛???Router
+    ??? config.py                     # ?典?閮剖?
+    ??? deps.py                       # 靘陷瘜典嚗B session 蝑?
 ```
 
-### 4.2 `knowledge/` — Knowledge Engine
+### 4.2 `knowledge/` ??Knowledge Engine
 
 ```
 knowledge/
-├── pyproject.toml
-└── aipa_knowledge/
-    ├── __init__.py
-    ├── router.py                     # FastAPI Router（/engine/knowledge/...）
-    ├── engine.py                     # KnowledgeEngine 主類別
-    ├── repository.py                 # KnowledgeRepository
-    ├── embedding.py                  # EmbeddingService（sentence-transformers）
-    ├── vector_store.py               # ChromaDB 封裝
-    ├── search.py                     # SemanticSearchService
-    ├── graph.py                      # KnowledgeGraphService
-    ├── ingestor.py                   # ScanResultIngestor
-    └── models.py                     # Pydantic 資料模型
+??? pyproject.toml
+??? aipa_knowledge/
+    ??? __init__.py
+    ??? router.py                     # FastAPI Router嚗?engine/knowledge/...嚗?
+    ??? engine.py                     # KnowledgeEngine 銝駁???
+    ??? repository.py                 # KnowledgeRepository
+    ??? embedding.py                  # EmbeddingService嚗entence-transformers嚗?
+    ??? vector_store.py               # ChromaDB 撠?
+    ??? search.py                     # SemanticSearchService
+    ??? graph.py                      # KnowledgeGraphService
+    ??? ingestor.py                   # ScanResultIngestor
+    ??? models.py                     # Pydantic 鞈?璅∪?
 ```
 
-### 4.3 `memory/` — Memory Engine
+### 4.3 `memory/` ??Memory Engine
 
 ```
 memory/
-├── pyproject.toml
-└── aipa_memory/
-    ├── __init__.py
-    ├── router.py                     # FastAPI Router（/engine/memory/...）
-    ├── engine.py                     # MemoryEngine 主類別
-    ├── repository.py                 # MemoryRepository
-    └── models.py                     # Pydantic 資料模型
+??? pyproject.toml
+??? aipa_memory/
+    ??? __init__.py
+    ??? router.py                     # FastAPI Router嚗?engine/memory/...嚗?
+    ??? engine.py                     # MemoryEngine 銝駁???
+    ??? repository.py                 # MemoryRepository
+    ??? models.py                     # Pydantic 鞈?璅∪?
 ```
 
-### 4.4 `learning/` — Learning Engine
+### 4.4 `learning/` ??Learning Engine
 
 ```
 learning/
-├── pyproject.toml
-└── aipa_learning/
-    ├── __init__.py
-    ├── router.py                     # FastAPI Router（/engine/learning/...）
-    ├── engine.py                     # LearningEngine 主類別
-    ├── diff_analyzer.py              # GitDiffAnalyzer
-    ├── commit_analyzer.py            # CommitMessageAnalyzer
-    ├── review_analyzer.py            # ReviewCommentAnalyzer
-    ├── pattern_extractor.py          # PatternExtractor（LLM 分析）
-    ├── knowledge_updater.py          # KnowledgeUpdater
-    ├── memory_updater.py             # MemoryUpdater
-    ├── experience_updater.py         # ExperienceUpdater
-    └── models.py
+??? pyproject.toml
+??? aipa_learning/
+    ??? __init__.py
+    ??? router.py                     # FastAPI Router嚗?engine/learning/...嚗?
+    ??? engine.py                     # LearningEngine 銝駁???
+    ??? diff_analyzer.py              # GitDiffAnalyzer
+    ??? commit_analyzer.py            # CommitMessageAnalyzer
+    ??? review_analyzer.py            # ReviewCommentAnalyzer
+    ??? pattern_extractor.py          # PatternExtractor嚗LM ??嚗?
+    ??? knowledge_updater.py          # KnowledgeUpdater
+    ??? memory_updater.py             # MemoryUpdater
+    ??? experience_updater.py         # ExperienceUpdater
+    ??? models.py
 ```
 
-### 4.5 `experience/` — Experience Engine
+### 4.5 `experience/` ??Experience Engine
 
 ```
 experience/
-├── pyproject.toml
-└── aipa_experience/
-    ├── __init__.py
-    ├── router.py                     # FastAPI Router（/engine/experience/...）
-    ├── engine.py                     # ExperienceEngine 主類別
-    ├── repository.py
-    ├── vector_store.py               # 經驗向量庫
-    └── models.py
+??? pyproject.toml
+??? aipa_experience/
+    ??? __init__.py
+    ??? router.py                     # FastAPI Router嚗?engine/experience/...嚗?
+    ??? engine.py                     # ExperienceEngine 銝駁???
+    ??? repository.py
+    ??? vector_store.py               # 蝬???摨?
+    ??? models.py
 ```
 
-### 4.6 `wisdom/` — Wisdom Engine（含掃描結果接收端點）
+### 4.6 `wisdom/` ??Wisdom Engine嚗??蝯??交蝡舫?嚗?
 
 ```
 wisdom/
-├── pyproject.toml
-└── aipa_wisdom/
-    ├── __init__.py
-    ├── router.py                     # FastAPI Router（/engine/wisdom/...）
-    ├── scan_router.py                # FastAPI Router（/engine/scan/...）
-    ├── engine.py                     # WisdomEngine 主類別
-    ├── repository.py
-    ├── matcher.py                    # 規則匹配邏輯
-    └── models.py
+??? pyproject.toml
+??? aipa_wisdom/
+    ??? __init__.py
+    ??? router.py                     # FastAPI Router嚗?engine/wisdom/...嚗?
+    ??? scan_router.py                # FastAPI Router嚗?engine/scan/...嚗?
+    ??? engine.py                     # WisdomEngine 銝駁???
+    ??? repository.py
+    ??? matcher.py                    # 閬??寥??摩
+    ??? models.py
 ```
 
 ---
 
-## 5. Node.js 模組結構
+## 5. Node.js 璅∠?蝯?
 
-### 5.1 `cli/` — aipa CLI
+### 5.1 `cli/` ??aipa CLI
 
 ```
 cli/
-├── package.json
-├── tsconfig.json
-└── src/
-    ├── index.ts                      # CLI 進入點（Commander.js 根命令）
-    ├── commands/                     # 各命令實作
-    │   ├── init.ts
-    │   ├── ask.ts
-    │   ├── scan.ts
-    │   ├── learn.ts
-    │   ├── review.ts
-    │   ├── status.ts
-    │   ├── checkpoint.ts
-    │   ├── knowledge.ts
-    │   ├── memory.ts
-    │   ├── wisdom.ts
-    │   ├── server.ts
-    │   ├── health.ts
-    │   ├── doctor.ts
-    │   ├── config.ts
-    │   └── version.ts
-    ├── client/
-    │   ├── RuntimeClient.ts          # HTTP 封裝（呼叫 Runtime REST API）
-    │   └── SSEConsumer.ts            # SSE 訂閱（Session 進度）
-    ├── ui/                           # Terminal UI 元件
-    │   ├── CheckpointUI.ts           # 互動式 Checkpoint 審核介面
-    │   ├── ProgressUI.ts             # Session 進度顯示
-    │   ├── TableUI.ts                # 表格輸出
-    │   └── Spinner.ts                # Loading 動畫
-    └── utils/
-        ├── config.ts                 # 讀寫 .ai-project/config.yml
-        └── logger.ts
+??? package.json
+??? tsconfig.json
+??? src/
+    ??? index.ts                      # CLI ?脣暺?Commander.js ?孵隞歹?
+    ??? commands/                     # ?隞文祕雿?
+    ??  ??? init.ts
+    ??  ??? ask.ts
+    ??  ??? scan.ts
+    ??  ??? learn.ts
+    ??  ??? review.ts
+    ??  ??? status.ts
+    ??  ??? checkpoint.ts
+    ??  ??? knowledge.ts
+    ??  ??? memory.ts
+    ??  ??? wisdom.ts
+    ??  ??? server.ts
+    ??  ??? health.ts
+    ??  ??? doctor.ts
+    ??  ??? config.ts
+    ??  ??? version.ts
+    ??? client/
+    ??  ??? RuntimeClient.ts          # HTTP 撠?嚗??Runtime REST API嚗?
+    ??  ??? SSEConsumer.ts            # SSE 閮嚗ession ?脣漲嚗?
+    ??? ui/                           # Terminal UI ?辣
+    ??  ??? CheckpointUI.ts           # 鈭?撘?Checkpoint 撖拇隞
+    ??  ??? ProgressUI.ts             # Session ?脣漲憿舐內
+    ??  ??? TableUI.ts                # 銵冽頛詨
+    ??  ??? Spinner.ts                # Loading ?
+    ??? utils/
+        ??? config.ts                 # 霈撖?.ai-project/config.yml
+        ??? logger.ts
 ```
 
-### 5.2 `web/` — Web UI Dashboard
+### 5.2 `web/` ??Web UI Dashboard
 
 ```
 web/
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-├── index.html
-└── src/
-    ├── main.tsx                      # React 進入點
-    ├── App.tsx                       # 路由設定（React Router）
-    ├── pages/                        # 頁面元件
-    │   ├── Dashboard.tsx
-    │   ├── Sessions.tsx
-    │   ├── SessionDetail.tsx
-    │   ├── Checkpoints.tsx
-    │   ├── CheckpointDetail.tsx
-    │   ├── Knowledge.tsx
-    │   ├── KnowledgeDetail.tsx
-    │   ├── Memory.tsx
-    │   ├── Wisdom.tsx
-    │   ├── Specs.tsx
-    │   ├── SpecDetail.tsx
-    │   └── Settings.tsx
-    ├── components/                   # 共用元件
-    │   ├── CheckpointPanel.tsx
-    │   ├── SpecViewer.tsx
-    │   ├── DiffViewer.tsx
-    │   ├── KnowledgeGraph.tsx
-    │   ├── SessionTimeline.tsx
-    │   └── SSEConsumer.tsx
-    ├── api/                          # API 呼叫層（React Query）
-    │   ├── sessions.ts
-    │   ├── checkpoints.ts
-    │   ├── knowledge.ts
-    │   ├── memory.ts
-    │   └── system.ts
-    └── hooks/                        # Custom Hooks
-        ├── useSSE.ts
-        └── useCheckpoint.ts
+??? package.json
+??? tsconfig.json
+??? vite.config.ts
+??? index.html
+??? src/
+    ??? main.tsx                      # React ?脣暺?
+    ??? App.tsx                       # 頝舐閮剖?嚗eact Router嚗?
+    ??? pages/                        # ??辣
+    ??  ??? Dashboard.tsx
+    ??  ??? Sessions.tsx
+    ??  ??? SessionDetail.tsx
+    ??  ??? Checkpoints.tsx
+    ??  ??? CheckpointDetail.tsx
+    ??  ??? Knowledge.tsx
+    ??  ??? KnowledgeDetail.tsx
+    ??  ??? Memory.tsx
+    ??  ??? Wisdom.tsx
+    ??  ??? Specs.tsx
+    ??  ??? SpecDetail.tsx
+    ??  ??? Settings.tsx
+    ??? components/                   # ?梁?辣
+    ??  ??? CheckpointPanel.tsx
+    ??  ??? SpecViewer.tsx
+    ??  ??? DiffViewer.tsx
+    ??  ??? KnowledgeGraph.tsx
+    ??  ??? SessionTimeline.tsx
+    ??  ??? SSEConsumer.tsx
+    ??? api/                          # API ?澆撅歹?React Query嚗?
+    ??  ??? sessions.ts
+    ??  ??? checkpoints.ts
+    ??  ??? knowledge.ts
+    ??  ??? memory.ts
+    ??  ??? system.ts
+    ??? hooks/                        # Custom Hooks
+        ??? useSSE.ts
+        ??? useCheckpoint.ts
 ```
 
-### 5.3 `plugin/vscode/` — VSCode Extension
+### 5.3 `plugin/vscode/` ??VSCode Extension
 
 ```
 plugin/vscode/
-├── package.json                      # VSCode Extension manifest
-├── tsconfig.json
-└── src/
-    ├── extension.ts                  # 擴充功能進入點（activate / deactivate）
-    ├── commands/                     # VS Code Command 實作
-    │   ├── askAipa.ts
-    │   └── openCheckpoint.ts
-    ├── views/                        # Webview / TreeView
-    │   ├── SessionPanel.ts           # 側欄面板（Webview）
-    │   └── StatusBarItem.ts
-    ├── notifications/
-    │   └── CheckpointNotification.ts
-    └── client/
-        └── RuntimeClient.ts
+??? package.json                      # VSCode Extension manifest
+??? tsconfig.json
+??? src/
+    ??? extension.ts                  # ?游???脣暺?activate / deactivate嚗?
+    ??? commands/                     # VS Code Command 撖虫?
+    ??  ??? askAipa.ts
+    ??  ??? openCheckpoint.ts
+    ??? views/                        # Webview / TreeView
+    ??  ??? SessionPanel.ts           # ?湔??Ｘ嚗ebview嚗?
+    ??  ??? StatusBarItem.ts
+    ??? notifications/
+    ??  ??? CheckpointNotification.ts
+    ??? client/
+        ??? RuntimeClient.ts
 ```
 
 ---
 
-## 6. Java/Kotlin 模組結構
+## 6. 後端/Kotlin 璅∠?蝯?
 
-### 6.1 `plugin/intellij/` — IntelliJ Plugin
+### 6.1 `plugin/intellij/` ??IntelliJ Plugin
 
 ```
 plugin/intellij/
-├── build.gradle.kts                  # IntelliJ Platform Gradle Plugin
-├── src/
-│   ├── main/
-│   │   ├── kotlin/com/aipa/intellij/
-│   │   │   ├── AipaPlugin.kt         # Plugin 初始化
-│   │   │   ├── actions/
-    │   │   │   ├── AskAipaAction.kt
-    │   │   │   └── OpenCheckpointAction.kt
-│   │   │   ├── toolwindow/
-│   │   │   │   └── AipaToolWindow.kt
-│   │   │   ├── notifications/
-│   │   │   │   └── CheckpointNotification.kt
-│   │   │   └── client/
-│   │   │       └── RuntimeClient.kt
-│   │   └── resources/
-│   │       ├── META-INF/plugin.xml   # Plugin 描述符
-│   │       └── icons/
-│   └── test/
-│       └── kotlin/com/aipa/intellij/
-└── gradle/
+??? build.gradle.kts                  # IntelliJ Platform Gradle Plugin
+??? src/
+??  ??? main/
+??  ??  ??? kotlin/com/aipa/intellij/
+??  ??  ??  ??? AipaPlugin.kt         # Plugin ????
+??  ??  ??  ??? actions/
+    ??  ??  ??  ??? AskAipaAction.kt
+    ??  ??  ??  ??? OpenCheckpointAction.kt
+??  ??  ??  ??? toolwindow/
+??  ??  ??  ??  ??? AipaToolWindow.kt
+??  ??  ??  ??? notifications/
+??  ??  ??  ??  ??? CheckpointNotification.kt
+??  ??  ??  ??? client/
+??  ??  ??      ??? RuntimeClient.kt
+??  ??  ??? resources/
+??  ??      ??? META-INF/plugin.xml   # Plugin ?膩蝚?
+??  ??      ??? icons/
+??  ??? test/
+??      ??? kotlin/com/aipa/intellij/
+??? gradle/
 ```
 
 ---
 
-## 7. Installer 目錄結構
+## 7. Installer ?桅?蝯?
 
 ### 7.1 `installer/windows/`
 
 ```
 installer/windows/
-├── aipa-setup.nsi                    # NSIS 安裝腳本
-├── build-installer.bat               # 建構安裝包腳本
-├── resources/
-│   ├── aipa-icon.ico
-│   ├── license.rtf
-│   └── welcome-banner.bmp
-└── bundled/                          # 捆綁的執行期（建構時下載）
-    ├── jre-17/                       # 捆綁 JRE 17
-    ├── node-20/                      # 捆綁 Node.js 20
-    └── python-311/                   # 捆綁 Python 3.11
+??? aipa-setup.nsi                    # NSIS 摰??單
+??? build-installer.bat               # 撱箸?摰????
+??? resources/
+??  ??? aipa-icon.ico
+??  ??? license.rtf
+??  ??? welcome-banner.bmp
+??? bundled/                          # ???銵?嚗遣瑽?銝?嚗?
+    ??? jre-17/                       # ?? JRE 17
+    ??? node-20/                      # ?? Node.js 20
+    ??? python-311/                   # ?? Python 3.11
 ```
 
 ### 7.2 `installer/linux/`
 
 ```
 installer/linux/
-├── install.sh                        # 主安裝腳本
-├── uninstall.sh                      # 解除安裝腳本
-├── update.sh                         # 更新腳本
-└── systemd/
-    ├── aipa-runtime.service
-    └── aipa-ai-engine.service
+??? install.sh                        # 銝餃?鋆??
+??? uninstall.sh                      # 閫?摰??單
+??? update.sh                         # ?湔?單
+??? systemd/
+    ??? aipa-runtime.service
+    ??? aipa-ai-engine.service
 ```
 
 ### 7.3 `installer/docker/`
 
 ```
 installer/docker/
-├── docker-compose.yml                # 正式部署設定
-├── docker-compose.dev.yml            # 開發環境設定（含 hot-reload）
-├── .env.example
-├── Dockerfile.runtime                # Runtime Service Docker 映像
-├── Dockerfile.ai-engine              # AI Engine Docker 映像
-├── Dockerfile.web                    # Web UI Docker 映像
-└── scripts/
-    ├── init-db.sql                   # PostgreSQL 初始化 SQL
-    └── healthcheck.sh
+??? docker-compose.yml                # 甇???函蔡閮剖?
+??? docker-compose.dev.yml            # ??啣?閮剖?嚗 hot-reload嚗?
+??? .env.example
+??? Dockerfile.runtime                # Runtime Service Docker ??
+??? Dockerfile.ai-engine              # AI Engine Docker ??
+??? Dockerfile.web                    # Web UI Docker ??
+??? scripts/
+    ??? init-db.sql                   # PostgreSQL ????SQL
+    ??? healthcheck.sh
 ```
 
 ---
 
-## 8. `templates/` 目錄結構
+## 8. `templates/` ?桅?蝯?
 
 ```
 templates/
-├── specs/                            # 規格文件模板（Freemarker）
-│   ├── feature-spec.ftl              # 功能規格模板
-│   ├── bug-spec.ftl                  # Bug 修復規格模板
-│   ├── refactor-spec.ftl             # 重構規格模板
-│   └── migration-spec.ftl            # 遷移規格模板
-│
-├── dna/                              # Project DNA 模板（YAML）
-│   ├── default-coding-style.yml      # 預設 Coding Style 模板
-│   ├── default-architecture.yml      # 預設架構規則模板
-│   └── default-business-rules.yml    # 預設業務規則模板
-│
-├── wisdom/                           # 智慧規則預設集
-│   ├── java-enterprise-rules.yml     # Java 企業開發常見規則
-│   ├── spring-boot-rules.yml         # Spring Boot 最佳實務
-│   ├── database-rules.yml            # 資料庫操作規則
-│   └── security-rules.yml            # 安全性規則
-│
-├── review/                           # 審查清單模板
-│   ├── architecture-checklist.md
-│   ├── security-checklist.md
-│   └── sql-checklist.md
-│
-└── pr/                               # PR 描述模板
-    └── pr-description.ftl
+??? specs/                            # 閬?辣璅⊥嚗reemarker嚗?
+??  ??? feature-spec.ftl              # ?閬璅⊥
+??  ??? bug-spec.ftl                  # Bug 靽桀儔閬璅⊥
+??  ??? refactor-spec.ftl             # ??閬璅⊥
+??  ??? migration-spec.ftl            # ?瑞宏閬璅⊥
+??
+??? dna/                              # Project DNA 璅⊥嚗AML嚗?
+??  ??? default-coding-style.yml      # ?身 Coding Style 璅⊥
+??  ??? default-architecture.yml      # ?身?嗆?閬?璅⊥
+??  ??? default-business-rules.yml    # ?身璆剖?閬?璅⊥
+??
+??? wisdom/                           # ?箸閬??身??
+??  ??? enterprise-rules.yml          # 隡平?撣貉?閬?
+??  ??? spring-boot-rules.yml         # 後端框架 ?雿喳祕??
+??  ??? database-rules.yml            # 鞈?摨急?雿???
+??  ??? security-rules.yml            # 摰?扯???
+??
+??? review/                           # 撖拇皜璅⊥
+??  ??? architecture-checklist.md
+??  ??? security-checklist.md
+??  ??? sql-checklist.md
+??
+??? pr/                               # PR ?膩璅⊥
+    ??? pr-description.ftl
 ```
 
 ---
 
-## 9. `specs/` 目錄結構（生成輸出）
+## 9. `specs/` ?桅?蝯?嚗??撓?綽?
 
-由 `aipa ask` 自動生成，使用者不應手動建立。
+??`aipa ask` ?芸???嚗蝙?刻????遣蝡?
 
 ```
 specs/
-├── .gitkeep                          # 確保目錄被 Git 追蹤（內容被 .gitignore 排除）
-└── {YYYY-MM-DD}/
-    └── {session-id}-{slug}.md        # 生成的規格文件
+??? .gitkeep                          # 蝣箔??桅?鋡?Git 餈質馱嚗摰寡◤ .gitignore ?嚗?
+??? {YYYY-MM-DD}/
+    ??? {session-id}-{slug}.md        # ?????潭?隞?
 ```
 
-### 規格文件命名慣例
+### 閬?辣?賢????
 
 ```
-格式：{YYYY-MM-DD}/{session-id}-{slug}.md
-範例：2025-01-15/s-001-add-case-reminder.md
+?澆?嚗YYYY-MM-DD}/{session-id}-{slug}.md
+蝭?嚗?025-01-15/s-001-add-case-reminder.md
 ```
 
 ---
 
-## 10. `.ai-project/` 目錄結構（每專案工作空間）
+## 10. `.ai-project/` ?桅?蝯?嚗?撠?撌乩?蝛粹?嚗?
 
-此目錄由 `aipa init` 自動生成於**目標專案**的根目錄（非 AIPA Studio Repository）。
+甇斤? `aipa init` ?芸?????*?格?撠?**??桅?嚗? AIPA Studio Repository嚗?
 
 ```
-{被管理的專案根目錄}/
-└── .ai-project/
-    ├── config.yml                    # 專案設定（AI 供應商、儲存後端、閾值）
-    │
-    ├── dna/                          # Project DNA（由 init 分析生成）
-    │   ├── project-dna.yml           # 整體 DNA 摘要
-    │   ├── coding-style.yml          # Coding Style 規則（自動偵測 + 人工補充）
-    │   ├── architecture-rules.yml    # 架構規則
-    │   └── business-rules.yml        # 業務規則（需人工補充）
-    │
-    ├── knowledge/
-    │   └── db/                       # SQLite 知識庫（StorageBackend=sqlite 時）
-    │       ├── knowledge.db
-    │       └── graph.db
-    │
-    ├── memory/
-    │   └── db/
-    │       └── memory.db
-    │
-    ├── sessions/
-    │   └── db/
-    │       └── sessions.db
-    │
-    ├── vector/
-    │   └── chromadb/                 # ChromaDB 向量資料
-    │       ├── knowledge/
-    │       └── experience/
-    │
-    ├── specs/                        # 本專案的規格文件
-    │   └── {YYYY-MM-DD}-{slug}.md
-    │
-    ├── audit/
-    │   └── checkpoint-audit.jsonl    # JSONL 格式，每行一條稽核記錄
-    │
-    ├── wisdom/
-    │   └── custom-rules.yml          # 本專案自訂的智慧規則（覆蓋預設規則）
-    │
-    └── .gitignore                    # 排除 db 檔案、向量資料、敏感設定
+{鋡怎恣??撠??寧?/
+??? .ai-project/
+    ??? config.yml                    # 撠?閮剖?嚗I 靘??摮?蝡胯?潘?
+    ??
+    ??? dna/                          # Project DNA嚗 init ????嚗?
+    ??  ??? project-dna.yml           # ?湧? DNA ??
+    ??  ??? coding-style.yml          # Coding Style 閬?嚗?皜?+ 鈭箏極鋆?嚗?
+    ??  ??? architecture-rules.yml    # ?嗆?閬?
+    ??  ??? business-rules.yml        # 璆剖?閬?嚗?鈭箏極鋆?嚗?
+    ??
+    ??? knowledge/
+    ??  ??? db/                       # SQLite ?亥?摨恬?StorageBackend=sqlite ??
+    ??      ??? knowledge.db
+    ??      ??? graph.db
+    ??
+    ??? memory/
+    ??  ??? db/
+    ??      ??? memory.db
+    ??
+    ??? sessions/
+    ??  ??? db/
+    ??      ??? sessions.db
+    ??
+    ??? vector/
+    ??  ??? chromadb/                 # ChromaDB ??鞈?
+    ??      ??? knowledge/
+    ??      ??? experience/
+    ??
+    ??? specs/                        # ?砍?獢?閬?辣
+    ??  ??? {YYYY-MM-DD}-{slug}.md
+    ??
+    ??? audit/
+    ??  ??? checkpoint-audit.jsonl    # JSONL ?澆?嚗?銵?璇里?貉???
+    ??
+    ??? wisdom/
+    ??  ??? custom-rules.yml          # ?砍?獢閮??箸閬?嚗???閮剛???
+    ??
+    ??? .gitignore                    # ? db 瑼????????身摰?
 ```
 
-### `.ai-project/.gitignore` 內容
+### `.ai-project/.gitignore` ?批捆
 
 ```gitignore
-# 資料庫檔案（本地儲存，不提交）
+# 鞈?摨急?獢??砍?脣?嚗??漱嚗?
 knowledge/db/
 memory/db/
 sessions/db/
 vector/
 
-# 稽核日誌（敏感資料）
+# 蝔賣?亥?嚗?????
 audit/
 
-# 環境特定設定（含 API Keys）
+# ?啣??孵?閮剖?嚗 API Keys嚗?
 config.yml
 
-# 保留以下文件（供團隊共享）
+# 靽?隞乩??辣嚗????曹澈嚗?
 # !dna/
 # !wisdom/
-# !specs/（可選：提交規格文件供團隊查閱）
+# !specs/嚗?賂??漱閬?辣靘???梧?
 ```
 
 ---
 
-## 11. Gradle Multi-project 設定
+## 11. Gradle Multi-project 閮剖?
 
 ### `settings.gradle.kts`
 
@@ -710,11 +708,11 @@ include(
     "workflow"
 )
 
-// Plugin 子專案
+// Plugin 摮?獢?
 include("plugin:intellij")
 ```
 
-### 根目錄 `build.gradle.kts`
+### ?寧??`build.gradle.kts`
 
 ```kotlin
 plugins {
@@ -746,9 +744,9 @@ subprojects {
 
 ---
 
-## 12. npm Workspaces 設定
+## 12. npm Workspaces 閮剖?
 
-### 根目錄 `package.json`
+### ?寧??`package.json`
 
 ```json
 {
@@ -769,66 +767,66 @@ subprojects {
 
 ---
 
-## 13. 命名慣例
+## 13. ?賢????
 
-### 13.1 Java 套件命名
+### 13.1 後端 憟辣?賢?
 
 ```
 com.aipa.{module}.{layer}
-範例：
+蝭?嚗?
   com.aipa.runtime.api.controller
   com.aipa.scanner.subscanner
   com.aipa.agent.adapter
   com.aipa.workflow.spec
 ```
 
-### 13.2 Python 套件命名
+### 13.2 Python 憟辣?賢?
 
 ```
 aipa_{module}
-範例：
+蝭?嚗?
   aipa_knowledge
   aipa_memory
   aipa_learning
 ```
 
-### 13.3 TypeScript / Node.js 命名
+### 13.3 TypeScript / Node.js ?賢?
 
 ```
 @aipa/{module}
-範例：
+蝭?嚗?
   @aipa/cli
   @aipa/web
   @aipa/plugin-vscode
 ```
 
-### 13.4 檔案命名慣例
+### 13.4 瑼??賢????
 
-| 類型 | 慣例 | 範例 |
+| 憿? | ??? | 蝭? |
 |---|---|---|
-| Java 類別 | PascalCase | `SpecEngineImpl.java` |
-| Java 介面 | PascalCase（不加 I 前綴） | `SpecEngine.java` |
-| Python 模組 | snake_case | `pattern_extractor.py` |
-| TypeScript 元件 | PascalCase | `CheckpointPanel.tsx` |
-| TypeScript 工具 | camelCase | `runtimeClient.ts` |
-| YAML 設定 | kebab-case | `coding-style.yml` |
-| SQL Migration | `V{序號}__{描述}.sql` | `V001__create_projects.sql` |
-| 規格文件 | `{YYYY-MM-DD}-{session-id}-{slug}.md` | `2025-01-15-s001-add-reminder.md` |
+| 後端 憿 | PascalCase | `SpecEngineImpl.java` |
+| 後端 隞 | PascalCase嚗???I ?韌嚗?| `SpecEngine.java` |
+| Python 璅∠? | snake_case | `pattern_extractor.py` |
+| TypeScript ?辣 | PascalCase | `CheckpointPanel.tsx` |
+| TypeScript 撌亙 | camelCase | `runtimeClient.ts` |
+| YAML 閮剖? | kebab-case | `coding-style.yml` |
+| SQL Migration | `V{摨?}__{?膩}.sql` | `V001__create_projects.sql` |
+| 閬?辣 | `{YYYY-MM-DD}-{session-id}-{slug}.md` | `2025-01-15-s001-add-reminder.md` |
 
-### 13.5 Git 慣例
+### 13.5 Git ???
 
-**分支命名**：
+**??賢?**嚗?
 
 ```
-main                              # 主分支（生產穩定）
-develop                           # 開發整合分支
-feature/{ticket-id}-{slug}        # 功能分支
-bugfix/{ticket-id}-{slug}         # Bug 修復分支
-release/v{major}.{minor}.{patch}  # 發布分支
-hotfix/{ticket-id}-{slug}         # 緊急修復分支
+main                              # 銝餃??荔??蝛拙?嚗?
+develop                           # ??游??
+feature/{ticket-id}-{slug}        # ??
+bugfix/{ticket-id}-{slug}         # Bug 靽桀儔?
+release/v{major}.{minor}.{patch}  # ?澆??
+hotfix/{ticket-id}-{slug}         # 蝺乩耨敺拙???
 ```
 
-**Commit 訊息格式**（Conventional Commits）：
+**Commit 閮?澆?**嚗onventional Commits嚗?
 
 ```
 {type}({scope}): {subject}
@@ -840,29 +838,30 @@ hotfix/{ticket-id}-{slug}         # 緊急修復分支
 type:  feat | fix | refactor | docs | test | chore | build | ci
 scope: runtime | scanner | cli | web | knowledge | memory | learning | agent | etc.
 
-範例：
+蝭?嚗?
 feat(spec): add impact analysis for CRITICAL risk level
 fix(confidence): correct weighted average calculation
 docs(prd): update Human Checkpoint requirements
 ```
 
-**Tag 策略**：
+**Tag 蝑**嚗?
 
 ```
-v{major}.{minor}.{patch}          # 正式發布（例：v1.0.0）
-v{major}.{minor}.{patch}-rc.{n}   # 發布候選（例：v1.0.0-rc.1）
-v{major}.{minor}.{patch}-beta.{n} # Beta（例：v1.0.0-beta.1）
+v{major}.{minor}.{patch}          # 甇???澆?嚗?嚗1.0.0嚗?
+v{major}.{minor}.{patch}-rc.{n}   # ?澆??嚗?嚗1.0.0-rc.1嚗?
+v{major}.{minor}.{patch}-beta.{n} # Beta嚗?嚗1.0.0-beta.1嚗?
 ```
 
 ---
 
-## 14. 版本歷史
+## 14. ?甇瑕
 
-| 版本 | 日期 | 變更說明 |
+| ? | ?交? | 霈隤芣? |
 |---|---|---|
-| 1.0.0-draft | Phase 1 | 初始 Repository 結構文件 |
+| 1.0.0-draft | Phase 1 | ?? Repository 蝯??辣 |
 
 ---
 
-*本文件為 AIPA Studio Phase 1 架構鎖定的一部分。所有 Phase 1 文件審核確認後，才可開始任何實作工作。*
+*?祆?隞嗥 AIPA Studio Phase 1 ?嗆??????典?????Phase 1 ?辣撖拇蝣箄?敺????隞颱?撖虫?撌乩???
+
 

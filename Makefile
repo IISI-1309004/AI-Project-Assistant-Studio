@@ -7,12 +7,8 @@
 all: build
 
 ## ── 建構 ──────────────────────────────────────────────
-build: build-java build-python build-node
+build: build-python build-node
 	@echo "✅ 全部模組建構完成"
-
-build-java:
-	@echo "🔨 建構 Java 模組..."
-	./gradlew build -x test
 
 build-python:
 	@echo "🐍 安裝 Python 依賴..."
@@ -24,12 +20,8 @@ build-node:
 	npm run build
 
 ## ── 測試 ──────────────────────────────────────────────
-test: test-java test-python test-node
+test: test-python test-node
 	@echo "✅ 全部測試完成"
-
-test-java:
-	@echo "🧪 執行 Java 測試..."
-	./gradlew test
 
 test-python:
 	@echo "🧪 執行 Python 測試..."
@@ -77,11 +69,8 @@ health:
 	@curl -sf http://localhost:18082/engine/health | python3 -m json.tool || echo "❌ AI Engine 無回應"
 
 ## ── 清理 ──────────────────────────────────────────────
-clean: clean-java clean-python clean-node
+clean: clean-python clean-node
 	@echo "✅ 清理完成"
-
-clean-java:
-	./gradlew clean
 
 clean-python:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
@@ -94,7 +83,7 @@ clean-node:
 help:
 	@echo "AIPA Studio — 可用建構指令："
 	@echo ""
-	@echo "  make build        建構所有模組（Java + Python + Node.js）"
+	@echo "  make build        建構所有模組（Python + Node.js）"
 	@echo "  make test         執行所有測試"
 	@echo "  make lint         執行程式碼風格檢查"
 	@echo "  make docker-up    啟動 Docker Compose 開發環境"
