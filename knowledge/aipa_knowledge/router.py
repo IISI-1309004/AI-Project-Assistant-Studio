@@ -5,10 +5,13 @@ from __future__ import annotations
 
 import uuid
 import logging
+import time
 from typing import Any, Optional
+from collections import defaultdict
 
 from fastapi import APIRouter, HTTPException, Query
 
+from .config import settings
 from .repository import KnowledgeRepository
 from .embedding import EmbeddingService
 from .vector_store import VectorStore
@@ -27,6 +30,174 @@ _ingestor: Optional[ScanResultIngestor] = None
 
 # 批量上傳會話快取（用於 batch/start -> batch/ingest -> batch/complete）
 _batch_sessions: dict[str, dict[str, Any]] = {}
+_MAX_GRAPH_EDGES = 2000
+_EDGE_WEIGHTS = {
+    "EXPLICIT_PARENT": 1.0,
+    "EXPLICIT_RELATED": 0.95,
+    "SAME_PARENT": 0.70,
+    "SHARED_TAG": 0.55,
+}
+_project_graph_versions: dict[str, int] = {}
+_project_graph_cache: dict[str, dict[str, Any]] = {}
+_filtered_graph_cache: dict[tuple[str, str, float], dict[str, Any]] = {}
+
+
+def _coerce_cache_ttl_seconds(raw_value: Any, default: float = 60.0) -> float:
+    try:
+        value = float(raw_value)
+    except (TypeError, ValueError):
+        return default
+    return max(1.0, value)
+
+
+_GRAPH_CACHE_TTL_SECONDS = _coerce_cache_ttl_seconds(
+    getattr(settings, "graph_cache_ttl_seconds", 60.0)
+)
+
+
+def _normalize_project_key(project_id: str) -> str:
+    return project_id or ""
+
+
+def _mark_graph_dirty(project_id: str) -> None:
+    """Invalidate graph caches for a project after mutations."""
+    project_key = _normalize_project_key(project_id)
+    _project_graph_versions[project_key] = _project_graph_versions.get(project_key, 0) + 1
+    _project_graph_cache.pop(project_key, None)
+    stale_keys = [key for key in _filtered_graph_cache if key[0] == project_key]
+    for key in stale_keys:
+        _filtered_graph_cache.pop(key, None)
+
+
+def _reset_graph_caches_for_tests() -> None:
+    _project_graph_versions.clear()
+    _project_graph_cache.clear()
+    _filtered_graph_cache.clear()
+
+
+def _derive_parent_ref(source_ref: str) -> str | None:
+    normalized = (source_ref or "").replace("\\", "/").strip("/")
+    if "/" not in normalized:
+        return None
+    parent = normalized.rsplit("/", 1)[0]
+    return parent or None
+
+
+def _build_graph_edges(items: list[dict[str, Any]], max_edges: int = _MAX_GRAPH_EDGES) -> list[dict[str, Any]]:
+    """Build graph edges from scanner metadata (directory and tag relationships)."""
+    edges: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str, str]] = set()
+    linked_pairs: set[tuple[str, str]] = set()
+
+    def add_edge(source: str, target: str, relation: str, label: str, *, allow_pair_reuse: bool = True) -> None:
+        if source == target or len(edges) >= max_edges:
+            return
+        pair_key = tuple(sorted((source, target)))
+        if not allow_pair_reuse and pair_key in linked_pairs:
+            return
+        edge_key = (source, target, relation, label)
+        if edge_key in seen:
+            return
+        seen.add(edge_key)
+        linked_pairs.add(pair_key)
+        edges.append(
+            {
+                "id": f"{relation}:{source}->{target}",
+                "source": source,
+                "target": target,
+                "relation": relation,
+                "label": label,
+                "weight": _EDGE_WEIGHTS.get(relation, 0.5),
+            }
+        )
+
+    # Build lookup from path -> knowledge items.
+    by_source_ref: dict[str, list[str]] = defaultdict(list)
+    for item in items:
+        source_ref = (item.get("source_ref") or "").replace("\\", "/").strip("/")
+        item_id = item.get("id", "")
+        if source_ref and item_id:
+            by_source_ref[source_ref].append(item_id)
+
+    def iter_ids_for_ref(ref: str) -> list[str]:
+        normalized = (ref or "").replace("\\", "/").strip("/")
+        if not normalized:
+            return []
+        matches: list[str] = []
+        for source_ref, ids in by_source_ref.items():
+            if source_ref == normalized or source_ref.startswith(f"{normalized}/"):
+                matches.extend(ids)
+        return list(dict.fromkeys(matches))
+
+    # 0) Explicit refs from scanner metadata first.
+    for item in items:
+        source_id = item.get("id", "")
+        if not source_id:
+            continue
+
+        parent_ref = item.get("parent_ref") or _derive_parent_ref(item.get("source_ref", ""))
+        for target_id in iter_ids_for_ref(parent_ref):
+            add_edge(source_id, target_id, "EXPLICIT_PARENT", str(parent_ref), allow_pair_reuse=False)
+            if len(edges) >= max_edges:
+                return edges
+
+        for related_ref in item.get("related_refs") or []:
+            for target_id in iter_ids_for_ref(str(related_ref)):
+                add_edge(source_id, target_id, "EXPLICIT_RELATED", str(related_ref), allow_pair_reuse=False)
+                if len(edges) >= max_edges:
+                    return edges
+
+    # 1) Same parent directory: connect files that live under the same folder.
+    by_parent: dict[str, list[str]] = defaultdict(list)
+    for item in items:
+        item_id = item.get("id", "")
+        source_ref = item.get("source_ref", "")
+        parent_ref = _derive_parent_ref(source_ref)
+        if item_id and parent_ref:
+            by_parent[parent_ref].append(item_id)
+
+    for parent_ref, node_ids in by_parent.items():
+        ordered = sorted(set(node_ids))
+        if len(ordered) < 2:
+            continue
+        hub = ordered[0]
+        for node_id in ordered[1:]:
+            add_edge(hub, node_id, "SAME_PARENT", parent_ref, allow_pair_reuse=False)
+            if len(edges) >= max_edges:
+                return edges
+
+    # 2) Shared tags: connect nodes that share concrete semantic tags.
+    generic_tags = {
+        "project",
+        "api",
+        "database",
+        "infrastructure",
+        "documentation",
+        "configuration",
+    }
+    by_tag: dict[str, list[str]] = defaultdict(list)
+    for item in items:
+        item_id = item.get("id", "")
+        tags = item.get("tags") or []
+        if not item_id:
+            continue
+        for tag in tags:
+            normalized_tag = str(tag).strip().lower()
+            if not normalized_tag or normalized_tag in generic_tags:
+                continue
+            by_tag[normalized_tag].append(item_id)
+
+    for tag, node_ids in by_tag.items():
+        ordered = sorted(set(node_ids))
+        if len(ordered) < 2:
+            continue
+        hub = ordered[0]
+        for node_id in ordered[1:]:
+            add_edge(hub, node_id, "SHARED_TAG", tag, allow_pair_reuse=False)
+            if len(edges) >= max_edges:
+                return edges
+
+    return edges
 
 
 def _get_services():
@@ -107,6 +278,7 @@ async def create_item(body: dict[str, Any]) -> dict[str, Any]:
 
     # 存入關聯式資料庫
     saved = repo.save(body)
+    _mark_graph_dirty(project_id)
     return saved
 
 
@@ -206,6 +378,8 @@ async def bulk_ingest(body: dict[str, Any]) -> dict[str, Any]:
         # 批量存入關聯式資料庫（一次 commit）
         logger.info(f"Batch saving {len(items)} items to database for project {project_id}")
         saved_count = repo.save_batch(items)
+        if saved_count > 0:
+            _mark_graph_dirty(project_id)
 
         logger.info(f"Bulk ingested {saved_count} items for project {project_id}")
         return {
@@ -223,13 +397,107 @@ async def bulk_ingest(body: dict[str, Any]) -> dict[str, Any]:
         })
 
 
+_DEFAULT_MAX_NODES = 1000
+_DEFAULT_MAX_EDGES = 2000
+
+
 @router.get("/graph")
-async def get_graph(project_id: str = Query("")) -> dict[str, Any]:
-    # TODO Phase 2+：實作知識圖譜關係
+async def get_graph(
+    project_id: str = Query(""),
+    edge_type: str = Query("", description="Filter by edge relation type (e.g. EXPLICIT_PARENT)"),
+    min_weight: float = Query(0.0, ge=0.0, le=1.0, description="Minimum edge weight filter"),
+    max_nodes: int = Query(0, ge=0, description="Max nodes to return (0 = use default cap)"),
+    max_edges: int = Query(0, ge=0, description="Max edges to return (0 = use default cap)"),
+) -> dict[str, Any]:
     repo, _, _, _ = _get_services()
-    items = repo.find_all(project_id)
-    nodes = [{"id": item["id"], "title": item["title"], "category": item["category"]} for item in items]
-    return {"nodes": nodes, "edges": [], "total": len(nodes)}
+    project_key = _normalize_project_key(project_id)
+    version = _project_graph_versions.get(project_key, 0)
+    now_ts = time.time()
+
+    effective_max_nodes = max_nodes if max_nodes > 0 else _DEFAULT_MAX_NODES
+    effective_max_edges = max_edges if max_edges > 0 else _DEFAULT_MAX_EDGES
+
+    project_cache = _project_graph_cache.get(project_key)
+    if (
+        project_cache
+        and project_cache.get("version") == version
+        and float(project_cache.get("expires_at", 0.0)) > now_ts
+    ):
+        nodes = project_cache["nodes"]
+        full_edges = project_cache["edges"]
+    else:
+        items = repo.find_all(project_id)
+        nodes = [
+            {
+                "id": item["id"],
+                "title": item["title"],
+                "category": item["category"],
+                "source_ref": item.get("source_ref"),
+                "parent_ref": item.get("parent_ref"),
+                "related_refs": item.get("related_refs", []),
+                "tags": item.get("tags", []),
+            }
+            for item in items
+        ]
+        full_edges = _build_graph_edges(items)
+        _project_graph_cache[project_key] = {
+            "version": version,
+            "expires_at": now_ts + _GRAPH_CACHE_TTL_SECONDS,
+            "nodes": nodes,
+            "edges": full_edges,
+        }
+
+    edge_type_upper = edge_type.strip().upper() if edge_type else ""
+    min_weight_value = round(float(min_weight), 4)
+    filtered_cache_key = (project_key, edge_type_upper, min_weight_value)
+    filtered_cache = _filtered_graph_cache.get(filtered_cache_key)
+
+    if (
+        filtered_cache
+        and filtered_cache.get("version") == version
+        and float(filtered_cache.get("expires_at", 0.0)) > now_ts
+    ):
+        edges = filtered_cache["edges"]
+    else:
+        edges = full_edges
+        if edge_type_upper:
+            edges = [edge for edge in edges if edge.get("relation", "").upper() == edge_type_upper]
+
+        if min_weight_value > 0:
+            edges = [edge for edge in edges if float(edge.get("weight", 0.0)) >= min_weight_value]
+
+        _filtered_graph_cache[filtered_cache_key] = {
+            "version": version,
+            "expires_at": now_ts + _GRAPH_CACHE_TTL_SECONDS,
+            "edges": edges,
+        }
+
+    # Apply size limits after filtering so limits do not pollute cached slices.
+    # Sort edges by descending weight so the most important are kept.
+    nodes_out = nodes[:effective_max_nodes]
+    visible_node_ids = {node["id"] for node in nodes_out}
+    edges_filtered = [
+        edge for edge in edges
+        if edge.get("source") in visible_node_ids and edge.get("target") in visible_node_ids
+    ]
+    # Sort descending by weight so callers get highest-value edges within the cap.
+    edges_filtered.sort(key=lambda e: float(e.get("weight", 0.0)), reverse=True)
+    edges_out = edges_filtered[:effective_max_edges]
+
+    return {
+        "nodes": nodes_out,
+        "edges": edges_out,
+        "total": len(nodes),
+        "edge_total": len(edges),
+        "returned_nodes": len(nodes_out),
+        "returned_edges": len(edges_out),
+        "filters": {
+            "edge_type": edge_type or None,
+            "min_weight": min_weight_value,
+            "max_nodes": effective_max_nodes,
+            "max_edges": effective_max_edges,
+        },
+    }
 
 
 # ============================================================
@@ -385,6 +653,8 @@ async def batch_ingest(body: dict[str, Any]) -> dict[str, Any]:
         # 批量存入關聯式資料庫
         logger.debug(f"Saving {len(items)} items to database for batch {batch_index}")
         saved_count = repo.save_batch(items)
+        if saved_count > 0:
+            _mark_graph_dirty(project_id)
 
         # 更新會話狀態
         session["batches_received"] += 1

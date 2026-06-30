@@ -5,10 +5,11 @@ from __future__ import annotations
 
 import uuid
 import os
+import json
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, String, Integer, Text, DateTime, create_engine
+from sqlalchemy import Column, String, Integer, Text, DateTime, create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import settings
@@ -28,6 +29,8 @@ class KnowledgeItemORM(Base):
     content = Column(Text, nullable=False)
     source_type = Column(String(50), default="MANUAL")
     source_ref = Column(Text)
+    parent_ref = Column(Text)
+    related_refs = Column(Text)
     tags = Column(Text)
     confidence = Column(Integer, default=80)
     vector_id = Column(String(255))
@@ -53,11 +56,34 @@ _engine = None
 _SessionLocal = None
 
 
+def _ensure_schema_compatibility(engine) -> None:
+    """Add missing columns for older databases without dropping existing data."""
+    try:
+        inspector = inspect(engine)
+        if "knowledge_items" not in inspector.get_table_names():
+            return
+
+        existing = {col["name"] for col in inspector.get_columns("knowledge_items")}
+        required = {
+            "parent_ref": "TEXT",
+            "related_refs": "TEXT",
+        }
+
+        with engine.begin() as conn:
+            for col_name, col_type in required.items():
+                if col_name not in existing:
+                    conn.execute(text(f"ALTER TABLE knowledge_items ADD COLUMN {col_name} {col_type}"))
+    except Exception:
+        # Keep startup resilient; Base.metadata.create_all already handles fresh databases.
+        pass
+
+
 def get_session() -> Session:
     global _engine, _SessionLocal
     if _engine is None:
         _engine = get_engine()
         Base.metadata.create_all(_engine)
+        _ensure_schema_compatibility(_engine)
         _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
     return _SessionLocal()
 
@@ -75,6 +101,8 @@ class KnowledgeRepository:
                 content=item["content"],
                 source_type=item.get("source_type", "MANUAL"),
                 source_ref=item.get("source_ref"),
+                parent_ref=item.get("parent_ref"),
+                related_refs=json.dumps(item.get("related_refs", []), ensure_ascii=True),
                 tags=",".join(item.get("tags", [])),
                 confidence=item.get("confidence", 80),
                 vector_id=item.get("vector_id"),
@@ -99,6 +127,8 @@ class KnowledgeRepository:
                         content=item["content"],
                         source_type=item.get("source_type", "MANUAL"),
                         source_ref=item.get("source_ref"),
+                        parent_ref=item.get("parent_ref"),
+                        related_refs=json.dumps(item.get("related_refs", []), ensure_ascii=True),
                         tags=",".join(item.get("tags", [])),
                         confidence=item.get("confidence", 80),
                         vector_id=item.get("vector_id"),
@@ -134,6 +164,12 @@ class KnowledgeRepository:
                 session.commit()
 
     def _to_dict(self, orm: KnowledgeItemORM) -> dict:
+        try:
+            related_refs = json.loads(orm.related_refs or "[]")
+            if not isinstance(related_refs, list):
+                related_refs = []
+        except Exception:
+            related_refs = []
         return {
             "id": orm.id,
             "project_id": orm.project_id,
@@ -142,6 +178,8 @@ class KnowledgeRepository:
             "content": orm.content,
             "source_type": orm.source_type,
             "source_ref": orm.source_ref,
+            "parent_ref": orm.parent_ref,
+            "related_refs": related_refs,
             "tags": orm.tags.split(",") if orm.tags else [],
             "confidence": orm.confidence,
             "vector_id": orm.vector_id,

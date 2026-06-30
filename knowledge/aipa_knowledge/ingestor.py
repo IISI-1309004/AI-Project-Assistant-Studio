@@ -22,6 +22,7 @@ class ScanResultIngestor:
         # 1. 處理知識片段（由子掃描器生成的原始片段）
         fragments = scan_result.get("fragments", [])
         for fragment in fragments:
+            tags = fragment.get("tags") or [fragment.get("category", "").lower()]
             item = {
                 "id": str(uuid.uuid4()),
                 "project_id": project_id,
@@ -30,8 +31,10 @@ class ScanResultIngestor:
                 "content": fragment.get("content", ""),
                 "source_type": "SCANNER",
                 "source_ref": fragment.get("sourceFile", ""),
-                "tags": [fragment.get("category", "").lower()],
+                "tags": tags,
                 "confidence": 75,
+                "parent_ref": fragment.get("parentRef"),
+                "related_refs": fragment.get("relatedRefs", []),
             }
             items.append(item)
 
@@ -48,6 +51,8 @@ class ScanResultIngestor:
                 "source_ref": "TechStackDetector",
                 "tags": ["tech-stack", "project"],
                 "confidence": 90,
+                "parent_ref": None,
+                "related_refs": [],
             })
 
         # 3. API 清單知識項目
@@ -63,6 +68,8 @@ class ScanResultIngestor:
                 "source_ref": "OpenApiScanner",
                 "tags": ["api", "endpoints"],
                 "confidence": 85,
+                "parent_ref": None,
+                "related_refs": [],
             })
 
         # 4. 資料庫 Schema 知識項目
@@ -78,6 +85,8 @@ class ScanResultIngestor:
                 "source_ref": "SqlDdlScanner",
                 "tags": ["database", "schema"],
                 "confidence": 85,
+                "parent_ref": None,
+                "related_refs": [],
             })
 
         logger.info(f"Ingested {len(items)} knowledge items for project {project_id}")

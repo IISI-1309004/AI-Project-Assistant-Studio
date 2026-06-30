@@ -1,5 +1,8 @@
 # AIPA Docs Index
 
+> **最後更新**：2026-06-30  
+> 知識圖譜（Knowledge Graph）功能已升級：邊從空陣列改為真實關係，支援篩選、限量、TTL 快取與自動失效。詳見 [knowledge-graph-guide.md](./guides/knowledge-graph-guide.md)。
+
 This page is the single entry point for project documentation.
 
 ## Guides
@@ -9,6 +12,8 @@ This page is the single entry point for project documentation.
 - Batch Ingest Guide: `docs/guides/batch-ingest-guide.md`
 - Batch Quick Reference: `docs/guides/quick-batch-reference.md`
 - Knowledge Ingest Timeout Fix: `docs/guides/knowledge-ingest-timeout-fix.md`
+- Knowledge Graph Guide（完整技術手冊）: `docs/guides/knowledge-graph-guide.md`
+- Knowledge Graph API Quick Reference: `docs/guides/knowledge-graph-api-examples.md`
 
 ## Design
 

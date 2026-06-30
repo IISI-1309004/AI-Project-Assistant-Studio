@@ -192,6 +192,21 @@ aipa memory show <memoryId>
 aipa memory reinforce <memoryId>
 ```
 
+#### 知識圖譜
+
+```powershell
+# 全圖（節點 + 邊）
+Invoke-RestMethod "http://localhost:18080/engine/knowledge/graph?project_id=<your-project-id>"
+
+# 只看高置信度邊（EXPLICIT_PARENT）
+Invoke-RestMethod "http://localhost:18080/engine/knowledge/graph?project_id=<your-project-id>&min_weight=0.95"
+
+# 限制大圖回傳量
+Invoke-RestMethod "http://localhost:18080/engine/knowledge/graph?project_id=<your-project-id>&max_nodes=100&max_edges=200"
+```
+
+> 完整知識圖譜指南：`docs/guides/knowledge-graph-guide.md`
+
 #### 學習、經驗、智慧規則
 
 ```powershell
@@ -211,9 +226,22 @@ aipa wisdom check --files "src/main/..." --type FEATURE
 
 1. 你在專案目錄下輸入 `aipa` 指令
 2. CLI 將請求送到 Runtime（18080）
-3. Runtime 協調掃描/規格/規劃/執行，並呼叫 AI Engine（18082）做知識檢索、記憶、學習、經驗、規則
+3. Runtime 協調掃描/規格/規劃/執行，並呼叫 AI Engine 做知識檢索、記憶、學習、經驗、規則
 4. 流程中產生的規格、審計、狀態回寫到專案 `.ai-project/`
 5. 每次新需求都可重用已累積的專案知識，而不是從零開始
+
+#### 知識圖譜是什麼？
+
+`aipa init` 掃描後，AIPA 會自動建立知識節點間的關係圖：
+
+| 邊類型 | 說明 |
+|---|---|
+| `EXPLICIT_PARENT`（權重 1.0） | Scanner 標記的父目錄關係，最可靠 |
+| `EXPLICIT_RELATED`（權重 0.95） | Scanner 標記的跨模組關係 |
+| `SAME_PARENT`（權重 0.70） | 同資料夾回退關係 |
+| `SHARED_TAG`（權重 0.55） | 共享語義標籤 |
+
+圖譜支援 `edge_type`、`min_weight`、`max_nodes`、`max_edges` 篩選，並有 TTL 快取（寫入後自動失效）。
 
 #### 核心價值
 
@@ -227,13 +255,14 @@ aipa wisdom check --files "src/main/..." --type FEATURE
 - 大版本調整前先 `aipa scan` 或重新 `aipa init`
 - Checkpoint 審核意見要寫清楚（可作為後續學習素材）
 - 將 `aipa doctor` 納入日常巡檢（尤其換機、升級後）
+- 知識圖譜可用於了解專案模組關係，建議定期查看高置信度邊（`min_weight=0.95`）
 
 ### 2.6 快速故障排查
 
 1. `aipa ask` timeout：先看 `aipa health`、`aipa doctor`
 2. Runtime 無回應：檢查 `runtime-service.out.log`、`runtime-service.err.log`
-3. AI Engine 異常：直接測 `http://localhost:18082/engine/health`
-4. Provider 錯誤：檢查 `cli/.env.local` 的 Token/URL
+3. AI Engine 異常：直接測 `http://localhost:18080/engine/health`
+4. 知識圖譜邊為空：確認知識庫有資料後重新 `aipa init`，或參考 `docs/guides/knowledge-graph-guide.md`
 
 ---
 

@@ -1,7 +1,7 @@
 # AIPA Studio — 跨語言建構指令
 # 使用方式：make <target>
 
-.PHONY: all build test lint clean install docker-up docker-down help
+.PHONY: all build test lint clean install docker-up docker-down help graph-demo graph-demo-related graph-demo-high-confidence graph-demo-dry graph-demo-raw graph-demo-raw-related
 
 ## 預設目標
 all: build
@@ -68,6 +68,29 @@ health:
 	@curl -sf http://localhost:18080/api/v1/health | python3 -m json.tool || echo "❌ Runtime Service 無回應"
 	@curl -sf http://localhost:18082/engine/health | python3 -m json.tool || echo "❌ AI Engine 無回應"
 
+## ── Knowledge Graph Demo ───────────────────────────────
+# 可透過 make graph-demo PROJECT_ID=my-project 覆寫預設專案。
+PROJECT_ID ?= demo-project
+API_BASE_URL ?= http://127.0.0.1:8000
+
+graph-demo:
+	@python scripts/knowledge_graph_demo.py --base-url $(API_BASE_URL) --project-id $(PROJECT_ID)
+
+graph-demo-related:
+	@python scripts/knowledge_graph_demo.py --base-url $(API_BASE_URL) --project-id $(PROJECT_ID) --edge-type EXPLICIT_RELATED
+
+graph-demo-high-confidence:
+	@python scripts/knowledge_graph_demo.py --base-url $(API_BASE_URL) --project-id $(PROJECT_ID) --min-weight 0.95
+
+graph-demo-dry:
+	@python scripts/knowledge_graph_demo.py --base-url $(API_BASE_URL) --project-id $(PROJECT_ID) --edge-type EXPLICIT_PARENT --min-weight 0.8 --dry-run
+
+graph-demo-raw:
+	@python scripts/knowledge_graph_demo.py --base-url $(API_BASE_URL) --project-id $(PROJECT_ID) --raw
+
+graph-demo-raw-related:
+	@python scripts/knowledge_graph_demo.py --base-url $(API_BASE_URL) --project-id $(PROJECT_ID) --edge-type EXPLICIT_RELATED --raw
+
 ## ── 清理 ──────────────────────────────────────────────
 clean: clean-python clean-node
 	@echo "✅ 清理完成"
@@ -89,4 +112,10 @@ help:
 	@echo "  make docker-up    啟動 Docker Compose 開發環境"
 	@echo "  make docker-down  停止 Docker Compose"
 	@echo "  make health       檢查服務健康狀態"
+	@echo "  make graph-demo   執行 Knowledge Graph 全圖查詢（可覆寫 PROJECT_ID）"
+	@echo "  make graph-demo-related  只查 EXPLICIT_RELATED 關係"
+	@echo "  make graph-demo-high-confidence  只查高權重關係"
+	@echo "  make graph-demo-dry      只輸出請求 URL（不發送網路）"
+	@echo "  make graph-demo-raw      查詢全圖並輸出完整 JSON"
+	@echo "  make graph-demo-raw-related  查詢 EXPLICIT_RELATED 並輸出完整 JSON"
 	@echo "  make clean        清理建構產物"

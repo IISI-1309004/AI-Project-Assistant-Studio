@@ -148,12 +148,17 @@ tail -f logs/ai-engine.log
 [AIEngine] Embedding 234 texts...
 [AIEngine] Upserting 234 vectors...
 [AIEngine] Batch saving 234 items...
+[AIEngine] Graph cache invalidated for project my-project (dirty after batch ingest)
 [Runtime] Batch 1 completed: 234 items created (Total so far: 234/7407)
 [Runtime] Uploading batch 2: fragments 1000 to 1999 (1000 items)
 ... (重複 9 次) ...
 [Runtime] Completing batch session e1234567-89ab-cdef-0123-456789abcdef after 9 batches
 [Runtime] Batch session completed: {...}
 ```
+
+> **知識圖譜快取**：每一批次（`batch/ingest`）完成後，知識圖譜快取會自動失效。  
+> 全部批次完成後，下一次查詢 `GET /engine/knowledge/graph` 時會重新建邊。  
+> 詳見 `docs/guides/knowledge-graph-guide.md`。
 
 ## 性能指標
 

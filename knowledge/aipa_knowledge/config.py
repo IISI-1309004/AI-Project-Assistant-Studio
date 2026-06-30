@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     chromadb_url: str = "http://localhost:18083"
     chromadb_path: str = ".ai-project/vector/chromadb"
     embedding_model: str = "all-MiniLM-L6-v2"
+    graph_cache_ttl_seconds: float = 60.0
 
     class Config:
         env_prefix = "AIPA_"
