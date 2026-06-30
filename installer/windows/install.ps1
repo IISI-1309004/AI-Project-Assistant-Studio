@@ -16,7 +16,8 @@
 param(
     [string]$Version = "main",
     [string]$RepoUrl = "https://github.com/IISI-1309004/AI-Project-Assistant-Studio.git",
-    [string]$InstallDir = "$env:USERPROFILE\.aipa\aipa-studio"
+    [string]$InstallDir = "$env:USERPROFILE\.aipa\aipa-studio",
+    [string]$BundleUrl = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -124,6 +125,52 @@ function Check-Requirements {
 
 function Setup-AipaProject {
     Write-InfoLog "準備 AIPA 專案..."
+
+    $resolvedBundleUrl = $BundleUrl
+    if ([string]::IsNullOrWhiteSpace($resolvedBundleUrl)) {
+        $resolvedBundleUrl = $env:AIPA_BUNDLE_URL
+    }
+    if ([string]::IsNullOrWhiteSpace($resolvedBundleUrl) -and $Version -ne "main") {
+        $resolvedBundleUrl = "https://github.com/IISI-1309004/AI-Project-Assistant-Studio/releases/download/$Version/aipa-studio-$Version-windows.zip"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($resolvedBundleUrl)) {
+        Write-InfoLog "嘗試從 release bundle 安裝：$resolvedBundleUrl"
+        try {
+            $parentDir = Split-Path -Parent $InstallDir
+            New-Item -ItemType Directory -Force -Path $parentDir | Out-Null
+
+            $bundlePath = Join-Path $env:TEMP "aipa-studio-$Version-windows.zip"
+            if (Test-Path $bundlePath) {
+                Remove-Item -Path $bundlePath -Force -ErrorAction SilentlyContinue
+            }
+
+            Invoke-WebRequest -Uri $resolvedBundleUrl -OutFile $bundlePath -UseBasicParsing
+
+            if (Test-Path -Path $InstallDir -PathType Container) {
+                Remove-Item -Path $InstallDir -Recurse -Force
+            }
+            New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+
+            Expand-Archive -LiteralPath $bundlePath -DestinationPath $InstallDir -Force
+
+            # 若 zip 內有單一根資料夾，提升其內容到 InstallDir
+            $children = Get-ChildItem -Path $InstallDir
+            if ($children.Count -eq 1 -and $children[0].PSIsContainer) {
+                Get-ChildItem -Path $children[0].FullName -Force | Move-Item -Destination $InstallDir -Force
+                Remove-Item -Path $children[0].FullName -Recurse -Force
+            }
+
+            if (-not (Test-Path "$InstallDir\installer\docker\docker-compose.yml")) {
+                throw "下載檔案不是有效的 AIPA 安裝包（缺少 installer/docker/docker-compose.yml）"
+            }
+
+            Write-SuccessLog "AIPA 安裝包已就緒：$InstallDir"
+            return
+        } catch {
+            Write-WarningLog "Bundle 安裝失敗，改用 git clone 流程。原因：$_"
+        }
+    }
 
     if (Test-Path -Path $InstallDir -PathType Container) {
         Write-InfoLog "更新現有專案..."

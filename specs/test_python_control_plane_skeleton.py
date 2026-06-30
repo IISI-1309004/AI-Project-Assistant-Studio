@@ -31,7 +31,7 @@ def test_engine_health_endpoint_is_served_by_same_app() -> None:
     assert body["engines"]["knowledge"] == "active"
 
 
-def test_project_init_returns_completed_skeleton_job(tmp_path: Path) -> None:
+def test_project_init_returns_completed_job_with_knowledge_ingest(tmp_path: Path) -> None:
     (tmp_path / "package.json").write_text('{"name":"demo"}', encoding="utf-8")
 
     response = client.post(
@@ -52,6 +52,8 @@ def test_project_init_returns_completed_skeleton_job(tmp_path: Path) -> None:
     assert status_body["status"] == "COMPLETED"
     assert status_body["summary"]["projectName"] == tmp_path.name
     assert "Node.js" in status_body["summary"]["frameworks"]
+    assert status_body["summary"]["knowledgeIngestStatus"] == "COMPLETED"
+    assert status_body["summary"]["knowledgeItemCount"] >= 1
 
 
 def test_session_and_checkpoint_flow_advances_to_task_pending() -> None:
@@ -97,7 +99,7 @@ def test_session_and_checkpoint_flow_advances_to_task_pending() -> None:
     assert "session-status" in stream.text
 
 
-def _poll_job_until_done(job_id: str, timeout_seconds: float = 2.0) -> dict:
+def _poll_job_until_done(job_id: str, timeout_seconds: float = 10.0) -> dict:
     deadline = time.time() + timeout_seconds
     last = None
     while time.time() < deadline:

@@ -29,6 +29,7 @@ AIPA_VERSION="${AIPA_VERSION:-main}"
 AIPA_REPO="${AIPA_REPO:-https://github.com/IISI-1309004/AI-Project-Assistant-Studio.git}"
 AIPA_HOME="${AIPA_HOME:-$HOME/.aipa}"
 INSTALL_DIR="$AIPA_HOME/aipa-studio"
+AIPA_BUNDLE_URL="${AIPA_BUNDLE_URL:-}"
 
 # 日誌函數
 log_info() {
@@ -154,6 +155,57 @@ check_requirements() {
 # 克隆或更新 AIPA 專案
 setup_aipa_project() {
     log_info "準備 AIPA 專案..."
+
+    local bundle_url="$AIPA_BUNDLE_URL"
+    if [ -z "$bundle_url" ] && [ "$AIPA_VERSION" != "main" ]; then
+        bundle_url="https://github.com/IISI-1309004/AI-Project-Assistant-Studio/releases/download/$AIPA_VERSION/aipa-studio-$AIPA_VERSION-linux.tar.gz"
+    fi
+
+    if [ -n "$bundle_url" ]; then
+        log_info "嘗試從 release bundle 安裝：$bundle_url"
+        local bundle_path="/tmp/aipa-studio-$AIPA_VERSION-linux"
+        rm -f "$bundle_path.tar.gz" "$bundle_path.zip"
+        mkdir -p "$AIPA_HOME"
+
+        if curl -fL "$bundle_url" -o "$bundle_path.tar.gz"; then
+            rm -rf "$INSTALL_DIR"
+            mkdir -p "$INSTALL_DIR"
+            tar -xzf "$bundle_path.tar.gz" -C "$INSTALL_DIR"
+        elif curl -fL "$bundle_url" -o "$bundle_path.zip"; then
+            rm -rf "$INSTALL_DIR"
+            mkdir -p "$INSTALL_DIR"
+            if command -v unzip >/dev/null 2>&1; then
+                unzip -q -o "$bundle_path.zip" -d "$INSTALL_DIR"
+            else
+                log_error "需要 unzip 才能解壓 zip bundle"
+                exit 1
+            fi
+        else
+            log_warning "Bundle 下載失敗，改用 git clone 流程"
+        fi
+
+        if [ -f "$INSTALL_DIR/installer/docker/docker-compose.yml" ]; then
+            # 若 bundle 內有單一根資料夾，提升內容到 INSTALL_DIR
+            local child_count
+            child_count=$(find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')
+            if [ "$child_count" = "1" ]; then
+                local only_child
+                only_child=$(find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 -type d)
+                if [ -n "$only_child" ] && [ -f "$only_child/installer/docker/docker-compose.yml" ]; then
+                    shopt -s dotglob
+                    mv "$only_child"/* "$INSTALL_DIR"/ 2>/dev/null || true
+                    shopt -u dotglob
+                    rm -rf "$only_child"
+                fi
+            fi
+
+            cd "$INSTALL_DIR"
+            log_success "AIPA 安裝包已就緒：$INSTALL_DIR"
+            return
+        fi
+
+        log_warning "Bundle 格式不正確，改用 git clone 流程"
+    fi
 
     if [ -d "$INSTALL_DIR" ]; then
         log_info "更新現有專案..."
