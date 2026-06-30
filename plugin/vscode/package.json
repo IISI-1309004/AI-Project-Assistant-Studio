@@ -1,27 +1,111 @@
 {
-  "name": "@aipa/plugin-vscode",
+  "name": "aipa-studio-vscode",
   "displayName": "AIPA Studio",
-  "description": "AI Project Assistant Studio — VSCode Extension",
+  "description": "AIPA Studio — VSCode 擴充功能。在編輯器中管理 AI 工作階段與檢查點核審。",
   "version": "1.0.0",
-  "engines": { "vscode": "^1.89.0" },
+  "publisher": "aipa-studio",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IISI-1309004/AI-Project-Assistant-Studio.git"
+  },
+  "license": "UNLICENSED",
+  "files": [
+    "dist/**",
+    "README.md",
+    "LICENSE.txt",
+    "package.json"
+  ],
+  "engines": {
+    "vscode": "^1.89.0"
+  },
   "categories": ["Other"],
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished",
+    "onView:aipaSessionsView",
+    "onView:aipaCheckpointsView",
+    "onCommand:aipa.ask",
+    "onCommand:aipa.refresh"
+  ],
   "main": "./dist/extension.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "clean": "rm -rf dist"
+    "watch": "tsc -w -p tsconfig.json",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "package": "npm run build && npx @vscode/vsce package --no-dependencies",
+    "package:pre": "npm install --include=dev"
   },
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "aipaSidebar",
+          "title": "AIPA",
+          "icon": "$(hubot)"
+        }
+      ]
+    },
+    "views": {
+      "aipaSidebar": [
+        {
+          "id": "aipaSessionsView",
+          "name": "Sessions"
+        },
+        {
+          "id": "aipaCheckpointsView",
+          "name": "Checkpoints"
+        }
+      ]
+    },
     "commands": [
-      { "command": "aipa.ask", "title": "Ask AIPA" }
+      { "command": "aipa.ask", "title": "AIPA：詢問" },
+      { "command": "aipa.refresh", "title": "AIPA：重新整理" },
+      { "command": "aipa.checkpoint.approve", "title": "AIPA：核准檢查點" },
+      { "command": "aipa.checkpoint.reject", "title": "AIPA：拒絕檢查點" }
     ],
     "menus": {
       "editor/context": [
         { "command": "aipa.ask", "group": "aipa" }
+      ],
+      "view/title": [
+        {
+          "command": "aipa.refresh",
+          "when": "view == aipaSessionsView || view == aipaCheckpointsView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "aipa.checkpoint.approve",
+          "when": "view == aipaCheckpointsView && viewItem == checkpointPending",
+          "group": "inline"
+        },
+        {
+          "command": "aipa.checkpoint.reject",
+          "when": "view == aipaCheckpointsView && viewItem == checkpointPending",
+          "group": "inline"
+        }
       ]
+    },
+    "configuration": {
+      "title": "AIPA Studio",
+      "properties": {
+        "aipa.runtimeUrl": {
+          "type": "string",
+          "default": "http://localhost:8080",
+          "description": "AIPA 執行環境服務的基礎網址"
+        },
+        "aipa.pollIntervalSeconds": {
+          "type": "number",
+          "default": 10,
+          "minimum": 5,
+          "description": "輪詢工作階段與檢查點的間隔秒數"
+        }
+      }
     }
   },
   "devDependencies": {
+    "@vscode/vsce": "^3.6.1",
+    "@types/node": "^20.14.8",
     "@types/vscode": "^1.89.0",
     "typescript": "^5.4.5"
   }

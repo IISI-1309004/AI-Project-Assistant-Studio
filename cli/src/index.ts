@@ -3,6 +3,10 @@ import { Command } from "commander";
 import chalk from "chalk";
 import axios, { AxiosInstance } from "axios";
 import { basename, resolve } from "node:path";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { constants as fsConstants } from "node:fs";
+import { spawn } from "node:child_process";
+import { parseExcludePatterns, redactSensitiveText } from "./security";
 
 type InitStatus = {
   jobId: string;
@@ -46,8 +50,175 @@ const http: AxiosInstance = axios.create({
 
 const sleep = (ms: number) => new Promise((resolveTimer) => setTimeout(resolveTimer, ms));
 
+type DoctorCheckResult = {
+  name: string;
+  status: "PASS" | "WARN" | "FAIL";
+  detail: string;
+  hint?: string;
+};
+
+
+function isNodeVersionSupported(versionText: string): boolean {
+  const major = Number(versionText.replace(/^v/, "").split(".")[0]);
+  return Number.isFinite(major) && major >= 20;
+}
+
 function normalizeProjectId(input: string): string {
   return input.toLowerCase().replace(/[^a-z0-9-_]+/g, "-").replace(/^-+|-+$/g, "") || "default";
+}
+
+const PROJECT_META_RELATIVE_PATH = ".ai-project/project.json";
+
+type ProjectMeta = {
+  projectId: string;
+  projectRoot: string;
+  updatedAt: string;
+};
+
+function rewriteSlashCommandArgs(argv: string[]): string[] {
+  const [nodeBin, scriptPath, maybeSlash, ...rest] = argv;
+  if (!maybeSlash || !maybeSlash.startsWith("/")) {
+    return argv;
+  }
+
+  const slash = maybeSlash.toLowerCase();
+  const mapped = (() => {
+    switch (slash) {
+      case "/spec":
+        return ["ask", ...rest];
+      case "/plan":
+        return ["checkpoint", "list", ...rest];
+      case "/approve":
+      case "/do":
+      case "/pr":
+        return ["checkpoint", "approve", ...rest];
+      case "/reject":
+        return ["checkpoint", "reject", ...rest];
+      case "/learn":
+        return rest.length > 0 ? ["learn", ...rest] : ["learn", "--auto"];
+      case "/test":
+        return ["test-local", ...rest];
+      default:
+        return [maybeSlash, ...rest];
+    }
+  })();
+
+  return [nodeBin, scriptPath, ...mapped];
+}
+
+process.argv = rewriteSlashCommandArgs(process.argv);
+
+async function readProjectMeta(projectRoot: string): Promise<ProjectMeta | null> {
+  try {
+    const text = await readFile(resolve(projectRoot, PROJECT_META_RELATIVE_PATH), "utf-8");
+    const parsed = JSON.parse(text) as Partial<ProjectMeta>;
+    if (!parsed.projectId) {
+      return null;
+    }
+    return {
+      projectId: parsed.projectId,
+      projectRoot: parsed.projectRoot ?? projectRoot,
+      updatedAt: parsed.updatedAt ?? new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function writeProjectMeta(projectRoot: string, projectId: string): Promise<void> {
+  const aiProjectDir = resolve(projectRoot, ".ai-project");
+  await mkdir(aiProjectDir, { recursive: true });
+  const payload: ProjectMeta = {
+    projectId,
+    projectRoot,
+    updatedAt: new Date().toISOString(),
+  };
+  await writeFile(resolve(projectRoot, PROJECT_META_RELATIVE_PATH), JSON.stringify(payload, null, 2), "utf-8");
+}
+
+async function resolveProjectId(
+  explicitProjectId: string | undefined,
+  projectRootInput: string | undefined
+): Promise<string> {
+  if (explicitProjectId?.trim()) {
+    return normalizeProjectId(explicitProjectId);
+  }
+
+  if (process.env.AIPA_PROJECT_ID?.trim()) {
+    return normalizeProjectId(process.env.AIPA_PROJECT_ID);
+  }
+
+  const projectRoot = resolve(projectRootInput ?? process.cwd());
+  const meta = await readProjectMeta(projectRoot);
+  if (meta?.projectId) {
+    return normalizeProjectId(meta.projectId);
+  }
+
+  return normalizeProjectId(basename(projectRoot));
+}
+
+function runCommandForCurrentProject(command: string, args: string[]): Promise<number> {
+  return new Promise<number>((resolveCode, rejectCode) => {
+    const child = spawn(command, args, {
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    });
+    child.on("error", rejectCode);
+    child.on("close", (code) => resolveCode(code ?? 1));
+  });
+}
+
+async function runLocalTestWrapper(): Promise<number> {
+  const cwd = process.cwd();
+
+  try {
+    await access(resolve(cwd, "gradlew.bat"), fsConstants.X_OK);
+    return await runCommandForCurrentProject(".\\gradlew.bat", ["test"]);
+  } catch {
+    // continue
+  }
+
+  try {
+    await access(resolve(cwd, "gradlew"), fsConstants.X_OK);
+    return await runCommandForCurrentProject("./gradlew", ["test"]);
+  } catch {
+    // continue
+  }
+
+  try {
+    await access(resolve(cwd, "pom.xml"), fsConstants.F_OK);
+    return await runCommandForCurrentProject("mvn", ["test"]);
+  } catch {
+    // continue
+  }
+
+  try {
+    const pkgText = await readFile(resolve(cwd, "package.json"), "utf-8");
+    const pkg = JSON.parse(pkgText) as { scripts?: Record<string, string> };
+    if (pkg.scripts?.test) {
+      return await runCommandForCurrentProject("npm", ["test"]);
+    }
+  } catch {
+    // continue
+  }
+
+  try {
+    await access(resolve(cwd, "pyproject.toml"), fsConstants.F_OK);
+    return await runCommandForCurrentProject("pytest", []);
+  } catch {
+    // continue
+  }
+
+  try {
+    await access(resolve(cwd, "requirements.txt"), fsConstants.F_OK);
+    return await runCommandForCurrentProject("pytest", []);
+  } catch {
+    // continue
+  }
+
+  console.error(chalk.red("No known test command found in current directory."));
+  console.error(chalk.gray("Expected one of: gradlew(.bat), pom.xml, package.json(test), pyproject.toml, requirements.txt"));
+  return 1;
 }
 
 async function waitForInit(jobId: string): Promise<InitStatus> {
@@ -87,7 +258,7 @@ program
   .option("--no-wait", "只送出 job，不等待完成")
   .action(async (opts: { projectRoot: string; projectId?: string; wait: boolean }) => {
     const projectRoot = resolve(opts.projectRoot);
-    const projectId = opts.projectId ?? normalizeProjectId(basename(projectRoot));
+    const projectId = await resolveProjectId(opts.projectId, projectRoot);
 
     const { data } = await http.post("/api/v1/project/init", {
       projectRoot,
@@ -97,6 +268,7 @@ program
     console.log(chalk.green(`Init job started: ${data.jobId}`));
     console.log(chalk.gray(`Runtime: ${RUNTIME_URL}`));
     console.log(chalk.gray(`Project: ${projectId} @ ${projectRoot}`));
+    await writeProjectMeta(projectRoot, projectId);
 
     if (!opts.wait) {
       console.log(chalk.yellow(`Use: aipa init-status ${data.jobId}`));
@@ -128,12 +300,18 @@ program
 program
   .command("ask <requirement>")
   .description("產生規格、信心評估與 Task Planning（Phase 3 MVP）")
-  .option("--project-id <id>", "專案識別碼", "default")
+  .option("--project-id <id>", "專案識別碼")
   .option("--project-root <path>", "專案路徑", process.cwd())
-  .action(async (requirement: string, opts: { projectId: string; projectRoot: string }) => {
+  .action(async (requirement: string, opts: { projectId?: string; projectRoot: string }) => {
+    const { sanitized, redactedCount } = redactSensitiveText(requirement);
+    const projectId = await resolveProjectId(opts.projectId, opts.projectRoot);
+    if (redactedCount > 0) {
+      console.log(chalk.yellow(`⚠️  已遮罩 ${redactedCount} 個敏感片段（contextExcludePatterns 生效）`));
+    }
+
     const { data } = await http.post<SessionStatus>("/api/v1/session", {
-      requirement,
-      projectId: opts.projectId,
+      requirement: sanitized,
+      projectId,
       projectRoot: resolve(opts.projectRoot),
     });
 
@@ -159,12 +337,13 @@ program
   .option("--project-id <id>", "專案識別碼")
   .action(async (opts: { target: string; projectId?: string }) => {
     const target = resolve(opts.target);
-    const projectId = opts.projectId ?? normalizeProjectId(basename(target));
+    const projectId = await resolveProjectId(opts.projectId, target);
     const { data } = await http.post("/api/v1/project/init", {
       projectRoot: target,
       projectId,
       fullRescan: true,
     });
+    await writeProjectMeta(target, projectId);
     console.log(chalk.green(`Rescan job started: ${data.jobId}`));
     const final = await waitForInit(data.jobId);
     if (final.status !== "COMPLETED") {
@@ -177,13 +356,13 @@ program
   .command("learn")
   .description("手動觸發學習（分析最新 PR）")
   .option("--pr <id>", "指定 PR ID")
-  .option("--project-id <id>", "專案識別碼", "default")
+  .option("--project-id <id>", "專案識別碼")
   .option("--session-id <id>", "來源 Session ID", "")
   .option("--summary <text>", "學習摘要", "Merged PR learning")
   .option("--files <items>", "變更檔案（逗號分隔）", "")
   .option("--review-comments <items>", "審查建議（逗號分隔）", "")
   .option("--auto", "自動從最近完成的 Session 觸發學習")
-  .action(async (opts: { pr?: string; projectId: string; sessionId: string; summary: string; files: string; reviewComments: string; auto?: boolean }) => {
+  .action(async (opts: { pr?: string; projectId?: string; sessionId: string; summary: string; files: string; reviewComments: string; auto?: boolean }) => {
     // Phase 5-2: Auto-trigger learning from latest COMPLETED session
     if (opts.auto) {
       try {
@@ -223,8 +402,9 @@ program
 
     const changedFiles = opts.files ? opts.files.split(",").map((item) => item.trim()).filter(Boolean) : [];
     const reviewComments = opts.reviewComments ? opts.reviewComments.split(",").map((item) => item.trim()).filter(Boolean) : [];
+    const projectId = await resolveProjectId(opts.projectId, process.cwd());
     const { data } = await http.post("/api/v1/learn", {
-      project_id: opts.projectId,
+      project_id: projectId,
       pr_id: opts.pr ?? "latest",
       session_id: opts.sessionId,
       summary: opts.summary,
@@ -384,12 +564,13 @@ const memory = program.command("memory").description("記憶查詢");
 knowledge
   .command("search <query>")
   .description("搜尋知識庫")
-  .option("--project-id <id>", "專案識別碼", "default")
+  .option("--project-id <id>", "專案識別碼")
   .option("--top-k <n>", "回傳筆數", "5")
-  .action(async (query: string, opts: { projectId: string; topK: string }) => {
+  .action(async (query: string, opts: { projectId?: string; topK: string }) => {
+    const projectId = await resolveProjectId(opts.projectId, process.cwd());
     const { data } = await http.post("/api/v1/knowledge/search", {
       query,
-      projectId: opts.projectId,
+      projectId,
       topK: Number(opts.topK),
     });
 
@@ -405,12 +586,13 @@ knowledge
 memory
   .command("list")
   .description("列出記憶條目")
-  .requiredOption("--project-id <id>", "專案識別碼")
+  .option("--project-id <id>", "專案識別碼")
   .option("--type <name>", "記憶類型")
-  .action(async (opts: { projectId: string; type?: string }) => {
+  .action(async (opts: { projectId?: string; type?: string }) => {
+    const projectId = await resolveProjectId(opts.projectId, process.cwd());
     const { data } = await http.get("/api/v1/memory", {
       params: {
-        projectId: opts.projectId,
+        projectId,
         type: opts.type,
       },
     });
@@ -442,12 +624,13 @@ memory
 knowledge
   .command("list")
   .description("列出知識項目")
-  .requiredOption("--project-id <id>", "專案識別碼")
+  .option("--project-id <id>", "專案識別碼")
   .option("--category <name>", "分類過濾")
-  .action(async (opts: { projectId: string; category?: string }) => {
+  .action(async (opts: { projectId?: string; category?: string }) => {
+    const projectId = await resolveProjectId(opts.projectId, process.cwd());
     const { data } = await http.get("/api/v1/knowledge", {
       params: {
-        projectId: opts.projectId,
+        projectId,
         category: opts.category,
       },
     });
@@ -518,6 +701,20 @@ program
     }
   });
 
+program
+  .command("session-summary <sessionId>")
+  .description("查詢指定 Session 的 completion summary（learning + memory）")
+  .action(async (sessionId: string) => {
+    try {
+      const { data } = await http.get(`/api/v1/session/${sessionId}/summary`);
+      console.log(JSON.stringify(data, null, 2));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to query session summary: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
 // ── server ──────────────────────────────────────────────────────
 const server = program.command("server").description("管理 Runtime Service");
 server.command("start").action(() => console.log(chalk.yellow("⚠️  Phase 1: use 'make docker-up' for now")));
@@ -530,6 +727,277 @@ server.command("status").action(async () => {
     console.log(chalk.red("❌ Runtime Service is DOWN"));
   }
 });
+
+// ── test-local (slash /test wrapper) ────────────────────────────
+program
+  .command("test-local")
+  .description("在當前專案自動選擇測試命令（Gradle/Maven/npm/pytest）")
+  .action(async () => {
+    const code = await runLocalTestWrapper();
+    if (code !== 0) {
+      process.exitCode = code;
+    }
+  });
+
+// ── wisdom (Phase 6) ────────────────────────────────────────────
+const wisdom = program.command("wisdom").description("智慧規則管理（Phase 6）");
+
+wisdom
+  .command("list")
+  .description("列出所有智慧規則")
+  .option("--project <projectId>", "篩選特定專案的規則", "")
+  .action(async (opts) => {
+    try {
+      const url = opts.project
+        ? `/api/v1/wisdom/rules?projectId=${opts.project}`
+        : "/api/v1/wisdom/rules";
+      const { data } = await http.get<Array<Record<string, unknown>>>(url);
+      if (!data || data.length === 0) {
+        console.log(chalk.yellow("No wisdom rules found."));
+        return;
+      }
+      data.forEach((rule) => {
+        const severity = rule["severity"] as string;
+        const icon = severity === "BLOCK" ? chalk.red("🚫 BLOCK") : chalk.yellow("⚠️  WARN ");
+        console.log(`${icon}  [${rule["id"]}] ${rule["title"]}`);
+        if (rule["description"]) {
+          console.log(`        ${chalk.gray(String(rule["description"]).substring(0, 80))}`);
+        }
+      });
+      console.log(chalk.gray(`\nTotal: ${data.length} rules`));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to list wisdom rules: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+wisdom
+  .command("add")
+  .description("新增智慧規則")
+  .requiredOption("--title <title>", "規則標題")
+  .requiredOption("--desc <description>", "規則描述")
+  .option("--severity <severity>", "嚴重等級 WARN|BLOCK", "WARN")
+  .option("--id <id>", "規則 ID（選填）")
+  .option("--condition <condition>", "觸發條件")
+  .action(async (opts) => {
+    try {
+      const rule: Record<string, unknown> = {
+        title: opts.title,
+        description: opts.desc,
+        severity: opts.severity.toUpperCase(),
+        scope: { global: true },
+        trigger_conditions: opts.condition ? [opts.condition] : [],
+        enabled: true,
+      };
+      if (opts.id) rule["id"] = opts.id;
+      const { data } = await http.post("/api/v1/wisdom/rules", rule);
+      console.log(chalk.green(`✅ Wisdom rule created: ${data["id"]}`));
+      console.log(`   Title: ${data["title"]}`);
+      console.log(`   Severity: ${data["severity"]}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to add wisdom rule: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+wisdom
+  .command("check")
+  .description("對程式碼變更執行智慧規則檢查")
+  .option("--diff <codeDiff>", "程式碼 diff 內容", "")
+  .option("--files <files>", "異動檔案（逗號分隔）", "")
+  .option("--type <specType>", "Spec 類型", "FEATURE")
+  .action(async (opts) => {
+    try {
+      const redacted = redactSensitiveText(opts.diff);
+      if (redacted.redactedCount > 0) {
+        console.log(chalk.yellow(`⚠️  已遮罩 ${redacted.redactedCount} 個敏感片段（contextExcludePatterns 生效）`));
+      }
+      const context = {
+        code_diff: redacted.sanitized,
+        file_names: opts.files ? opts.files.split(",").map((f: string) => f.trim()) : [],
+        spec_type: opts.type,
+      };
+      const { data } = await http.post<{
+        hasBlockViolation: boolean;
+        blockCount: number;
+        warnCount: number;
+        matchedRules: Array<Record<string, unknown>>;
+      }>("/api/v1/wisdom/check", context);
+      if (data.hasBlockViolation) {
+        console.log(chalk.red(`🚫 BLOCK violation! (${data.blockCount} BLOCK, ${data.warnCount} WARN)`));
+      } else if (data.warnCount > 0) {
+        console.log(chalk.yellow(`⚠️  ${data.warnCount} WARN rule(s) matched.`));
+      } else {
+        console.log(chalk.green("✅ No wisdom rule violations."));
+      }
+      (data.matchedRules ?? []).forEach((rule) => {
+        const icon = rule["severity"] === "BLOCK" ? chalk.red("🚫") : chalk.yellow("⚠️");
+        console.log(`  ${icon} [${rule["id"]}] ${rule["title"]}`);
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to check wisdom rules: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+// ── doctor (Phase 9) ─────────────────────────────────────────────
+program
+  .command("doctor")
+  .description("企業強化診斷（Phase 9）：檢查 Runtime、環境、敏感設定")
+  .option("--json", "以 JSON 輸出診斷結果")
+  .action(async (opts: { json?: boolean }) => {
+    const checks: DoctorCheckResult[] = [];
+
+    try {
+      const res = await http.get("/api/v1/health", { timeout: 3000 });
+      checks.push({
+        name: "runtime",
+        status: "PASS",
+        detail: `Runtime 可連線 (${res.status}) @ ${RUNTIME_URL}`,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      checks.push({
+        name: "runtime",
+        status: "FAIL",
+        detail: `Runtime 無回應 @ ${RUNTIME_URL}`,
+        hint: `請先啟動服務後重試（${message}）`,
+      });
+    }
+
+    checks.push({
+      name: "node",
+      status: isNodeVersionSupported(process.version) ? "PASS" : "WARN",
+      detail: `Node.js ${process.version}`,
+      hint: isNodeVersionSupported(process.version) ? undefined : "建議升級到 Node.js >= 20",
+    });
+
+    const configuredProviders = [
+      "CLAUDE_API_KEY",
+      "OPENAI_API_KEY",
+      "GEMINI_API_KEY",
+      "OLLAMA_BASE_URL",
+    ].filter((name) => Boolean(process.env[name]));
+    checks.push({
+      name: "ai-provider",
+      status: configuredProviders.length > 0 ? "PASS" : "WARN",
+      detail: configuredProviders.length > 0
+        ? `已設定 ${configuredProviders.length} 個 AI 供應商`
+        : "未偵測到 AI 供應商設定",
+      hint: configuredProviders.length > 0 ? undefined : "請設定 API Key 或 Ollama URL",
+    });
+
+    try {
+      await access(process.cwd(), fsConstants.W_OK);
+      checks.push({
+        name: "workspace-write",
+        status: "PASS",
+        detail: `工作目錄可寫入 (${process.cwd()})`,
+      });
+    } catch {
+      checks.push({
+        name: "workspace-write",
+        status: "FAIL",
+        detail: `工作目錄不可寫入 (${process.cwd()})`,
+        hint: "請檢查目錄權限",
+      });
+    }
+
+    const excludePatterns = parseExcludePatterns(process.env.AIPA_CONTEXT_EXCLUDE_PATTERNS);
+    checks.push({
+      name: "context-exclude",
+      status: excludePatterns.length > 0 ? "PASS" : "WARN",
+      detail: `自訂遮罩規則數量: ${excludePatterns.length}`,
+      hint: excludePatterns.length > 0 ? undefined : "建議設定 AIPA_CONTEXT_EXCLUDE_PATTERNS",
+    });
+
+    if (opts.json) {
+      console.log(JSON.stringify({
+        runtimeUrl: RUNTIME_URL,
+        timestamp: new Date().toISOString(),
+        checks,
+      }, null, 2));
+    } else {
+      console.log(chalk.cyan("AIPA Doctor Report"));
+      for (const check of checks) {
+        const icon = check.status === "PASS" ? chalk.green("✅") : check.status === "WARN" ? chalk.yellow("⚠️") : chalk.red("❌");
+        console.log(`${icon} ${check.name}: ${check.detail}`);
+        if (check.hint) {
+          console.log(chalk.gray(`   hint: ${check.hint}`));
+        }
+      }
+    }
+
+    if (checks.some((check) => check.status === "FAIL")) {
+      process.exitCode = 1;
+    }
+  });
+
+// ── experience (Phase 6) ─────────────────────────────────────────
+const experience = program.command("experience").description("經驗案例管理（Phase 6）");
+
+experience
+  .command("search <query>")
+  .description("搜尋相似歷史案例（相似度 > 0.6）")
+  .option("--project <projectId>", "限定專案 ID", "")
+  .option("--top <n>", "回傳筆數", "5")
+  .action(async (query: string, opts) => {
+    try {
+      const { data } = await http.post<Array<Record<string, unknown>>>("/api/v1/experience/search", {
+        query,
+        project_id: opts.project,
+        top_k: parseInt(opts.top, 10),
+      });
+      if (!data || data.length === 0) {
+        console.log(chalk.yellow("No similar cases found (similarity threshold: 0.6)."));
+        return;
+      }
+      console.log(chalk.green(`Found ${data.length} similar case(s):\n`));
+      data.forEach((c, i) => {
+        const sim = typeof c["_similarity"] === "number"
+          ? ` (similarity: ${(c["_similarity"] as number).toFixed(2)})`
+          : "";
+        console.log(`${i + 1}. [${c["id"]}] ${c["title"]}${sim}`);
+        if (c["requirement"]) {
+          console.log(`   ${chalk.gray(String(c["requirement"]).substring(0, 100))}`);
+        }
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to search experience cases: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+experience
+  .command("list")
+  .description("列出所有歷史案例")
+  .requiredOption("--project <projectId>", "專案 ID")
+  .action(async (opts) => {
+    try {
+      const { data } = await http.get<Array<Record<string, unknown>>>(
+        `/api/v1/experience/cases?project_id=${opts.project}`
+      );
+      if (!data || data.length === 0) {
+        console.log(chalk.yellow("No experience cases found."));
+        return;
+      }
+      console.log(chalk.bold(`Experience Cases for '${opts.project}':\n`));
+      data.forEach((c, i) => {
+        const icon = c["outcome"] === "SUCCESS" ? chalk.green("✅") : chalk.yellow("⚠️");
+        console.log(`${i + 1}. ${icon} [${c["id"]}] ${c["title"]}`);
+        console.log(`   Created: ${c["created_at"]}  References: ${c["reference_count"] ?? 0}`);
+      });
+      console.log(chalk.gray(`\nTotal: ${data.length} cases`));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(chalk.red(`Failed to list experience cases: ${message}`));
+      process.exitCode = 1;
+    }
+  });
 
 program.parseAsync().catch((err: unknown) => {
   const message = err instanceof Error ? err.message : String(err);

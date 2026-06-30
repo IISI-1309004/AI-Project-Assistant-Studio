@@ -1,5 +1,7 @@
 package com.aipa.scanner;
 
+import com.aipa.scanner.subscanner.JavaSourceScanner;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +32,7 @@ public class PartialScanResult {
         if (classes.isEmpty()) return result;
 
         // 逐類別建立知識片段
-        for (var cls : classes) {
+        for (JavaSourceScanner.ClassInfo cls : classes) {
             String desc = buildClassDescription(cls);
             result.addFragment(new KnowledgeFragment("ARCHITECTURE", cls.simpleName(), desc, cls.relativePath()));
         }

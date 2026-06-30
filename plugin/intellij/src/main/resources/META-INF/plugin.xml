@@ -2,13 +2,25 @@
   <id>com.aipa.studio</id>
   <name>AIPA Studio</name>
   <version>1.0.0-SNAPSHOT</version>
-  <description>AI Project Assistant Studio — IntelliJ Plugin (Phase 1 Skeleton)</description>
+  <description>AIPA Studio — IntelliJ 外掛程式。在 IDE 內管理 AI 工作階段與檢查點核審。</description>
 
   <depends>com.intellij.modules.platform</depends>
 
+  <!-- 通知組 -->
+  <notificationGroup id="AIPA Studio" displayType="BALLOON"/>
+
+  <!-- 工具視窗 -->
+  <extensions defaultExtensionNs="com.intellij">
+    <toolWindow id="AIPA" anchor="right" factoryClass="com.aipa.intellij.tool.AipaToolWindowFactory"/>
+    <applicationService serviceImplementation="com.aipa.intellij.api.AipaApiClient"/>
+    <projectService serviceImplementation="com.aipa.intellij.listener.CheckpointPollingService"/>
+    <projectListener implementation="com.aipa.intellij.AipaProjectListener"/>
+  </extensions>
+
+  <!-- 右鍵選單命令 -->
   <actions>
     <action id="AipaAsk" class="com.aipa.intellij.actions.AskAipaAction"
-            text="Ask AIPA" description="Ask AIPA Studio">
+            text="詢問 AIPA" description="向 AIPA Studio 詢問">
       <add-to-group group-id="EditorPopupMenu" anchor="last"/>
     </action>
   </actions>

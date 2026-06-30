@@ -14,6 +14,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
     implementation("org.flywaydb:flyway-core")
     implementation("com.fasterxml.jackson.module:jackson-module-parameter-names")
 
@@ -24,8 +25,12 @@ dependencies {
     // PostgreSQL
     runtimeOnly("org.postgresql:postgresql")
 
+    // Phase 9: 結構化 JSON 日誌
+    implementation("net.logstash.logback:logstash-logback-encoder:7.4")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("com.h2database:h2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 tasks.bootJar {

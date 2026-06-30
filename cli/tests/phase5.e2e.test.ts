@@ -1,13 +1,16 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { spawn } from "node:child_process";
+import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const rootDir = process.cwd();
 
-async function runCli(args: string[], port: number): Promise<string> {
+async function runCli(args: string[], port: number, cwd: string = rootDir): Promise<string> {
   return await new Promise<string>((resolveOutput, rejectOutput) => {
     const child = spawn("node", ["./dist/index.js", ...args], {
-      cwd: rootDir,
+      cwd,
       env: {
         ...process.env,
         AIPA_RUNTIME_URL: `http://127.0.0.1:${port}`,
@@ -38,22 +41,58 @@ async function runCli(args: string[], port: number): Promise<string> {
   });
 }
 
-async function runCliWithRetry(args: string[], port: number): Promise<string> {
+async function runCliWithRetry(args: string[], port: number, cwd?: string): Promise<string> {
   try {
-    return await runCli(args, port);
+    return await runCli(args, port, cwd);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (!message.includes("ETIMEDOUT")) {
       throw err;
     }
-    return await runCli(args, port);
+    return await runCli(args, port, cwd);
   }
 }
 
 describe("Phase 5 CLI learning and memory e2e", () => {
   let serverPort = 0;
+  let lastSessionPayload: Record<string, unknown> | null = null;
   const server = createServer((req: IncomingMessage, res: ServerResponse) => {
     const url = req.url ?? "";
+
+    if (req.method === "POST" && url === "/api/v1/session") {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += chunk.toString();
+      });
+      req.on("end", () => {
+        try {
+          lastSessionPayload = JSON.parse(body) as Record<string, unknown>;
+        } catch {
+          lastSessionPayload = null;
+        }
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({
+          sessionId: "sess-test-1",
+          projectId: String(lastSessionPayload?.projectId ?? "default"),
+          status: "SPEC_APPROVAL_PENDING",
+          requirement: String(lastSessionPayload?.requirement ?? ""),
+          specId: "spec-1",
+          currentCheckpointId: "cp-1",
+          confidenceScore: 82,
+          spec: { title: "Generated Spec" },
+        }));
+      });
+      return;
+    }
+
+    if (req.method === "GET" && url.startsWith("/api/v1/checkpoint")) {
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify([
+        { checkpointId: "cp-1", type: "SPEC_APPROVAL", sessionId: "sess-test-1", status: "PENDING" },
+      ]));
+      return;
+    }
+
 
     if (req.method === "POST" && url === "/api/v1/learn") {
       res.setHeader("Content-Type", "application/json");
@@ -104,6 +143,24 @@ describe("Phase 5 CLI learning and memory e2e", () => {
       res.end(JSON.stringify({
         sessionId: "s-auto-test",
         status: "AVAILABLE",
+        memoryReinforcement: {
+          enabled: true,
+          attempted: 2,
+          reinforced: 2,
+          failed: 0,
+        },
+      }));
+      return;
+    }
+
+    if (req.method === "GET" && url === "/api/v1/session/s-auto-test/summary") {
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({
+        sessionId: "s-auto-test",
+        projectId: "demo",
+        status: "COMPLETED",
+        completionReport: { specTitle: "Auto-learning feature spec" },
+        autoLearning: { learning_id: "learn-1" },
         memoryReinforcement: {
           enabled: true,
           attempted: 2,
@@ -199,6 +256,37 @@ describe("Phase 5 CLI learning and memory e2e", () => {
     const stdout = await runCliWithRetry(["status", "--memory"], serverPort);
     expect(stdout).toContain("\"status\": \"AVAILABLE\"");
     expect(stdout).toContain("\"memoryReinforcement\"");
+  });
+
+  it("supports session-summary command", async () => {
+    const stdout = await runCliWithRetry(["session-summary", "s-auto-test"], serverPort);
+    expect(stdout).toContain("\"status\": \"COMPLETED\"");
+    expect(stdout).toContain("\"autoLearning\"");
+    expect(stdout).toContain("\"memoryReinforcement\"");
+  });
+
+  it("supports slash /spec wrapper and routes to ask", async () => {
+    const stdout = await runCliWithRetry(["/spec", "新增付款提醒功能"], serverPort);
+    expect(stdout).toContain("Session created:");
+    expect(lastSessionPayload?.projectId).toBe("default");
+  });
+
+  it("auto-detects project_id from .ai-project/project.json", async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "aipa-cli-test-"));
+    await mkdir(join(tempRoot, ".ai-project"), { recursive: true });
+    await writeFile(
+      join(tempRoot, ".ai-project", "project.json"),
+      JSON.stringify({
+        projectId: "payment-service",
+        projectRoot: tempRoot,
+        updatedAt: new Date().toISOString(),
+      }, null, 2),
+      "utf-8"
+    );
+
+    const stdout = await runCliWithRetry(["ask", "修復付款通知"], serverPort, tempRoot);
+    expect(stdout).toContain("Session created:");
+    expect(lastSessionPayload?.projectId).toBe("payment-service");
   });
 });
 

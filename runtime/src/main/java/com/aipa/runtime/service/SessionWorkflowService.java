@@ -36,6 +36,8 @@ public class SessionWorkflowService {
     private final PlanningEngine planningEngine;
     private final ExecutionPipelineService executionPipelineService;
     private final SessionCompletionReportService completionReportService;
+    private final ExperienceEngineClient experienceEngineClient;
+    private final WisdomEngineClient wisdomEngineClient;
     private final ObjectMapper objectMapper;
     private final int confidenceThreshold;
     private final int executionMaxRetries;
@@ -53,6 +55,8 @@ public class SessionWorkflowService {
             PlanningEngine planningEngine,
             ExecutionPipelineService executionPipelineService,
             SessionCompletionReportService completionReportService,
+            ExperienceEngineClient experienceEngineClient,
+            WisdomEngineClient wisdomEngineClient,
             ObjectMapper objectMapper,
             @Value("${aipa.confidence-threshold:70}") int confidenceThreshold,
             @Value("${aipa.execution-max-retries:3}") int executionMaxRetries,
@@ -67,6 +71,8 @@ public class SessionWorkflowService {
         this.planningEngine = planningEngine;
         this.executionPipelineService = executionPipelineService;
         this.completionReportService = completionReportService;
+        this.experienceEngineClient = experienceEngineClient;
+        this.wisdomEngineClient = wisdomEngineClient;
         this.objectMapper = objectMapper.findAndRegisterModules();
         this.confidenceThreshold = confidenceThreshold;
         this.executionMaxRetries = Math.max(1, executionMaxRetries);
@@ -83,6 +89,8 @@ public class SessionWorkflowService {
 
         List<Map<String, Object>> knowledgeRefs = safeKnowledgeSearch(projectId, requirement);
         Map<String, Object> memoryContext = safeMemoryContext(projectId);
+        // Phase 6: 搜尋相似歷史案例
+        List<Map<String, Object>> similarCases = safeSimilarCasesSearch(projectId, requirement);
         ConfidenceScore preliminaryScore = confidenceEngine.evaluate(requirement, knowledgeRefs, memoryContext, confidenceThreshold);
         Specification spec = specEngine.generateSpec(new SpecRequest(
                 projectId,
@@ -126,6 +134,7 @@ public class SessionWorkflowService {
         session.put("updatedAt", Instant.now().toString());
         session.put("knowledgeRefs", knowledgeRefs);
         session.put("memoryContext", memoryContext);
+        session.put("similarCases", similarCases);
         session.put("spec", spec);
         session.put("taskPlan", null);
         session.put("phase4Message", null);
@@ -344,6 +353,24 @@ public class SessionWorkflowService {
         );
     }
 
+    public Map<String, Object> getCompletionSummary(String sessionId) {
+        Map<String, Object> session = requireSession(sessionId);
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("sessionId", sessionId);
+        summary.put("projectId", session.getOrDefault("projectId", "unknown"));
+        summary.put("status", session.getOrDefault("status", "UNKNOWN"));
+        summary.put("requirement", session.getOrDefault("requirement", ""));
+        summary.put("message", session.getOrDefault("message", ""));
+        summary.put("completionReport", session.getOrDefault("completionReport", Map.of()));
+        summary.put("autoLearning", session.getOrDefault("autoLearning", Map.of()));
+        summary.put("learningId", session.getOrDefault("learningId", ""));
+        summary.put("learningResult", session.getOrDefault("learningResult", Map.of()));
+        summary.put("memoryReinforcement", session.getOrDefault("memoryReinforcement", Map.of()));
+        summary.put("updatedAt", session.getOrDefault("updatedAt", ""));
+        return summary;
+    }
+
     private Map<String, Object> advanceAfterSpecApproval(Map<String, Object> session, Map<String, Object> checkpoint) {
         String specId = String.valueOf(session.get("specId"));
         Specification spec = specEngine.approveSpec(specId, String.valueOf(checkpoint.get("resolvedBy")), String.valueOf(checkpoint.get("comments")));
@@ -411,6 +438,44 @@ public class SessionWorkflowService {
             return result == null ? Map.of() : result;
         } catch (Exception ex) {
             return Map.of();
+        }
+    }
+
+    // Phase 6: 搜尋相似歷史案例
+    private List<Map<String, Object>> safeSimilarCasesSearch(String projectId, String requirement) {
+        try {
+            List<Map<String, Object>> result = experienceEngineClient.searchSimilar(requirement, projectId, 3);
+            return result == null ? List.of() : result;
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
+    // Phase 6: 智慧規則檢查
+    private Map<String, Object> safeWisdomRulesCheck(Map<String, Object> session) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> execution = (Map<String, Object>) session.getOrDefault("execution", Map.of());
+            String codeDiff = String.valueOf(execution.getOrDefault("codeDiff", ""));
+            @SuppressWarnings("unchecked")
+            List<String> filesChanged = (List<String>) execution.getOrDefault("filesChanged", List.of());
+            String specType = String.valueOf(session.getOrDefault("specType", "FEATURE"));
+
+            Map<String, Object> context = new LinkedHashMap<>();
+            context.put("code_diff", codeDiff);
+            context.put("file_names", filesChanged);
+            context.put("spec_type", specType);
+            context.put("modules", List.of());
+
+            List<Map<String, Object>> matched = wisdomEngineClient.matchRules(context);
+            boolean hasBlock = matched.stream().anyMatch(r -> "BLOCK".equals(r.get("severity")));
+            return Map.of(
+                    "matchedRules", matched,
+                    "hasBlockViolation", hasBlock,
+                    "checkedAt", Instant.now().toString()
+            );
+        } catch (Exception ex) {
+            return Map.of("error", ex.getMessage(), "matchedRules", List.of(), "hasBlockViolation", false);
         }
     }
 
@@ -531,6 +596,7 @@ public class SessionWorkflowService {
 
     /**
      * Phase 5-2: 完成會話並觸發自動學習
+     * Phase 6: 建立 ExperienceCase + 智慧規則檢查
      */
     private void completeSessionWithLearning(Map<String, Object> session) {
         try {
@@ -547,6 +613,12 @@ public class SessionWorkflowService {
             // Phase 5-3: 完成後自動強化關聯記憶（fail-soft）
             session.put("memoryReinforcement", reinforceMemorySignals(session));
 
+            // Phase 6: 建立 ExperienceCase（fail-soft）
+            session.put("experienceCase", createExperienceCaseFromSession(session, report));
+
+            // Phase 6: 智慧規則檢查結果記錄
+            session.put("wisdomRulesCheck", safeWisdomRulesCheck(session));
+
             // 記錄完成審計
             appendCompletionAudit(session, report);
         } catch (Exception ex) {
@@ -561,6 +633,26 @@ public class SessionWorkflowService {
                     "reinforced", 0
             ));
             session.put("learningError", ex.getMessage());
+        }
+    }
+
+    private Map<String, Object> createExperienceCaseFromSession(Map<String, Object> session, SessionCompletionReport report) {
+        try {
+            Map<String, Object> caseData = new LinkedHashMap<>();
+            caseData.put("project_id", String.valueOf(session.getOrDefault("projectId", "unknown")));
+            caseData.put("title", report.specTitle() != null ? report.specTitle() : "Session " + report.sessionId());
+            caseData.put("requirement", report.requirement() != null ? report.requirement() : "");
+            caseData.put("spec_type", "FEATURE");
+            caseData.put("solution_summary", report.executionStatus());
+            caseData.put("knowledge_topics", report.knowledgeTopics());
+            caseData.put("key_decisions", report.keyLearnings());
+            caseData.put("confidence_score", report.confidenceScore());
+            caseData.put("outcome", "COMPLETED".equals(String.valueOf(session.getOrDefault("status", ""))) ? "SUCCESS" : "PARTIAL");
+            caseData.put("session_id", String.valueOf(session.getOrDefault("sessionId", "")));
+            Map<String, Object> result = experienceEngineClient.createCase(caseData);
+            return result;
+        } catch (Exception ex) {
+            return Map.of("error", ex.getMessage());
         }
     }
 

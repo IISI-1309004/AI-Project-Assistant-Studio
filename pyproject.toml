@@ -23,6 +23,8 @@ gitpython = "^3.1.43"
 psycopg2-binary = "^2.9.9"
 pyyaml = "^6.0.1"
 httpx = "^0.27.0"
+# Phase 9: 結構化 JSON 日誌
+python-json-logger = "^2.0.7"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"

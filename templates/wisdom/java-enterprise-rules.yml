@@ -67,3 +67,59 @@ rules:
       global: true
     triggerConditions:
       - "log 語句中包含 password、token、cardNumber 等欄位名稱"
+
+  - id: WIS-SEC-002
+    title: 禁止硬編碼密碼或 API Key
+    description: 原始碼中不得出現硬編碼的 password、secret、apiKey 字串值
+    severity: BLOCK
+    scope:
+      global: true
+    triggerConditions:
+      - "String password = 或 String apiKey = 或 String secret = 賦值字串"
+    examples:
+      bad: "String password = \"abc123\";"
+      good: "String password = System.getenv(\"DB_PASSWORD\");"
+
+  - id: WIS-JAVA-005
+    title: REST API 回傳必須使用 ResponseEntity
+    description: Controller 方法的回傳類型必須是 ResponseEntity，不得直接回傳 POJO
+    severity: WARN
+    scope:
+      global: false
+      modules: ["controller", "api"]
+    triggerConditions:
+      - "Controller 方法直接回傳非 ResponseEntity 的物件"
+
+  - id: WIS-JAVA-006
+    title: 禁止在 Service 層使用 @Autowired 欄位注入
+    description: Service 層應使用建構子注入取代 @Autowired 欄位注入，以利測試
+    severity: WARN
+    scope:
+      global: true
+    triggerConditions:
+      - "@Autowired 標注在非建構子的欄位上"
+    examples:
+      bad: "@Autowired private UserRepository repo;"
+      good: "public UserService(UserRepository repo) { this.repo = repo; }"
+
+  - id: WIS-SQL-001
+    title: SQL 查詢必須使用參數化查詢
+    description: 禁止使用字串拼接方式組成 SQL，必須使用 ? 或 #{} 佔位符
+    severity: BLOCK
+    scope:
+      global: true
+    triggerConditions:
+      - "SQL 字串中包含 + 或 concat 與變數拼接"
+    examples:
+      bad: "\"SELECT * FROM users WHERE name = '\" + name + \"'\""
+      good: "\"SELECT * FROM users WHERE name = ?\" with PreparedStatement"
+
+  - id: WIS-SQL-002
+    title: 分頁查詢必須有 LIMIT 或 PageRequest
+    description: 查詢大量資料時必須使用分頁，避免全表掃描造成 OOM
+    severity: WARN
+    scope:
+      global: true
+    triggerConditions:
+      - "findAll() 或 SELECT * 沒有搭配 Pageable 或 LIMIT"
+
