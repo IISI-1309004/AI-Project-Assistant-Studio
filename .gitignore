@@ -21,3 +21,7 @@ Thumbs.db
 .DS_Store
 *.log
 
+
+# Local env files with credentials
+cli/.env.local
+*.env.local
