@@ -4,6 +4,22 @@ AIPA Studio AI Engine — FastAPI 主進程入口
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+
+# Phase 9: 結構化 JSON 日誌配置
+from aipa_ai_engine.logging_config import setup_json_logging, get_audit_logger
+
+# 初始化日誌
+setup_json_logging(
+    service_name="ai-engine",
+    version="1.0.0-SNAPSHOT",
+    enable_console=True,
+    enable_file=True,
+    enable_audit=True,
+)
+
+logger = logging.getLogger("aipa_ai_engine")
+audit_logger = get_audit_logger()
 
 from aipa_knowledge.router import router as knowledge_router
 from aipa_memory.router import router as memory_router

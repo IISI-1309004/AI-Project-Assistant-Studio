@@ -27,6 +27,16 @@ aipa:
     generate-completion-report: true
     auto-reinforce-memory: true
     reinforce-max-items: 3
+  # Phase 9: 企業級安全強化
+  security:
+    # IP 白名單配置 (逗号分隔)
+    # 支援格式:
+    #   - 精確 IP: 192.168.1.1
+    #   - CIDR 段: 192.168.1.0/24, 10.0.0.0/8
+    #   - 本地測試環境預設總是允許: 127.0.0.1
+    ip-whitelist: "127.0.0.1,::1"
+    # 是否啟用 IP 白名單過濾 (開發時禁用, 生產環境建議啟用)
+    enable-ip-whitelist: false
 
 management:
   endpoints:
