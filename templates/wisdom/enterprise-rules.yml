@@ -1,8 +1,8 @@
-# AIPA Studio — 預設智慧規則（Java 企業開發）
-# Phase 6 載入至 Wisdom Engine
+# AIPA Studio — 預設智慧規則（企業開發）
+# 載入至 Wisdom Engine
 
 rules:
-  - id: WIS-JAVA-001
+  - id: WIS-ENT-001
     title: 禁止在 Controller 層直接注入 Repository
     description: Controller 層不得直接依賴 Repository，必須透過 Service 層存取資料
     severity: BLOCK
@@ -16,7 +16,7 @@ rules:
       bad: "@Autowired private UserRepository userRepository; // 在 Controller 中"
       good: "@Autowired private UserService userService; // 透過 Service 層"
 
-  - id: WIS-JAVA-002
+  - id: WIS-ENT-002
     title: 不得在 for loop 內執行 DB 查詢（N+1 問題）
     description: 禁止在迴圈內執行資料庫查詢，應使用批次查詢或 JOIN
     severity: WARN
@@ -28,7 +28,7 @@ rules:
       bad: "for (Long id : ids) { repo.findById(id); }"
       good: "repo.findAllById(ids);"
 
-  - id: WIS-JAVA-003
+  - id: WIS-ENT-003
     title: Service 方法必須標注 @Transactional
     description: 有寫入操作的 Service 方法必須標注 @Transactional，查詢方法使用 readOnly=true
     severity: WARN
@@ -37,7 +37,7 @@ rules:
     triggerConditions:
       - "Service 類別中有 save/update/delete 操作但無 @Transactional 標注"
 
-  - id: WIS-JAVA-004
+  - id: WIS-ENT-004
     title: 不得在月底批次作業期間修改 Batch Job
     description: 每月最後 3 天禁止修改任何批次作業邏輯，避免影響月結
     severity: BLOCK
@@ -80,7 +80,7 @@ rules:
       bad: "String password = \"abc123\";"
       good: "String password = System.getenv(\"DB_PASSWORD\");"
 
-  - id: WIS-JAVA-005
+  - id: WIS-ENT-005
     title: REST API 回傳必須使用 ResponseEntity
     description: Controller 方法的回傳類型必須是 ResponseEntity，不得直接回傳 POJO
     severity: WARN
@@ -90,7 +90,7 @@ rules:
     triggerConditions:
       - "Controller 方法直接回傳非 ResponseEntity 的物件"
 
-  - id: WIS-JAVA-006
+  - id: WIS-ENT-006
     title: 禁止在 Service 層使用 @Autowired 欄位注入
     description: Service 層應使用建構子注入取代 @Autowired 欄位注入，以利測試
     severity: WARN
@@ -122,4 +122,5 @@ rules:
       global: true
     triggerConditions:
       - "findAll() 或 SELECT * 沒有搭配 Pageable 或 LIMIT"
+
 

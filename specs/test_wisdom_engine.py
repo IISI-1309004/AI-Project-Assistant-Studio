@@ -104,7 +104,7 @@ class TestWisdomRuleMatching:
         })
         context = {
             "code_diff": "void greet() { System.out.println(\"hello\"); }",
-            "file_names": ["GreetService.java"],
+            "file_names": ["GreetService.py"],
             "spec_type": "FEATURE",
         }
         matched = engine.match_rules(context)
@@ -159,7 +159,7 @@ class TestWisdomDefaultRulesLoader:
         engine.load_default_rules()
         rules = engine.list_rules()
         block_rules = [r for r in rules if r["severity"] == "BLOCK"]
-        assert len(block_rules) >= 3  # WIS-JAVA-001, WIS-JAVA-004, WIS-DB-001, WIS-SEC-001
+        assert len(block_rules) >= 3  # WIS-ENT-001, WIS-ENT-004, WIS-DB-001, WIS-SEC-001
 
     def test_default_rules_not_duplicated(self, engine):
         engine.load_default_rules()

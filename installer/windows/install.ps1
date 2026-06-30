@@ -196,7 +196,7 @@ function Show-CompletionInfo {
     Write-Host "服務連接資訊：" -ForegroundColor Cyan
     Write-Host "  🌐 Web Dashboard：  http://localhost"
     Write-Host "  🔌 Runtime API：    http://localhost:8080"
-    Write-Host "  📊 AI 引擎：        http://localhost:18082（內部）"
+    Write-Host "  📊 Unified API：    http://localhost:18080（開發模式）"
     Write-Host ""
 
     Write-Host "常用命令：" -ForegroundColor Cyan

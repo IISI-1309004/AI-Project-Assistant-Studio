@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # 預設規則模板路徑（相對於 project root）
 _DEFAULT_RULES_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "..", "..", "templates", "wisdom", "java-enterprise-rules.yml"
+    os.path.dirname(__file__), "..", "..", "templates", "wisdom", "enterprise-rules.yml"
 )
 
 
@@ -98,6 +98,12 @@ class WisdomEngine:
             hit_reason = ""
             for condition in trigger_conditions:
                 condition_lower = condition.lower()
+                if ("without where" in condition_lower or ("缺少" in condition_lower and "where" in condition_lower)) and (
+                    ("update" in code_diff or "delete" in code_diff) and "where" not in code_diff
+                ):
+                    hit = True
+                    hit_reason = condition
+                    break
                 # 簡單關鍵字匹配（Phase 6 基礎版，Phase 9 可換 LLM 增強）
                 keywords = self._extract_keywords(condition_lower)
                 if all(kw in code_diff for kw in keywords if kw):
@@ -129,7 +135,7 @@ class WisdomEngine:
     # 預設規則載入（Phase 6）
     # ------------------------------------------------------------------ #
     def load_default_rules(self) -> int:
-        """從模板檔案載入預設 Java 企業開發規則，回傳載入數量"""
+        """從模板檔案載入預設企業開發規則，回傳載入數量"""
         rules_path = os.path.abspath(_DEFAULT_RULES_PATH)
         if not os.path.exists(rules_path):
             logger.warning(f"Default rules file not found: {rules_path}")

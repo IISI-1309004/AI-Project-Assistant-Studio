@@ -85,8 +85,9 @@ class ScanResultIngestor:
 
     def _build_tech_stack_summary(self, meta: dict) -> str:
         lines = [f"專案名稱：{meta.get('name', 'unknown')}"]
-        if meta.get("javaVersion"):
-            lines.append(f"Java 版本：{meta['javaVersion']}")
+        runtime_version = meta.get("runtimeVersion") or meta.get("languageVersion")
+        if runtime_version:
+            lines.append(f"執行環境版本：{runtime_version}")
         if meta.get("frameworks"):
             lines.append(f"框架：{', '.join(meta['frameworks'])}")
         if meta.get("databases"):
