@@ -648,24 +648,48 @@ docker compose up -d
 
 至少設定一個 AI 供應商才能使用程式碼生成功能。
 
-#### Anthropic Claude（推薦）
+#### GitHub Copilot（推薦 — 公司已購買）
+
+GitHub Copilot 是公司已購買的方案，推薦優先使用。
+
+```bash
+# 1. 取得 GitHub Personal Access Token
+#    前往：https://github.com/settings/tokens
+#    建立新 Token（勾選 copilot scope）
+#    複製 Token
+
+# 2. 設定環境變數
+export GITHUB_TOKEN=ghp_xxxxxxxxxxxxx
+
+# 3. 驗證連線
+curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/user
+```
+
+#### Anthropic Claude（付費備選）
 
 ```bash
 # 取得 API Key：https://console.anthropic.com/
 export CLAUDE_API_KEY=sk-ant-xxxxx
 ```
 
-#### OpenAI
+#### OpenAI（付費備選）
 
 ```bash
 # 取得 API Key：https://platform.openai.com/api-keys
 export OPENAI_API_KEY=sk-xxxxx
 ```
 
-#### Ollama（完全離線，推薦企業內網）
+#### Google Gemini（付費備選，含免費配額）
 
 ```bash
-# 安裝 Ollama
+# 取得 API Key：https://makersuite.google.com/app/apikey
+export GEMINI_API_KEY=AIxxxxx
+```
+
+#### Ollama（完全免費，離線備選）
+
+```bash
+# 安裝 Ollama（Linux）
 curl -fsSL https://ollama.ai/install.sh | sh
 
 # 下載模型（選其一）
