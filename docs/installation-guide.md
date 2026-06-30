@@ -67,9 +67,9 @@ cd AI-Project-Assistant-Studio
 
 ---
 
-## 2. 方式 A：Windows 本機模式（無 Docker — 推薦企業環境）
+## 2. 方式 A：Windows 本機模式 — 推薦企業環境
 
-**適用於公司不允許安裝 Docker 設備，或想輕量化部署的環境**
+**適用於 Windows 開發環境**
 
 ### 2.1 前置軟體（手動安裝）
 
@@ -117,12 +117,12 @@ OLLAMA_BASE_URL=http://localhost:11434
 
 ### 2.4（推薦）安裝 Ollama 本機 AI 模型
 
-Ollama 是獨立應用程式（**不需要 Docker**），可在本機離線運行 AI 模型。
+Ollama 是獨立應用程式，可在本機離線運行 AI 模型。
 
 ```powershell
 # 1. 下載 Ollama Windows 版本
 #    https://ollama.ai/download
-#    直接安裝（無需 Docker）
+#    直接安裝
 
 # 2. 確認 Ollama 已啟動（應在背景執行）
 #    檢查：http://localhost:11434 是否回應
