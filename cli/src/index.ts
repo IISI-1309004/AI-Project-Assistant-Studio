@@ -3,8 +3,9 @@ import { Command } from "commander";
 import chalk from "chalk";
 import axios, { AxiosInstance } from "axios";
 import { basename, resolve } from "node:path";
-import { access } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
+import { spawn } from "node:child_process";
 import { parseExcludePatterns, redactSensitiveText } from "./security";
 
 type InitStatus = {
@@ -66,6 +67,160 @@ function normalizeProjectId(input: string): string {
   return input.toLowerCase().replace(/[^a-z0-9-_]+/g, "-").replace(/^-+|-+$/g, "") || "default";
 }
 
+const PROJECT_META_RELATIVE_PATH = ".ai-project/project.json";
+
+type ProjectMeta = {
+  projectId: string;
+  projectRoot: string;
+  updatedAt: string;
+};
+
+function rewriteSlashCommandArgs(argv: string[]): string[] {
+  const [nodeBin, scriptPath, maybeSlash, ...rest] = argv;
+  if (!maybeSlash || !maybeSlash.startsWith("/")) {
+    return argv;
+  }
+
+  const slash = maybeSlash.toLowerCase();
+  const mapped = (() => {
+    switch (slash) {
+      case "/spec":
+        return ["ask", ...rest];
+      case "/plan":
+        return ["checkpoint", "list", ...rest];
+      case "/approve":
+      case "/do":
+      case "/pr":
+        return ["checkpoint", "approve", ...rest];
+      case "/reject":
+        return ["checkpoint", "reject", ...rest];
+      case "/learn":
+        return rest.length > 0 ? ["learn", ...rest] : ["learn", "--auto"];
+      case "/test":
+        return ["test-local", ...rest];
+      default:
+        return [maybeSlash, ...rest];
+    }
+  })();
+
+  return [nodeBin, scriptPath, ...mapped];
+}
+
+process.argv = rewriteSlashCommandArgs(process.argv);
+
+async function readProjectMeta(projectRoot: string): Promise<ProjectMeta | null> {
+  try {
+    const text = await readFile(resolve(projectRoot, PROJECT_META_RELATIVE_PATH), "utf-8");
+    const parsed = JSON.parse(text) as Partial<ProjectMeta>;
+    if (!parsed.projectId) {
+      return null;
+    }
+    return {
+      projectId: parsed.projectId,
+      projectRoot: parsed.projectRoot ?? projectRoot,
+      updatedAt: parsed.updatedAt ?? new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function writeProjectMeta(projectRoot: string, projectId: string): Promise<void> {
+  const aiProjectDir = resolve(projectRoot, ".ai-project");
+  await mkdir(aiProjectDir, { recursive: true });
+  const payload: ProjectMeta = {
+    projectId,
+    projectRoot,
+    updatedAt: new Date().toISOString(),
+  };
+  await writeFile(resolve(projectRoot, PROJECT_META_RELATIVE_PATH), JSON.stringify(payload, null, 2), "utf-8");
+}
+
+async function resolveProjectId(
+  explicitProjectId: string | undefined,
+  projectRootInput: string | undefined
+): Promise<string> {
+  if (explicitProjectId?.trim()) {
+    return normalizeProjectId(explicitProjectId);
+  }
+
+  if (process.env.AIPA_PROJECT_ID?.trim()) {
+    return normalizeProjectId(process.env.AIPA_PROJECT_ID);
+  }
+
+  const projectRoot = resolve(projectRootInput ?? process.cwd());
+  const meta = await readProjectMeta(projectRoot);
+  if (meta?.projectId) {
+    return normalizeProjectId(meta.projectId);
+  }
+
+  return normalizeProjectId(basename(projectRoot));
+}
+
+function runCommandForCurrentProject(command: string, args: string[]): Promise<number> {
+  return new Promise<number>((resolveCode, rejectCode) => {
+    const child = spawn(command, args, {
+      stdio: "inherit",
+      shell: process.platform === "win32",
+    });
+    child.on("error", rejectCode);
+    child.on("close", (code) => resolveCode(code ?? 1));
+  });
+}
+
+async function runLocalTestWrapper(): Promise<number> {
+  const cwd = process.cwd();
+
+  try {
+    await access(resolve(cwd, "gradlew.bat"), fsConstants.X_OK);
+    return await runCommandForCurrentProject(".\\gradlew.bat", ["test"]);
+  } catch {
+    // continue
+  }
+
+  try {
+    await access(resolve(cwd, "gradlew"), fsConstants.X_OK);
+    return await runCommandForCurrentProject("./gradlew", ["test"]);
+  } catch {
+    // continue
+  }
+
+  try {
+    await access(resolve(cwd, "pom.xml"), fsConstants.F_OK);
+    return await runCommandForCurrentProject("mvn", ["test"]);
+  } catch {
+    // continue
+  }
+
+  try {
+    const pkgText = await readFile(resolve(cwd, "package.json"), "utf-8");
+    const pkg = JSON.parse(pkgText) as { scripts?: Record<string, string> };
+    if (pkg.scripts?.test) {
+      return await runCommandForCurrentProject("npm", ["test"]);
+    }
+  } catch {
+    // continue
+  }
+
+  try {
+    await access(resolve(cwd, "pyproject.toml"), fsConstants.F_OK);
+    return await runCommandForCurrentProject("pytest", []);
+  } catch {
+    // continue
+  }
+
+  try {
+    await access(resolve(cwd, "requirements.txt"), fsConstants.F_OK);
+    return await runCommandForCurrentProject("pytest", []);
+  } catch {
+    // continue
+  }
+
+  console.error(chalk.red("No known test command found in current directory."));
+  console.error(chalk.gray("Expected one of: gradlew(.bat), pom.xml, package.json(test), pyproject.toml, requirements.txt"));
+  return 1;
+}
+
 async function waitForInit(jobId: string): Promise<InitStatus> {
   let latest: InitStatus = {
     jobId,
@@ -103,7 +258,7 @@ program
   .option("--no-wait", "只送出 job，不等待完成")
   .action(async (opts: { projectRoot: string; projectId?: string; wait: boolean }) => {
     const projectRoot = resolve(opts.projectRoot);
-    const projectId = opts.projectId ?? normalizeProjectId(basename(projectRoot));
+    const projectId = await resolveProjectId(opts.projectId, projectRoot);
 
     const { data } = await http.post("/api/v1/project/init", {
       projectRoot,
@@ -113,6 +268,7 @@ program
     console.log(chalk.green(`Init job started: ${data.jobId}`));
     console.log(chalk.gray(`Runtime: ${RUNTIME_URL}`));
     console.log(chalk.gray(`Project: ${projectId} @ ${projectRoot}`));
+    await writeProjectMeta(projectRoot, projectId);
 
     if (!opts.wait) {
       console.log(chalk.yellow(`Use: aipa init-status ${data.jobId}`));
@@ -144,17 +300,18 @@ program
 program
   .command("ask <requirement>")
   .description("產生規格、信心評估與 Task Planning（Phase 3 MVP）")
-  .option("--project-id <id>", "專案識別碼", "default")
+  .option("--project-id <id>", "專案識別碼")
   .option("--project-root <path>", "專案路徑", process.cwd())
-  .action(async (requirement: string, opts: { projectId: string; projectRoot: string }) => {
+  .action(async (requirement: string, opts: { projectId?: string; projectRoot: string }) => {
     const { sanitized, redactedCount } = redactSensitiveText(requirement);
+    const projectId = await resolveProjectId(opts.projectId, opts.projectRoot);
     if (redactedCount > 0) {
       console.log(chalk.yellow(`⚠️  已遮罩 ${redactedCount} 個敏感片段（contextExcludePatterns 生效）`));
     }
 
     const { data } = await http.post<SessionStatus>("/api/v1/session", {
       requirement: sanitized,
-      projectId: opts.projectId,
+      projectId,
       projectRoot: resolve(opts.projectRoot),
     });
 
@@ -180,12 +337,13 @@ program
   .option("--project-id <id>", "專案識別碼")
   .action(async (opts: { target: string; projectId?: string }) => {
     const target = resolve(opts.target);
-    const projectId = opts.projectId ?? normalizeProjectId(basename(target));
+    const projectId = await resolveProjectId(opts.projectId, target);
     const { data } = await http.post("/api/v1/project/init", {
       projectRoot: target,
       projectId,
       fullRescan: true,
     });
+    await writeProjectMeta(target, projectId);
     console.log(chalk.green(`Rescan job started: ${data.jobId}`));
     const final = await waitForInit(data.jobId);
     if (final.status !== "COMPLETED") {
@@ -198,13 +356,13 @@ program
   .command("learn")
   .description("手動觸發學習（分析最新 PR）")
   .option("--pr <id>", "指定 PR ID")
-  .option("--project-id <id>", "專案識別碼", "default")
+  .option("--project-id <id>", "專案識別碼")
   .option("--session-id <id>", "來源 Session ID", "")
   .option("--summary <text>", "學習摘要", "Merged PR learning")
   .option("--files <items>", "變更檔案（逗號分隔）", "")
   .option("--review-comments <items>", "審查建議（逗號分隔）", "")
   .option("--auto", "自動從最近完成的 Session 觸發學習")
-  .action(async (opts: { pr?: string; projectId: string; sessionId: string; summary: string; files: string; reviewComments: string; auto?: boolean }) => {
+  .action(async (opts: { pr?: string; projectId?: string; sessionId: string; summary: string; files: string; reviewComments: string; auto?: boolean }) => {
     // Phase 5-2: Auto-trigger learning from latest COMPLETED session
     if (opts.auto) {
       try {
@@ -244,8 +402,9 @@ program
 
     const changedFiles = opts.files ? opts.files.split(",").map((item) => item.trim()).filter(Boolean) : [];
     const reviewComments = opts.reviewComments ? opts.reviewComments.split(",").map((item) => item.trim()).filter(Boolean) : [];
+    const projectId = await resolveProjectId(opts.projectId, process.cwd());
     const { data } = await http.post("/api/v1/learn", {
-      project_id: opts.projectId,
+      project_id: projectId,
       pr_id: opts.pr ?? "latest",
       session_id: opts.sessionId,
       summary: opts.summary,
@@ -405,12 +564,13 @@ const memory = program.command("memory").description("記憶查詢");
 knowledge
   .command("search <query>")
   .description("搜尋知識庫")
-  .option("--project-id <id>", "專案識別碼", "default")
+  .option("--project-id <id>", "專案識別碼")
   .option("--top-k <n>", "回傳筆數", "5")
-  .action(async (query: string, opts: { projectId: string; topK: string }) => {
+  .action(async (query: string, opts: { projectId?: string; topK: string }) => {
+    const projectId = await resolveProjectId(opts.projectId, process.cwd());
     const { data } = await http.post("/api/v1/knowledge/search", {
       query,
-      projectId: opts.projectId,
+      projectId,
       topK: Number(opts.topK),
     });
 
@@ -426,12 +586,13 @@ knowledge
 memory
   .command("list")
   .description("列出記憶條目")
-  .requiredOption("--project-id <id>", "專案識別碼")
+  .option("--project-id <id>", "專案識別碼")
   .option("--type <name>", "記憶類型")
-  .action(async (opts: { projectId: string; type?: string }) => {
+  .action(async (opts: { projectId?: string; type?: string }) => {
+    const projectId = await resolveProjectId(opts.projectId, process.cwd());
     const { data } = await http.get("/api/v1/memory", {
       params: {
-        projectId: opts.projectId,
+        projectId,
         type: opts.type,
       },
     });
@@ -463,12 +624,13 @@ memory
 knowledge
   .command("list")
   .description("列出知識項目")
-  .requiredOption("--project-id <id>", "專案識別碼")
+  .option("--project-id <id>", "專案識別碼")
   .option("--category <name>", "分類過濾")
-  .action(async (opts: { projectId: string; category?: string }) => {
+  .action(async (opts: { projectId?: string; category?: string }) => {
+    const projectId = await resolveProjectId(opts.projectId, process.cwd());
     const { data } = await http.get("/api/v1/knowledge", {
       params: {
-        projectId: opts.projectId,
+        projectId,
         category: opts.category,
       },
     });
@@ -565,6 +727,17 @@ server.command("status").action(async () => {
     console.log(chalk.red("❌ Runtime Service is DOWN"));
   }
 });
+
+// ── test-local (slash /test wrapper) ────────────────────────────
+program
+  .command("test-local")
+  .description("在當前專案自動選擇測試命令（Gradle/Maven/npm/pytest）")
+  .action(async () => {
+    const code = await runLocalTestWrapper();
+    if (code !== 0) {
+      process.exitCode = code;
+    }
+  });
 
 // ── wisdom (Phase 6) ────────────────────────────────────────────
 const wisdom = program.command("wisdom").description("智慧規則管理（Phase 6）");

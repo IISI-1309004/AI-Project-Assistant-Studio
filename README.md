@@ -21,10 +21,10 @@ AIPA Studio 是一套可安裝於企業內部的 AI 開發平台。它不是 Cha
 
 | 文件 | 說明 |
 |------|------|
-| 🚀 **[安裝手冊](docs/installation-guide.md)** | Docker/Linux/Windows 詳細安裝步驟 |
-| 📖 **[使用手冊](docs/user-guide.md)** | CLI 指令完整參考、Web Dashboard、IDE 外掛 |
+| 🚀 **[安裝手冊](docs/guides/001-installation-guide.md)** | Docker/Linux/Windows 詳細安裝步驟 |
+| 📖 **[使用手冊](docs/guides/002-user-guide.md)** | CLI 指令完整參考、Web Dashboard、IDE 外掛 |
 | 📋 **[Phase Gate 追蹤](docs/phase-gate-tracker.md)** | 各 Phase 進入/退出標準與實際完成狀態 |
-| [系統架構（SAD）](docs/sad.md) | 系統架構設計 |
+| [系統架構（SAD）](docs/design/003-system-architecture-design.md) | 系統架構設計 |
 | [開發路線圖](docs/roadmap.md) | Phase 0 → v1.0.0 GA |
 
 ## 核心理念：LSDD
@@ -65,7 +65,7 @@ aipa checkpoint list                          # 查看待審核 Checkpoint
 aipa checkpoint approve <checkpointId>        # 核准後繼續
 ```
 
-➡️ 詳細說明請見 **[使用手冊](docs/user-guide.md)**
+➡️ 詳細說明請見 **[使用手冊](docs/guides/002-user-guide.md)**
 
 ## 架構概覽
 

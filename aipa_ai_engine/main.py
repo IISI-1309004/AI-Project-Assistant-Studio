@@ -27,11 +27,17 @@ from aipa_learning.router import router as learning_router
 from aipa_experience.router import router as experience_router
 from aipa_wisdom.router import router as wisdom_router
 
+# 多租戶支持（一對多架構）
+from aipa_ai_engine.project_context_middleware import ProjectContextMiddleware
+
 app = FastAPI(
     title="AIPA Studio AI Engine",
     description="Knowledge, Memory, Learning, Experience, Wisdom Engines",
     version="1.0.0-SNAPSHOT",
 )
+
+# 添加多租戶上下文中間件（第一個執行，提取 project_id）
+app.add_middleware(ProjectContextMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
