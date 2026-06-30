@@ -37,31 +37,30 @@ AIPA Studio 是一套可安裝於企業內部的 AI 開發平台。它不是 Cha
 - 🔒 **Human Checkpoint** — 四道強制人工審核關卡
 - 📈 **Learning Always** — 每次 PR Merge 後 AI 自動成長
 
-## 🚀 快速開始（3 分鐘）
+## 🚀 快速開始（3 分鐘，Windows）
 
-### 1. 安裝服務（Docker Compose）
+### 1. 自動安裝（推薦）
 
-```bash
-git clone https://github.com/your-org/AI-Project-Assistant-Studio.git
-cd AI-Project-Assistant-Studio/installer/docker
-cp .env.example .env
-# 編輯 .env 填入 AI API Key（至少一個）
-docker compose up -d
+在 **PowerShell**（以管理員身份）執行：
+
+```powershell
+cd AI-Project-Assistant-Studio\installer\windows
+Set-ExecutionPolicy Bypass -Scope Process -Force
+.\install.ps1
 ```
 
-### 2. 安裝 CLI
+完成後重新開啟 PowerShell：
 
-```bash
-cd cli && npm install && npm run build && sudo npm install -g .
+```powershell
 aipa doctor  # 驗證安裝狀態
 ```
 
-### 3. 初始化你的 Java 專案並提出需求
+### 2. 初始化你的 Java 專案並提出需求
 
-```bash
-cd /your/java/project
+```powershell
+cd C:\your\java\project
 aipa init                                     # 掃描專案，建立知識庫（3-10 分鐘）
-aipa ask "新增客戶付款到期前三天提醒功能"       # 提出需求，開始工作流程
+aipa ask "新增客戶付款到期前三天提醒功能"    # 提出需求，開始工作流程
 aipa checkpoint list                          # 查看待審核 Checkpoint
 aipa checkpoint approve <checkpointId>        # 核准後繼續
 ```

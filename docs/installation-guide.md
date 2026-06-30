@@ -12,9 +12,9 @@
 ## 目錄
 
 1. [安裝前準備](#1-安裝前準備)
-2. [方式 A：Docker Compose（推薦）](#2-方式-a-docker-compose推薦)
-3. [方式 B：Linux 伺服器安裝](#3-方式-b-linux-伺服器安裝)
-4. [方式 C：Windows 安裝](#4-方式-c-windows-安裝)
+2. [方式 A：Windows 安裝（推薦）](#2-方式-a-windows-安裝推薦)
+3. [方式 B：Docker Compose（Linux/macOS）](#3-方式-b-docker-composelinuxmacos)
+4. [方式 C：Linux 伺服器安裝](#4-方式-c-linux-伺服器安裝)
 5. [安裝後設定](#5-安裝後設定)
 6. [服務管理](#6-服務管理)
 7. [升級流程](#7-升級流程)
@@ -66,11 +66,132 @@ cd AI-Project-Assistant-Studio
 
 ---
 
-## 2. 方式 A：Docker Compose（推薦）
+## 2. 方式 A：Windows 安裝（推薦用於 Windows 作業系統）
 
-適合：大多數場景，快速部署，易於維護。
+適合：Windows 10/11 開發環境、企業內網配置。
 
-### 2.1 前置需求安裝
+### 2.1 前置需求
+
+1. **確認 Windows 版本**：
+   - 開啟「執行」（Win+R）→ 輸入 `winver`
+   - 需要 Build 19041（Windows 10 2004）或更高版本
+
+2. **確認已啟用 WSL 2**（Docker Desktop 需要）：
+
+在 **PowerShell**（以管理員身份執行）執行：
+
+```powershell
+wsl --install
+wsl --set-default-version 2
+```
+
+3. **重新啟動電腦**
+
+### 2.2 執行 Windows 安裝腳本
+
+1. 開啟 **PowerShell**（務必以管理員身份）
+
+2. 導航到安裝目錄：
+```powershell
+cd C:\Users\YourUsername\AI-Project-Assistant-Studio
+# 或你克隆到的路徑
+```
+
+3. 設定執行原則（允許腳本執行）：
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force
+```
+
+4. 執行安裝腳本：
+```powershell
+.\installer\windows\install.ps1
+```
+
+### 2.3 安裝過程
+
+腳本會自動執行以下步驟（約 10–15 分鐘）：
+
+```
+[1/6] 檢查 Windows 版本
+      ✓ Windows 11 21H2
+      ✓ WSL 2 已啟用
+
+[2/6] 下載並安裝 Docker Desktop
+      (如尚未安裝)
+
+[3/6] 設定環境變數
+      請輸入 AI API Key（或按 Enter 跳過）：
+
+[4/6] 啟動所有服務
+      ✓ 所有容器已啟動
+
+[5/6] 安裝 CLI 工具
+      ✓ aipa 已安裝至全域
+
+[6/6] 驗證安裝
+      ✓ 所有功能正常
+```
+
+> ⚠️ **重要**：Docker Desktop 安裝完成可能需要**重新開機**。腳本執行完畢後，請重新啟動電腦。
+
+### 2.4 安裝後設定 AI API Key
+
+安裝完成後，開啟新的 **PowerShell**（以管理員身份），設定 API Key：
+
+```powershell
+# 設定 Claude（推薦）
+[System.Environment]::SetEnvironmentVariable("CLAUDE_API_KEY", "sk-ant-xxxxx", "Machine")
+
+# 或 OpenAI
+[System.Environment]::SetEnvironmentVariable("OPENAI_API_KEY", "sk-xxxxx", "Machine")
+
+# 或 Ollama 本地（無需 API Key）
+[System.Environment]::SetEnvironmentVariable("OLLAMA_BASE_URL", "http://localhost:11434", "Machine")
+
+# 重新啟動 Docker 以套用設定
+docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' down
+docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' up -d
+```
+
+### 2.5 驗證安裝
+
+開啟新的命令列視窗（PowerShell 或 CMD），執行：
+
+```powershell
+aipa doctor
+```
+
+預期輸出：
+```
+✅ runtime: Runtime 可連線 (200) @ http://localhost:8080
+✅ node: Node.js v20.x.x
+✅ ai-provider: 已設定 1 個 AI 供應商
+✅ workspace-write: 工作目錄可寫入 (C:\Users\YourUsername)
+⚠️  context-exclude: 自訂遮罩規則數量: 0
+```
+
+### 2.6 開機自動啟動
+
+安裝腳本預設設定 Docker 服務為自動啟動。如需手動管理：
+
+```powershell
+# 查看 Docker 服務狀態
+Get-ScheduledTask | Where-Object {$_.TaskName -like "*docker*"}
+
+# 手動啟動服務
+docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' up -d
+
+# 停止服務
+docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' down
+```
+
+---
+
+## 3. 方式 B：Docker Compose（Linux/macOS 自訂部署）
+
+適合：大多數 Linux 場景、自訂部署需求。
+
+### 3.1 前置需求安裝
 
 #### Ubuntu/Debian
 
@@ -216,7 +337,7 @@ bash installer/docker/verify-deployment.sh
 
 ---
 
-## 3. 方式 B：Linux 伺服器安裝
+## 4. 方式 C：Linux 伺服器安裝
 
 適合：生產伺服器、需要 systemd 服務管理、長期穩定運行。
 
