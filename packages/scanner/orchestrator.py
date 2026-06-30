@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 
 class ScannerOrchestrator:
@@ -34,7 +34,11 @@ class ScannerOrchestrator:
         self.max_fragments = max(50, int(os.getenv("AIPA_SCAN_MAX_FRAGMENTS", "5000")))
         self.max_content_chars = max(200, int(os.getenv("AIPA_SCAN_SNIPPET_CHARS", "1500")))
 
-    def scan_project(self, project_root: str) -> dict[str, Any]:
+    def scan_project(
+        self,
+        project_root: str,
+        progress_callback: Callable[[int, int], None] | None = None,
+    ) -> dict[str, Any]:
         root = Path(project_root).resolve()
         if not root.exists():
             return {
@@ -63,6 +67,8 @@ class ScannerOrchestrator:
 
             for filename in filenames:
                 file_count += 1
+                if progress_callback and file_count % 500 == 0:
+                    progress_callback(file_count, len(fragments))
                 if len(fragments) >= self.max_fragments:
                     continue
 
@@ -84,6 +90,12 @@ class ScannerOrchestrator:
                         "sourceFile": rel_path,
                     }
                 )
+
+                if progress_callback and len(fragments) % 100 == 0:
+                    progress_callback(file_count, len(fragments))
+
+        if progress_callback:
+            progress_callback(file_count, len(fragments))
 
         return {
             "projectMeta": {

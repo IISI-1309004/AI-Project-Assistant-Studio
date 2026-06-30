@@ -234,11 +234,23 @@ async function waitForInit(jobId: string): Promise<InitStatus> {
     progress: 0,
     message: "Waiting for initialization",
   };
+  let lastRenderKey = "";
+  let pollTick = 0;
+  const startedAt = Date.now();
 
   while (true) {
     const { data } = await http.get<InitStatus>(`/api/v1/project/init/${jobId}/status`);
     latest = data;
-    process.stdout.write(`\r${chalk.cyan("[init]")} ${latest.progress}% ${latest.message.padEnd(48)}`);
+    pollTick += 1;
+    const spinner = ["|", "/", "-", "\\"][pollTick % 4] ?? "|";
+    const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+    const renderKey = `${latest.status}|${latest.progress}|${latest.message}`;
+    if (renderKey !== lastRenderKey) {
+      process.stdout.write(
+        `\r${chalk.cyan("[init]")} ${spinner} ${latest.progress}% ${latest.message.padEnd(56)} ${chalk.gray(`(${elapsedSec}s)`)}`,
+      );
+      lastRenderKey = renderKey;
+    }
 
     if (latest.status === "COMPLETED" || latest.status === "FAILED") {
       process.stdout.write("\n");

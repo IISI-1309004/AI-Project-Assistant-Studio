@@ -18,13 +18,27 @@ def execute_project_init(
     project_root: str,
     project_id: str,
 ) -> dict[str, Any]:
+    last_reported_files = 0
+
+    def report_scan_progress(scanned_files: int, fragment_count: int) -> None:
+        nonlocal last_reported_files
+        if scanned_files <= 0 or scanned_files - last_reported_files < 1000:
+            return
+        last_reported_files = scanned_files
+        job_service.update_job(
+            job_id,
+            status="RUNNING",
+            progress=35,
+            message=f"Scanning source code... files={scanned_files}, fragments={fragment_count}",
+        )
+
     job_service.update_job(
         job_id,
         status="RUNNING",
         progress=20,
         message="Scanning source code",
     )
-    scan_result = scanner.scan_project(project_root)
+    scan_result = scanner.scan_project(project_root, progress_callback=report_scan_progress)
 
     job_service.update_job(
         job_id,
@@ -37,6 +51,12 @@ def execute_project_init(
     ingest_message = "Knowledge ingest completed"
     ingested_count = 0
     try:
+        job_service.update_job(
+            job_id,
+            status="RUNNING",
+            progress=85,
+            message=f"Ingesting knowledge... fragments={len(scan_result.get('fragments', []))}",
+        )
         ingest_result = asyncio.run(
             bulk_ingest(
                 {

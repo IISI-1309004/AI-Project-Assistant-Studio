@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +18,15 @@ from wisdom.aipa_wisdom.router import router as wisdom_engine_router
 
 settings = get_settings()
 
+
+class _AccessLogFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        # Hide repetitive polling requests from CLI init progress loop.
+        if "GET /api/v1/project/init/" in message and "/status HTTP/" in message:
+            return False
+        return True
+
 setup_json_logging(
     service_name="aipa-studio",
     version=settings.app_version,
@@ -24,6 +34,8 @@ setup_json_logging(
     enable_file=True,
     enable_audit=True,
 )
+
+logging.getLogger("uvicorn.access").addFilter(_AccessLogFilter())
 
 
 @asynccontextmanager
