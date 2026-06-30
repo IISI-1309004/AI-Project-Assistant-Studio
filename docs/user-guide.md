@@ -209,150 +209,109 @@ Invoke-WebRequest -Uri "http://localhost:11434/api/tags" -UseBasicParsing
 
 ---
 
-### 3.2 Windows 一鍵安裝（包含 Docker）
+### 3.2 社群伺服器模式（連線遠端）
 
-⚠️ **僅適用於允許安裝應用程式的環境**
+**適用於有公司 Linux 伺服器或已有 AIPA 部署的企業**
 
-#### 前置需求
+此模式下 Windows 上只安裝 CLI 工具，連線到已有的遠端 AIPA Runtime 服務。
 
-1. **確認 Windows 版本**：
-   - 開啟「執行」（Win+R）→ 輸入 `winver`
-   - 需要 Build 19041（Windows 10 2004）或更高版本
+#### 前置條件
 
-2. **確認已啟用 WSL 2**（Docker Desktop 需要）：
+- IT 部門已在公司 Linux 伺服器上部署 AIPA Runtime
+- 公司網路允許 Windows 連線到該伺服器
+- 伺服器 IP 或 DNS 名稱（例如：`company-aipa-server` 或 `10.0.1.100`）
 
-在 **PowerShell**（以管理員身份執行）執行：
-
-```powershell
-wsl --install
-wsl --set-default-version 2
-```
-
-3. **重新啟動電腦**
-
-#### 執行 Windows 安裝腳本
-
-1. 開啟 **PowerShell**（務必以管理員身份）
-
-2. 導航到安裝目錄：
-```powershell
-cd C:\Users\YourUsername\AI-Project-Assistant-Studio
-# 或你克隆到的路徑
-```
-
-3. 設定執行原則（允許腳本執行）：
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force
-```
-
-4. 執行安裝腳本：
-```powershell
-.\installer\windows\install.ps1
-```
-
-#### 安裝過程
-
-腳本會自動執行以下步驟（約 10–15 分鐘）：
-
-```
-[1/6] 檢查 Windows 版本
-      ✓ Windows 11 21H2
-      ✓ WSL 2 已啟用
-
-[2/6] 下載並安裝 Docker Desktop
-      (如尚未安裝)
-
-[3/6] 設定環境變數
-      請輸入 AI API Key（或按 Enter 跳過）：
-
-[4/6] 啟動所有服務
-      ✓ 所有容器已啟動
-
-[5/6] 安裝 CLI 工具
-      ✓ aipa 已安裝至全域
-
-[6/6] 驗證安裝
-      ✓ 所有功能正常
-```
-
-> ⚠️ **重要**：Docker Desktop 安裝完成可能需要**重新開機**。腳本執行完畢後，請重新啟動電腦。
-
-#### 安裝後設定 AI 供應商
-
-安裝完成後，開啟新的 **PowerShell**（以管理員身份），設定 AI 供應商：
-
-**推薦：使用公司已購買的 GitHub Copilot**
+#### 安裝 CLI
 
 ```powershell
-# 1. 前往 https://github.com/settings/tokens 建立 Personal Access Token
-# 2. 複製 Token 於下方
-
-[System.Environment]::SetEnvironmentVariable("GITHUB_TOKEN", "ghp_xxxxxxxxxxxxx", "Machine")
-
-# 重新啟動 Docker 以套用設定
-docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' down
-docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' up -d
+cd AI-Project-Assistant-Studio\cli
+npm install
+npm run build
+npm install -g .
 ```
 
-**備選：使用其他 AI 供應商**
+#### 設定遠端伺服器位址
 
 ```powershell
-# Claude（付費）
-[System.Environment]::SetEnvironmentVariable("CLAUDE_API_KEY", "sk-ant-xxxxx", "Machine")
-
-# OpenAI（付費）
-[System.Environment]::SetEnvironmentVariable("OPENAI_API_KEY", "sk-xxxxx", "Machine")
-
-# Gemini（付費，含免費配額）
-[System.Environment]::SetEnvironmentVariable("GEMINI_API_KEY", "AIxxxxx", "Machine")
-
-# Ollama（免費離線）
-[System.Environment]::SetEnvironmentVariable("OLLAMA_BASE_URL", "http://localhost:11434", "Machine")
-
-# 重新啟動 Docker 以套用設定
-docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' down
-docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' up -d
+# 設定環境變數指向公司伺服器
+[System.Environment]::SetEnvironmentVariable("AIPA_RUNTIME_URL", "http://company-aipa-server:8080", "Machine")
 ```
 
-#### 驗證安裝
+或編輯 `cli\.env` 檔案：
 
-開啟新的命令列視窗（PowerShell 或 CMD），執行：
+```ini
+AIPA_RUNTIME_URL=http://company-aipa-server:8080
+AIPA_MODE=REMOTE
+```
+
+#### 測試連線
 
 ```powershell
-aipa doctor
+aipa health
+# 應顯示遠端 Runtime 版本信息
 ```
 
-預期輸出：
-```
-✅ runtime: Runtime 可連線 (200) @ http://localhost:8080
-✅ node: Node.js v20.x.x
-✅ ai-provider: 已設定 1 個 AI 供應商
-✅ workspace-write: 工作目錄可寫入 (C:\Users\YourUsername)
-⚠️  context-exclude: 自訂遮罩規則數量: 0
-```
-
-#### 開機自動啟動
-
-安裝腳本預設設定 Docker 服務為自動啟動。如需手動管理：
-
-```powershell
-# 查看 Docker 服務狀態
-Get-ScheduledTask | Where-Object {$_.TaskName -like "*docker*"}
-
-# 手動啟動服務
-docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' up -d
-
-# 停止服務
-docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' down
-```
+完成！Windows 用戶現在可以透過 CLI 連線到公司的 AIPA 服務。
 
 ---
 
-### 3.3 社群伺服器模式（連線遠端）
+### 3.3 Docker Compose（Linux/macOS 手動部署）
 
+適合 Linux 和 macOS 用戶的手動部署方式。
 
+#### 步驟 1：取得安裝檔案
 
-## 4. 快速開始（5 分鐘上手）
+```bash
+git clone https://github.com/your-org/AI-Project-Assistant-Studio.git
+cd AI-Project-Assistant-Studio
+```
+
+#### 步驟 2：設定環境變數
+
+```bash
+cp installer/docker/.env.example installer/docker/.env
+```
+
+編輯 `.env` 檔案，填入你的設定：
+
+```bash
+# 基本設定
+COMPOSE_PROJECT_NAME=aipa-studio
+AIPA_VERSION=1.0.0
+
+# AI 供應商（至少設定一個）
+GITHUB_TOKEN=ghp_xxxxxxxxxxxxx           # GitHub Copilot（推薦 — 公司可能已購買）
+CLAUDE_API_KEY=sk-ant-xxxxx               # Claude（付費）
+OPENAI_API_KEY=sk-xxxxx                   # OpenAI（付費）
+GEMINI_API_KEY=AIxxxxx                    # Google Gemini（付費）
+OLLAMA_BASE_URL=http://localhost:11434    # Ollama（免費本機模型）
+```
+
+#### 步驟 3：啟動所有服務
+
+```bash
+cd installer/docker
+docker compose up -d
+```
+
+#### 步驟 4：安裝 CLI 工具
+
+```bash
+cd ../../cli
+npm install
+npm run build
+sudo npm install -g .
+```
+
+#### 步驟 5：驗證安裝
+
+```bash
+aipa doctor
+```
+
+所有項目應顯示 ✅ 或 ⚠️（警告可暫時忽略）。
+
+---
 
 ### 情境：在 Windows 上為現有 Java Spring Boot 專案啟用 AIPA
 

@@ -13,15 +13,14 @@
 
 1. [安裝前準備](#1-安裝前準備)
 2. [方式 A：Windows 本機模式（無 Docker — 推薦企業環境）](#2-方式-a-windows-本機模式無-docker-推薦企業環境)
-3. [方式 B：Windows 一鍵安裝（包含 Docker）](#3-方式-b-windows-一鍵安裝包含-docker)
-4. [方式 C：社群伺服器模式（連線遠端）](#4-方式-c-社群伺服器模式連線遠端)
-5. [方式 D：Docker Compose（Linux/macOS）](#5-方式-ddocker-composelinuxmacos)
-6. [方式 E：Linux 伺服器安裝](#6-方式-elinux-伺服器安裝)
-7. [安裝後設定](#7-安裝後設定)
-8. [服務管理](#8-服務管理)
-9. [升級流程](#9-升級流程)
-10. [解除安裝](#10-解除安裝)
-11. [安裝驗收清單](#11-安裝驗收清單)
+3. [方式 B：社群伺服器模式（連線遠端）](#3-方式-b-社群伺服器模式連線遠端)
+4. [方式 C：Docker Compose（Linux/macOS）](#4-方式-cdocker-composelinuxmacos)
+5. [方式 D：Linux 伺服器安裝](#5-方式-dlinux-伺服器安裝)
+6. [安裝後設定](#6-安裝後設定)
+7. [服務管理](#7-服務管理)
+8. [升級流程](#8-升級流程)
+9. [解除安裝](#9-解除安裝)
+10. [安裝驗收清單](#10-安裝驗收清單)
 
 ---
 
@@ -147,142 +146,19 @@ Invoke-WebRequest -Uri "http://localhost:11434/api/tags" -UseBasicParsing
 
 ---
 
-## 3. 方式 B：Windows 一鍵安裝（包含 Docker）
-
-⚠️ **僅適用於允許安裝應用程式的環境**
-
-適合：Windows 10/11 開發環境、企業內網配置。
-
-### 3.1 前置需求
-
-1. **確認 Windows 版本**：
-   - 開啟「執行」（Win+R）→ 輸入 `winver`
-   - 需要 Build 19041（Windows 10 2004）或更高版本
-
-2. **確認已啟用 WSL 2**（Docker Desktop 需要）：
-
-在 **PowerShell**（以管理員身份執行）執行：
-
-```powershell
-wsl --install
-wsl --set-default-version 2
-```
-
-3. **重新啟動電腦**
-
-### 3.2 執行 Windows 安裝腳本
-
-1. 開啟 **PowerShell**（務必以管理員身份）
-
-2. 導航到安裝目錄：
-```powershell
-cd C:\Users\YourUsername\AI-Project-Assistant-Studio
-# 或你克隆到的路徑
-```
-
-3. 設定執行原則（允許腳本執行）：
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force
-```
-
-4. 執行安裝腳本：
-```powershell
-.\installer\windows\install.ps1
-```
-
-### 3.3 安裝過程
-
-腳本會自動執行以下步驟（約 10–15 分鐘）：
-
-```
-[1/6] 檢查 Windows 版本
-      ✓ Windows 11 21H2
-      ✓ WSL 2 已啟用
-
-[2/6] 下載並安裝 Docker Desktop
-      (如尚未安裝)
-
-[3/6] 設定環境變數
-      請輸入 AI API Key（或按 Enter 跳過）：
-
-[4/6] 啟動所有服務
-      ✓ 所有容器已啟動
-
-[5/6] 安裝 CLI 工具
-      ✓ aipa 已安裝至全域
-
-[6/6] 驗證安裝
-      ✓ 所有功能正常
-```
-
-> ⚠️ **重要**：Docker Desktop 安裝完成可能需要**重新開機**。腳本執行完畢後，請重新啟動電腦。
-
-### 3.4 安裝後設定 AI API Key
-
-安裝完成後，開啟新的 **PowerShell**（以管理員身份），設定 API Key：
-
-```powershell
-# 設定 Claude（推薦）
-[System.Environment]::SetEnvironmentVariable("CLAUDE_API_KEY", "sk-ant-xxxxx", "Machine")
-
-# 或 OpenAI
-[System.Environment]::SetEnvironmentVariable("OPENAI_API_KEY", "sk-xxxxx", "Machine")
-
-# 或 Ollama 本地（無需 API Key）
-[System.Environment]::SetEnvironmentVariable("OLLAMA_BASE_URL", "http://localhost:11434", "Machine")
-
-# 重新啟動 Docker 以套用設定
-docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' down
-docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' up -d
-```
-
-### 3.5 驗證安裝
-
-開啟新的命令列視窗（PowerShell 或 CMD），執行：
-
-```powershell
-aipa doctor
-```
-
-預期輸出：
-```
-✅ runtime: Runtime 可連線 (200) @ http://localhost:8080
-✅ node: Node.js v20.x.x
-✅ ai-provider: 已設定 1 個 AI 供應商
-✅ workspace-write: 工作目錄可寫入 (C:\Users\YourUsername)
-⚠️  context-exclude: 自訂遮罩規則數量: 0
-```
-
-### 3.6 開機自動啟動
-
-安裝腳本預設設定 Docker 服務為自動啟動。如需手動管理：
-
-```powershell
-# 查看 Docker 服務狀態
-Get-ScheduledTask | Where-Object {$_.TaskName -like "*docker*"}
-
-# 手動啟動服務
-docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' up -d
-
-# 停止服務
-docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' down
-```
-
----
-
-## 4. 方式 C：社群伺服器模式（連線遠端）
+## 3. 方式 B：社群伺服器模式（連線遠端）
 
 **適用於有公司 Linux 伺服器或已有 AIPA 部署的企業**
 
 此模式下 Windows 上只安裝 CLI 工具，連線到已有的遠端 AIPA Runtime 服務。
 
-### 4.1 前置條件
+### 3.1 前置條件
 
-- IT 部門已在公司 Linux 伺服器上部署 AIPA Runtime（使用方式 E 的一鍵安裝腳本）
+- IT 部門已在公司 Linux 伺服器上部署 AIPA Runtime（使用方式 D 的一鍵安裝腳本）
 - 公司網路允許 Windows 連線到該伺服器
 - 伺服器 IP 或 DNS 名稱（例如：`company-aipa-server` 或 `10.0.1.100`）
 
-### 4.2 安裝 CLI
+### 3.2 安裝 CLI
 
 ```powershell
 cd AI-Project-Assistant-Studio\cli
@@ -291,7 +167,7 @@ npm run build
 npm install -g .
 ```
 
-### 4.3 設定遠端伺服器位址
+### 3.3 設定遠端伺服器位址
 
 ```powershell
 # 設定環境變數指向公司伺服器
@@ -305,7 +181,7 @@ AIPA_RUNTIME_URL=http://company-aipa-server:8080
 AIPA_MODE=REMOTE
 ```
 
-### 4.4 測試連線
+### 3.4 測試連線
 
 ```powershell
 aipa health
@@ -316,11 +192,11 @@ aipa health
 
 ---
 
-## 5. 方式 D：Docker Compose（Linux/macOS 自訂部署）
+## 4. 方式 C：Docker Compose（Linux/macOS 自訂部署）
 
 適合：大多數 Linux 場景、自訂部署需求。
 
-### 5.1 前置需求安裝
+### 4.1 前置需求安裝
 
 #### Ubuntu/Debian
 
