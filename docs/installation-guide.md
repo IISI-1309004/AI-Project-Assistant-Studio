@@ -12,14 +12,16 @@
 ## 目錄
 
 1. [安裝前準備](#1-安裝前準備)
-2. [方式 A：Windows 安裝（推薦）](#2-方式-a-windows-安裝推薦)
-3. [方式 B：Docker Compose（Linux/macOS）](#3-方式-b-docker-composelinuxmacos)
-4. [方式 C：Linux 伺服器安裝](#4-方式-c-linux-伺服器安裝)
-5. [安裝後設定](#5-安裝後設定)
-6. [服務管理](#6-服務管理)
-7. [升級流程](#7-升級流程)
-8. [解除安裝](#8-解除安裝)
-9. [安裝驗收清單](#9-安裝驗收清單)
+2. [方式 A：Windows 本機模式（無 Docker — 推薦企業環境）](#2-方式-a-windows-本機模式無-docker-推薦企業環境)
+3. [方式 B：Windows 一鍵安裝（包含 Docker）](#3-方式-b-windows-一鍵安裝包含-docker)
+4. [方式 C：社群伺服器模式（連線遠端）](#4-方式-c-社群伺服器模式連線遠端)
+5. [方式 D：Docker Compose（Linux/macOS）](#5-方式-ddocker-composelinuxmacos)
+6. [方式 E：Linux 伺服器安裝](#6-方式-elinux-伺服器安裝)
+7. [安裝後設定](#7-安裝後設定)
+8. [服務管理](#8-服務管理)
+9. [升級流程](#9-升級流程)
+10. [解除安裝](#10-解除安裝)
+11. [安裝驗收清單](#11-安裝驗收清單)
 
 ---
 
@@ -66,11 +68,92 @@ cd AI-Project-Assistant-Studio
 
 ---
 
-## 2. 方式 A：Windows 安裝（推薦用於 Windows 作業系統）
+## 2. 方式 A：Windows 本機模式（無 Docker — 推薦企業環境）
+
+**適用於公司不允許安裝 Docker 設備，或想輕量化部署的環境**
+
+### 2.1 前置軟體（手動安裝）
+
+```powershell
+# 1. 安裝 Node.js 20 LTS
+#    下載：https://nodejs.org/en/download/
+#    或聯絡貴公司 IT 協助安裝
+
+# 驗證安裝
+node --version  # 應顯示 v20.x.x 或更新版本
+npm --version
+```
+
+### 2.2 克隆並安裝 CLI
+
+```powershell
+# 導航到工作目錄
+cd C:\Users\YourUsername\work
+
+# 克隆程式碼
+git clone https://github.com/your-org/AI-Project-Assistant-Studio.git
+cd AI-Project-Assistant-Studio
+
+# 安裝 CLI 工具
+cd cli
+npm install
+npm run build
+npm install -g .
+
+# 驗證
+aipa version  # 應顯示版本號
+```
+
+### 2.3 配置本機模式
+
+編輯 `cli\.env.local` 檔案（如無此檔案則在 `cli` 目錄下建立）：
+
+```ini
+# .env.local — Windows 本機模式設定
+AIPA_MODE=LOCAL
+SKIP_SERVER_CHECK=true
+AIPA_AI_PROVIDER=OLLAMA
+OLLAMA_BASE_URL=http://localhost:11434
+```
+
+### 2.4（推薦）安裝 Ollama 本機 AI 模型
+
+Ollama 是獨立應用程式（**不需要 Docker**），可在本機離線運行 AI 模型。
+
+```powershell
+# 1. 下載 Ollama Windows 版本
+#    https://ollama.ai/download
+#    直接安裝（無需 Docker）
+
+# 2. 確認 Ollama 已啟動（應在背景執行）
+#    檢查：http://localhost:11434 是否回應
+
+# 3. 在新 PowerShell 視窗下載模型
+ollama pull llama3.1:8b   # 輕量，推薦一般開發（4GB）
+# 或
+ollama pull qwen2.5-coder:7b  # 程式碼生成最佳化（6GB）
+```
+
+### 2.5 驗證本機模式安裝
+
+```powershell
+# 檢查 CLI
+aipa version
+
+# 測試 Ollama 連線
+Invoke-WebRequest -Uri "http://localhost:11434/api/tags" -UseBasicParsing
+# 應返回已安裝的模型列表
+```
+
+---
+
+## 3. 方式 B：Windows 一鍵安裝（包含 Docker）
+
+⚠️ **僅適用於允許安裝應用程式的環境**
 
 適合：Windows 10/11 開發環境、企業內網配置。
 
-### 2.1 前置需求
+### 3.1 前置需求
 
 1. **確認 Windows 版本**：
    - 開啟「執行」（Win+R）→ 輸入 `winver`
@@ -87,7 +170,7 @@ wsl --set-default-version 2
 
 3. **重新啟動電腦**
 
-### 2.2 執行 Windows 安裝腳本
+### 3.2 執行 Windows 安裝腳本
 
 1. 開啟 **PowerShell**（務必以管理員身份）
 
@@ -107,7 +190,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 .\installer\windows\install.ps1
 ```
 
-### 2.3 安裝過程
+### 3.3 安裝過程
 
 腳本會自動執行以下步驟（約 10–15 分鐘）：
 
@@ -134,7 +217,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 
 > ⚠️ **重要**：Docker Desktop 安裝完成可能需要**重新開機**。腳本執行完畢後，請重新啟動電腦。
 
-### 2.4 安裝後設定 AI API Key
+### 3.4 安裝後設定 AI API Key
 
 安裝完成後，開啟新的 **PowerShell**（以管理員身份），設定 API Key：
 
@@ -153,7 +236,7 @@ docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.
 docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.yml' up -d
 ```
 
-### 2.5 驗證安裝
+### 3.5 驗證安裝
 
 開啟新的命令列視窗（PowerShell 或 CMD），執行：
 
@@ -170,7 +253,7 @@ aipa doctor
 ⚠️  context-exclude: 自訂遮罩規則數量: 0
 ```
 
-### 2.6 開機自動啟動
+### 3.6 開機自動啟動
 
 安裝腳本預設設定 Docker 服務為自動啟動。如需手動管理：
 
@@ -187,11 +270,57 @@ docker compose -f 'C:\Program Files\aipa-studio\installer\docker\docker-compose.
 
 ---
 
-## 3. 方式 B：Docker Compose（Linux/macOS 自訂部署）
+## 4. 方式 C：社群伺服器模式（連線遠端）
+
+**適用於有公司 Linux 伺服器或已有 AIPA 部署的企業**
+
+此模式下 Windows 上只安裝 CLI 工具，連線到已有的遠端 AIPA Runtime 服務。
+
+### 4.1 前置條件
+
+- IT 部門已在公司 Linux 伺服器上部署 AIPA Runtime（使用方式 E 的一鍵安裝腳本）
+- 公司網路允許 Windows 連線到該伺服器
+- 伺服器 IP 或 DNS 名稱（例如：`company-aipa-server` 或 `10.0.1.100`）
+
+### 4.2 安裝 CLI
+
+```powershell
+cd AI-Project-Assistant-Studio\cli
+npm install
+npm run build
+npm install -g .
+```
+
+### 4.3 設定遠端伺服器位址
+
+```powershell
+# 設定環境變數指向公司伺服器
+[System.Environment]::SetEnvironmentVariable("AIPA_RUNTIME_URL", "http://company-aipa-server:8080", "Machine")
+```
+
+或編輯 `cli\.env` 檔案：
+
+```ini
+AIPA_RUNTIME_URL=http://company-aipa-server:8080
+AIPA_MODE=REMOTE
+```
+
+### 4.4 測試連線
+
+```powershell
+aipa health
+# 應顯示遠端 Runtime 版本信息
+```
+
+完成！Windows 用戶現在可以透過 CLI 連線到公司的 AIPA 服務。
+
+---
+
+## 5. 方式 D：Docker Compose（Linux/macOS 自訂部署）
 
 適合：大多數 Linux 場景、自訂部署需求。
 
-### 3.1 前置需求安裝
+### 5.1 前置需求安裝
 
 #### Ubuntu/Debian
 
